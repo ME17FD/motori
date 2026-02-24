@@ -1,0 +1,104 @@
+spring:
+  application:
+    name: gateway
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/motori_gateway}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:toor}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "http://localhost:5173"
+            allowed-methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+      routes:
+        - id: auth-service-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+        - id: user-service-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=1
+        - id: user-service-actuator-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user-service/actuator/**
+          filters:
+            - StripPrefix=2
+        - id: gateway-logs-route
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/gateway/logs/**
+          filters:
+            - StripPrefix=2
+        - id: eureka-service-route
+          uri: http://localhost:8761
+          predicates:
+            - Path=/api/eureka/**
+          filters:
+            - StripPrefix=1
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    hostname: localhost
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,routes
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      access: UNRESTRICTED
+    routes:
+      enabled: true
+
+keycloak:
+  auth-server-url: http://localhost:8082
+  realm: motori_realm
+  client-secret: ${KEYCLOAK_SECRET_KEY:}
+  enabled: true
+
+gateway:
+  security:
+    jwt-validation-enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: ERROR
+    com.motori.gateway: INFO

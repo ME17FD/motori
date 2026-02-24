@@ -1,0 +1,44 @@
+# Reusable infrastructure: Keycloak + MinIO
+# Use with: docker compose up -d
+# Keycloak expects PostgreSQL at host.docker.internal:5432 (database: motori_keycloak)
+# Services register with Eureka (discovery) and gateway routes use lb://service-name
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.1
+    container_name: motori-keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/motori_keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: toor
+      KC_LOG_LEVEL: error
+    ports:
+      - "8082:8080"
+    command: start-dev
+    networks:
+      - motori-network
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: motori-minio
+    ports:
+      - "9002:9000"   # S3 API
+      - "9090:9090"   # Web console
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: supersecret
+    command: server /data --console-address ":9090"
+    volumes:
+      - minio_data:/data
+    networks:
+      - motori-network
+
+volumes:
+  minio_data:
+
+networks:
+  motori-network:
+    driver: bridge
