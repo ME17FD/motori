@@ -1,10 +1,11 @@
 import ProductCard from './components/ProductCard/ProductCard'
+import brakeImage from "./assets/a.png";
 function App() {
   return (
     <>
       <div className="products-grid ">
       <ProductCard
-        image="/assets/a.png"
+        image={brakeImage}
         title="Plaquettes de freins arrière"
         dimensions="12-18 mm x 3 mm"
         price="1500,00 DH"

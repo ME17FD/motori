@@ -15,10 +15,18 @@ const ProductCard: React.FC<ProductCardProps> = ({
   dimensions,
   price,
 }) => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = "https://placehold.co/300x300?text=Image+indisponible";
+  };
+
   return (
     <div className="product-card">
       <div className="image-wrapper">
-        <img src={image} alt={title} />
+        <img 
+          src={image} 
+          alt={title}
+          onError={handleImageError}
+        />
       </div>
 
       <div className="product-info">
