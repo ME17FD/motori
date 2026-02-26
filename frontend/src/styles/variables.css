@@ -1,4 +1,5 @@
 :root {
+
   /* 🎨 Palette */
   --color-white: #FFFFFF;
   --color-black: #111111;
@@ -37,4 +38,9 @@
 .dark {
   --color-white: #111111;
   --color-black: #FFFFFF;
+}
+
+.body{
+  margin: 0;
+  padding: 0;
 }

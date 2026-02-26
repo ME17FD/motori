@@ -1,8 +1,10 @@
 import ProductCard from './components/ProductCard/ProductCard'
 import brakeImage from "./assets/a.png";
+import Navbar from './components/Navbar/Navbar';
 function App() {
   return (
     <>
+      <Navbar />
       <div className="products-grid ">
       <ProductCard
         image={brakeImage}
