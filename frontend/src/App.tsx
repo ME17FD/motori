@@ -1,56 +1,45 @@
-import ProductCard from './components/ProductCard/ProductCard'
-import brakeImage from "./assets/a.png";
-import Navbar from './components/Navbar/Navbar';
+import React, { useEffect, useState } from "react";
+import Navbar from "./components/Navbar/Navbar";
+import ProductSlider from "./components/ProductSlider/ProductSlider";
+import { mockProducts, type Product } from "./mocks/product";
+
 function App() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 🔹 Si tu as une vraie API
+    fetch("/api/products")
+      .then((res) => {
+        if (!res.ok) throw new Error("API not available");
+        return res.json();
+      })
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        // 🔹 Fallback vers mock data
+        setProducts(mockProducts);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <>
       <Navbar />
-      <div className="products-grid ">
-      <ProductCard
-        image={brakeImage}
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      <ProductCard
-        image="/assets/a.png"
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      <ProductCard
-        image="/assets/a.png"
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      <ProductCard
-        image="/assets/a.png"
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      <ProductCard
-        image="/assets/a.png"
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      <ProductCard
-        image="/images/plaquettes.png"
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      <ProductCard
-        image="/images/plaquettes.png"
-        title="Plaquettes de freins arrière"
-        dimensions="12-18 mm x 3 mm"
-        price="1500,00 DH"
-      />
-      </div>
+
+      {loading ? (
+        <div style={{ padding: "4rem", textAlign: "center" }}>
+          Chargement des produits...
+        </div>
+      ) : (
+        <div style={{ padding: "4rem" }}>
+          <ProductSlider products={products} />
+        </div>
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
