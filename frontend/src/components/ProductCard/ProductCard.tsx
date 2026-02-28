@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import "../../styles/ProductCard/ProductCard.css";
-import type { ProductCardProps } from "./ProductCard.types";
+import type { ProductCardProps } from "../../types/ui/ProductCard.types";
 
 const ProductCard: React.FC<ProductCardProps> = React.memo(
   ({ id, image, title, dimensions, price, onAddToCart }) => {
