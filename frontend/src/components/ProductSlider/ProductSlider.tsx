@@ -4,11 +4,12 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  useLayoutEffect,
 } from "react";
 import "../../styles/ProductSlider/ProductSlider.css";
 import ProductCard from "../ProductCard/ProductCard";
-import type { ProductSliderProps } from "./ProductSlider.types";
-import type { Product } from "../../types";
+import type { ProductSliderProps } from "../../types/ui/ProductSlider.types";
+import type { Product } from "../../types/index";
 
 const ProductSlider: React.FC<ProductSliderProps> = React.memo(
   ({ products, autoplay = true, autoplayDelay = 4000, onAddToCart }) => {
@@ -53,10 +54,12 @@ const ProductSlider: React.FC<ProductSliderProps> = React.memo(
 
     const showControls = products.length > itemsPerView;
 
-    useEffect(() => {
-      setCurrentIndex(itemsPerView);
-      setIsAnimating(false);
-    }, [itemsPerView]);
+    useLayoutEffect(() => {
+    requestAnimationFrame(() => {
+    setCurrentIndex(itemsPerView);
+    setIsAnimating(false);
+  });
+}, [itemsPerView]);
 
     // ── Navigation ────────────────────────────────────────────────────────────
     const goNext = useCallback((): void => {
