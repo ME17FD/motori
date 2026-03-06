@@ -31,7 +31,9 @@ public class InventoryMapper {
         inventory.getExpiredAt(),
         inventory.getSoldAt(),
         inventory.getPaymentStatus().name(),
-        inventory.getCreatedAt()
+        inventory.getCreatedAt(),
+        inventory.getUpdatedAt() 
+        
     );
 }
     public Inventory toEntity(InventoryRequest request) {

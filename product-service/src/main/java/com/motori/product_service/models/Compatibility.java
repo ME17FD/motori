@@ -1,14 +1,11 @@
 package com.motori.product_service.models;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
 
-import jakarta.persistence.Column;
+
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -23,12 +20,15 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Getter @Setter
-@Table(name = "compatibility")
-public class Compatibility {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
+@Table(name = "compatibility",
+    indexes = {
+        @Index(name = "idx_compatibility_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_compatibility_part_id", columnList = "part_id"),
+        @Index(name = "idx_compatibility_vehicule_id", columnList = "vehicule_id"),
+        @Index(name = "idx_compatibility_part_vehicle", columnList = "part_id, vehicule_id")
+    })
+public class Compatibility extends BaseEntity{
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "part_id")
     private Parts part;           
@@ -37,9 +37,4 @@ public class Compatibility {
     @JoinColumn(name = "vehicule_id")
     private Vehicule vehicule;    
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 }

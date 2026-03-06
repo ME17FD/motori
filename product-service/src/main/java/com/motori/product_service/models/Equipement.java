@@ -1,8 +1,7 @@
 package com.motori.product_service.models;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+
 
 import com.motori.product_service.enums.EquipementSize;
 
@@ -11,9 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -29,16 +26,22 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "equipement")
+@Table(name = "equipement",
+    indexes = {
+        @Index(name = "idx_equipement_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_equipement_brand_id", columnList = "equipement_brand_id"),
+        @Index(name = "idx_equipement_category_id", columnList = "equipement_category_id")
+    })
 
-public class Equipement {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+public class Equipement extends BaseEntity{
+
 
     @Column(name="size")
     @Enumerated(EnumType.STRING)
     private EquipementSize size;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "color")
     private String color;
@@ -59,11 +62,5 @@ public class Equipement {
     
     @Column(name = "price")
     private BigDecimal price;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 
 }

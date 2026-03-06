@@ -20,7 +20,9 @@ public class VehiculeMapper {
             vehicule.getId(),
             vehicule.getModel(),
             vehicule.getName(),
-            vehiculeBrandMapper.toResponse(vehicule.getVehiculeBrandId())
+            vehiculeBrandMapper.toResponse(vehicule.getVehiculeBrandId()),
+            vehicule.getCreatedAt(),
+            vehicule.getUpdatedAt()
         );
     }
 

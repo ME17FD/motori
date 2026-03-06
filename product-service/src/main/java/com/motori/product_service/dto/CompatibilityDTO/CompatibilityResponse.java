@@ -10,5 +10,6 @@ public record CompatibilityResponse(
     UUID id,
     PartResponse part,
     VehiculeResponse vehicule,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {}

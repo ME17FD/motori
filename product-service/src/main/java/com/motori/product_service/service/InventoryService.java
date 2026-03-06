@@ -1,11 +1,14 @@
 package com.motori.product_service.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import com.motori.product_service.dto.InventoryDTO.InventoryFilterRequest;
 import com.motori.product_service.dto.InventoryDTO.InventoryRequest;
 import com.motori.product_service.dto.InventoryDTO.InventoryResponse;
 import com.motori.product_service.enums.PayementStatus;
@@ -17,9 +20,11 @@ import com.motori.product_service.models.Parts;
 import com.motori.product_service.repository.EquipementRepository;
 import com.motori.product_service.repository.InventoryRepository;
 import com.motori.product_service.repository.PartRepository;
+import com.motori.product_service.specification.InventorySpecification;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -52,7 +57,7 @@ public class InventoryService {
 
     if (hasPart) {
         Parts part = partRepository
-            .findByIdAndDeletedAtIsNull(request.partId())
+            .findById(request.partId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Pièce introuvable avec l'id : " + request.partId()
             ));
@@ -61,7 +66,7 @@ public class InventoryService {
 
     if (hasEquipement) {
         Equipement equipement = equipementRepository
-            .findByIdAndDeletedAtIsNull(request.equipementId())
+            .findById(request.equipementId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Équipement introuvable avec l'id : " + request.equipementId()
             ));
@@ -69,14 +74,13 @@ public class InventoryService {
     }
 
     inventory.setPaymentStatus(PayementStatus.PENDING);
-    inventory.setCreatedAt(LocalDateTime.now());
 
     return mapper.toResponse(repository.save(inventory));
 }
     // ─── GET BY ID ────────────────────────────────────────────
     public InventoryResponse getById(UUID id) {
         return repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Inventory introuvable avec l'id : " + id
@@ -84,17 +88,17 @@ public class InventoryService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<InventoryResponse> getAll() {
-        return repository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(mapper::toResponse)
-            .toList();
+    public Page<InventoryResponse> getAll(InventoryFilterRequest filter, Pageable pageable) {
+        log.debug("Récupération des inventaires avec filtres : {}", filter);
+        Specification<Inventory> spec = InventorySpecification.withFilters(filter);
+        return repository.findAll(spec, pageable)
+            .map(mapper::toResponse);
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
         Inventory inventory = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Inventory introuvable avec l'id : " + id
             ));
@@ -104,8 +108,6 @@ public class InventoryService {
                 "Impossible de supprimer un article déjà vendu"
             );
         }
-
-        inventory.setDeletedAt(LocalDateTime.now());
-        repository.save(inventory);
+        repository.delete(inventory);
     }
 } 

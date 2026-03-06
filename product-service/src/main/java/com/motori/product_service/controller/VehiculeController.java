@@ -1,6 +1,5 @@
 package com.motori.product_service.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -13,10 +12,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 import com.motori.product_service.dto.VehiculeDTO.VehiculeRequest;
 import com.motori.product_service.dto.VehiculeDTO.VehiculeResponse;
 import com.motori.product_service.service.VehiculeService;
+
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,9 +44,11 @@ public class VehiculeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<VehiculeResponse>> getAll() {
-        return ResponseEntity.ok(service.getAll());
-    }
+    public ResponseEntity<Page<VehiculeResponse>> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(service.getAll(pageable));
+    }      
 
     @PutMapping("/{id}")
     public ResponseEntity<VehiculeResponse> update(

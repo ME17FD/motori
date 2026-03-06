@@ -25,7 +25,9 @@ public class PartCategoryMapper {
             category.getId(),
             category.getName(),
             parentId,
-            parentName
+            parentName,
+            category.getCreatedAt(),
+            category.getUpdatedAt()
         );
     }
 

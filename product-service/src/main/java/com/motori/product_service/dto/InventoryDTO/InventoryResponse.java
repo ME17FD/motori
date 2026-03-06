@@ -13,5 +13,6 @@ public record InventoryResponse(
     LocalDateTime expiredAt,
     LocalDateTime soldAt,
     String paymentStatus,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {}

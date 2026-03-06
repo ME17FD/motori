@@ -1,6 +1,5 @@
 package com.motori.product_service.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -11,8 +10,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
+import com.motori.product_service.dto.InventoryDTO.InventoryFilterRequest;
 import com.motori.product_service.dto.InventoryDTO.InventoryRequest;
 import com.motori.product_service.dto.InventoryDTO.InventoryResponse;
 import com.motori.product_service.service.InventoryService;
@@ -39,8 +44,17 @@ public class InventoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<InventoryResponse>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<Page<InventoryResponse>> getAll(
+        @RequestParam(required = false) Boolean available,
+        @RequestParam(required = false) String paymentStatus,
+        @RequestParam(required = false) String type,
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+        Pageable pageable) {
+
+        InventoryFilterRequest filter = new InventoryFilterRequest(
+            available, paymentStatus, type
+        );
+        return ResponseEntity.ok(service.getAll(filter, pageable));
     }
 
     @DeleteMapping("/{id}")

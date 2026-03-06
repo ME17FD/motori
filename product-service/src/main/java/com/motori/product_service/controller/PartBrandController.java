@@ -1,9 +1,9 @@
 package com.motori.product_service.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.hc.core5.http.HttpStatus;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,10 +13,15 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 
 import com.motori.product_service.dto.PartBrandDTO.PartBrandRequest;
 import com.motori.product_service.dto.PartBrandDTO.PartBrandResponse;
 import com.motori.product_service.service.PartBrandService;
+
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,9 +46,12 @@ public class PartBrandController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PartBrandResponse>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<Page<PartBrandResponse>> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(service.getAll(pageable));
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<PartBrandResponse> update(

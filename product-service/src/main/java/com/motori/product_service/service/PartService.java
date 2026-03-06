@@ -1,11 +1,15 @@
 package com.motori.product_service.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.motori.product_service.dto.PartDTO.PartFilterRequest;
 import com.motori.product_service.dto.PartDTO.PartRequest;
 import com.motori.product_service.dto.PartDTO.PartResponse;
 import com.motori.product_service.exception.DuplicateResourceException;
@@ -17,9 +21,11 @@ import com.motori.product_service.models.Parts;
 import com.motori.product_service.repository.PartBrandRepository;
 import com.motori.product_service.repository.PartCategoryRepository;
 import com.motori.product_service.repository.PartRepository;
+import com.motori.product_service.specification.PartSpecification;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PartService {
@@ -28,25 +34,26 @@ public class PartService {
     private final PartBrandRepository partBrandRepository;
     private final PartCategoryRepository partCategoryRepository;
     private final PartMapper mapper;
+    private final MinioService minioService;
 
     // ─── CREATE ───────────────────────────────────────────────
     public PartResponse create(PartRequest request) {
 
         // Validation métier : ref unique
-        if (repository.findByRefAndDeletedAtIsNull(request.ref()).isPresent()) {
+        if (repository.findByRef(request.ref()).isPresent()) {
             throw new DuplicateResourceException(
                 "Une pièce avec la référence '" + request.ref() + "' existe déjà"
             );
         }
 
         PartBrand brand = partBrandRepository
-            .findByIdAndDeletedAtIsNull(request.partBrandId())
+            .findById(request.partBrandId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque pièce introuvable avec l'id : " + request.partBrandId()
             ));
 
         PartCategory category = partCategoryRepository
-            .findByIdAndDeletedAtIsNull(request.partCategoryId())
+            .findById(request.partCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Catégorie introuvable avec l'id : " + request.partCategoryId()
             ));
@@ -54,7 +61,7 @@ public class PartService {
         Parts part = mapper.toEntity(request);
         part.setPartBrand(brand);
         part.setPartCategory(category);
-        part.setCreatedAt(LocalDateTime.now());
+        
 
         return mapper.toResponse(repository.save(part));
     }
@@ -62,7 +69,7 @@ public class PartService {
     // ─── GET BY ID ────────────────────────────────────────────
     public PartResponse getById(UUID id) {
         return repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Pièce introuvable avec l'id : " + id
@@ -70,24 +77,24 @@ public class PartService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<PartResponse> getAll() {
-        return repository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(mapper::toResponse)
-            .toList();
+    
+    public Page<PartResponse> getAll(PartFilterRequest filter, Pageable pageable) {
+        log.debug("Récupération des pièces avec filtres : {}", filter);
+        Specification<Parts> spec = PartSpecification.withFilters(filter);
+        return repository.findAll(spec, pageable)
+            .map(mapper::toResponse);
     }
-
     // ─── UPDATE ───────────────────────────────────────────────
     public PartResponse update(UUID id, PartRequest request) {
 
         Parts part = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Pièce introuvable avec l'id : " + id
             ));
 
         // Ref unique sur une autre pièce
-        repository.findByRefAndDeletedAtIsNull(request.ref())
+        repository.findByRef(request.ref())
             .ifPresent(existing -> {
                 if (!existing.getId().equals(id)) {
                     throw new DuplicateResourceException(
@@ -97,13 +104,13 @@ public class PartService {
             });
 
         PartBrand brand = partBrandRepository
-            .findByIdAndDeletedAtIsNull(request.partBrandId())
+            .findById(request.partBrandId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque pièce introuvable avec l'id : " + request.partBrandId()
             ));
 
         PartCategory category = partCategoryRepository
-            .findByIdAndDeletedAtIsNull(request.partCategoryId())
+            .findById(request.partCategoryId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Catégorie introuvable avec l'id : " + request.partCategoryId()
             ));
@@ -121,12 +128,46 @@ public class PartService {
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
         Parts part = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Pièce introuvable avec l'id : " + id
             ));
+        repository.delete(part);
+    }
 
-        part.setDeletedAt(LocalDateTime.now());
-        repository.save(part);
+    // ─── Images ────────────────────────────────────────
+    public PartResponse uploadImage(UUID id, MultipartFile file) {
+        log.info("Upload image pour la pièce : {}", id);
+
+        Parts part = repository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException(
+            "Pièce introuvable avec l'id : " + id
+        ));
+
+        // Supprime l'ancienne image si elle existe
+        if (part.getImageUrl() != null) {
+            minioService.deleteImage(part.getImageUrl());
+        }
+
+        String imageUrl = minioService.uploadImage(file, "parts");
+        part.setImageUrl(imageUrl);
+
+        return mapper.toResponse(repository.save(part));
+    }
+
+    public PartResponse deleteImage(UUID id) {
+        log.info("Suppression image pour la pièce : {}", id);
+
+        Parts part = repository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+            "Pièce introuvable avec l'id : " + id
+            ));
+
+        if (part.getImageUrl() != null) {
+            minioService.deleteImage(part.getImageUrl());
+            part.setImageUrl(null);
+            repository.save(part);
+        }
+        return mapper.toResponse(part);
     }
 } 

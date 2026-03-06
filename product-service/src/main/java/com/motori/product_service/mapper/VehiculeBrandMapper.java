@@ -12,7 +12,9 @@ public class VehiculeBrandMapper {
     public VehiculeBrandResponse toResponse(VehiculeBrand brand) {
         return new VehiculeBrandResponse(
             brand.getId(),
-            brand.getName()
+            brand.getName(),
+            brand.getCreatedAt(),
+            brand.getUpdatedAt()  
         );
     }
 

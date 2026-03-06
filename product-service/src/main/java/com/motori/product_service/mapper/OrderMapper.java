@@ -26,7 +26,8 @@ public class OrderMapper {
             order.getItems().stream()
                 .map(orderItemMapper::toResponse)
                 .toList(),
-            order.getCreatedAt()
+            order.getCreatedAt(),
+            order.getUpdatedAt() 
         );
     }
 

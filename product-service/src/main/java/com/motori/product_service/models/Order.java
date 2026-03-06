@@ -1,11 +1,11 @@
 package com.motori.product_service.models;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 import java.util.List;
 import java.util.UUID;
 
-import org.hibernate.validator.internal.util.stereotypes.Lazy;
+
 
 import com.motori.product_service.enums.OrderStatus;
 
@@ -14,9 +14,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -32,11 +30,14 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Getter @Setter
-@Table(name = "orders")                  
-public class Order {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+@Table(name = "orders",
+    indexes = {
+        @Index(name = "idx_orders_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_orders_user_id", columnList = "user_id"),
+        @Index(name = "idx_orders_status", columnList = "status")
+    })                  
+public class Order extends BaseEntity{
+   
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;       
@@ -49,15 +50,13 @@ public class Order {
     private BigDecimal totalPrice;       
 
     @Column(name = "completed", nullable = false)
+    @Builder.Default
     private boolean completed = false;   
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
+    @Builder.Default
     private OrderStatus status = OrderStatus.PENDING; 
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
+    
 }

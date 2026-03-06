@@ -1,9 +1,9 @@
 package com.motori.product_service.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.VehiculeBrandDTO.VehiculeBrandRequest;
@@ -15,7 +15,8 @@ import com.motori.product_service.models.VehiculeBrand;
 import com.motori.product_service.repository.VehiculeBrandRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VehiculeBrandService {
@@ -26,7 +27,7 @@ public class VehiculeBrandService {
     // ─── CREATE ───────────────────────────────────────────────
     public VehiculeBrandResponse create(VehiculeBrandRequest request) {
         boolean nameExists = repository
-            .findByNameAndDeletedAtIsNull(request.name())
+            .findByName(request.name())
             .isPresent();
         if (nameExists) {
             throw new DuplicateResourceException(
@@ -34,7 +35,7 @@ public class VehiculeBrandService {
             );
         }
         VehiculeBrand brand = mapper.toEntity(request);
-        brand.setCreatedAt(LocalDateTime.now());
+        
 
         return mapper.toResponse(repository.save(brand));
     }
@@ -42,7 +43,7 @@ public class VehiculeBrandService {
     // ─── GET BY ID ────────────────────────────────────────────
     public VehiculeBrandResponse getById(UUID id) {
         VehiculeBrand brand = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque véhicule introuvable avec l'id : " + id
             ));
@@ -51,23 +52,22 @@ public class VehiculeBrandService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<VehiculeBrandResponse> getAll() {
-        return repository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(mapper::toResponse)
-            .toList();
+    public Page<VehiculeBrandResponse> getAll(Pageable pageable) {
+        log.debug("Récupération de toutes les marques véhicule");
+        return repository.findAll(pageable)
+            .map(mapper::toResponse);
     }
 
     // ─── UPDATE ───────────────────────────────────────────────
     public VehiculeBrandResponse update(UUID id, VehiculeBrandRequest request) {
 
         VehiculeBrand brand = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque véhicule introuvable avec l'id : " + id
             ));
 
-        repository.findByNameAndDeletedAtIsNull(request.name())
+        repository.findByName(request.name())
             .ifPresent(existing -> {
                 if (!existing.getId().equals(id)) {
                     throw new DuplicateResourceException(
@@ -84,13 +84,11 @@ public class VehiculeBrandService {
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
         VehiculeBrand brand = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque véhicule introuvable avec l'id : " + id
             ));
-
-        brand.setDeletedAt(LocalDateTime.now());
-        repository.save(brand);
+        repository.delete(brand);
     } 
 }
     

@@ -1,6 +1,5 @@
 package com.motori.product_service.controller;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.hc.core5.http.HttpStatus;
@@ -13,6 +12,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 
 import com.motori.product_service.dto.EquipementBrandDTO.EquipementBrandRequest;
 import com.motori.product_service.dto.EquipementBrandDTO.EquipementBrandResponse;
@@ -41,8 +44,10 @@ public class EquipementBrandController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EquipementBrandResponse>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<Page<EquipementBrandResponse>> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
+        return ResponseEntity.ok(service.getAll(pageable));
     }
 
     @PutMapping("/{id}")

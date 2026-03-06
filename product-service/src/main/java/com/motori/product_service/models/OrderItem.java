@@ -1,15 +1,12 @@
 package com.motori.product_service.models;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -25,11 +22,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "order_item")
-public class OrderItem {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+@Table(name = "order_item",
+    indexes = {
+        @Index(name = "idx_order_item_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_order_item_order_id", columnList = "order_id"),
+        @Index(name = "idx_order_item_inventory_id", columnList = "inventory_id")
+    })
+public class OrderItem extends BaseEntity{
+    
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
@@ -45,9 +45,5 @@ public class OrderItem {
     @Column(name = "price")
     private BigDecimal price;
 
-    @Column(name="created_at")
-    private LocalDateTime createdAt;
     
-    @Column(name="deleted_at")
-    private LocalDateTime deletedAt;
 }

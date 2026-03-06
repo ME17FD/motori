@@ -1,13 +1,10 @@
 package com.motori.product_service.models;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,20 +18,14 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "equipement_brand")
+@Table(name = "equipement_brand", indexes = {
+        @Index(name = "idx_equipement_brand_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_equipement_brand_name", columnList = "name")
+    })
 
-public class EquipementBrand {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
+public class EquipementBrand extends BaseEntity{
+    
     @Column(name = "name")
     private String name;
-
-    @Column(name="created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name="deleted_at")
-    private LocalDateTime deletedAt;
     
 }

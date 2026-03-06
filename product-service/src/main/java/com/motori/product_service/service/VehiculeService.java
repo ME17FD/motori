@@ -1,9 +1,10 @@
 package com.motori.product_service.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.VehiculeDTO.VehiculeRequest;
@@ -16,7 +17,8 @@ import com.motori.product_service.repository.VehiculeBrandRepository;
 import com.motori.product_service.repository.VehiculeRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class VehiculeService {
@@ -29,14 +31,14 @@ public class VehiculeService {
     public VehiculeResponse create(VehiculeRequest request) {
         
         VehiculeBrand brand = vehiculeBrandRepository
-            .findByIdAndDeletedAtIsNull(request.vehiculeBrandId())
+            .findById(request.vehiculeBrandId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque véhicule introuvable avec l'id : " + request.vehiculeBrandId()
             ));
 
         Vehicule vehicule = mapper.toEntity(request);
         vehicule.setVehiculeBrandId(brand);      
-        vehicule.setCreatedAt(LocalDateTime.now());
+       
 
         return mapper.toResponse(repository.save(vehicule));
     }
@@ -44,7 +46,7 @@ public class VehiculeService {
     // ─── GET BY ID ────────────────────────────────────────────
     public VehiculeResponse getById(UUID id) {
         return repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Véhicule introuvable avec l'id : " + id
@@ -52,24 +54,23 @@ public class VehiculeService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<VehiculeResponse> getAll() {
-        return repository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(mapper::toResponse)
-            .toList();
+    public Page<VehiculeResponse> getAll(Pageable pageable) {
+    log.debug("Récupération de tous les véhicules");
+    return repository.findAll(pageable)
+        .map(mapper::toResponse);
     }
 
     // ─── UPDATE ───────────────────────────────────────────────
     public VehiculeResponse update(UUID id, VehiculeRequest request) {
 
         Vehicule vehicule = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Véhicule introuvable avec l'id : " + id
             ));
 
         VehiculeBrand brand = vehiculeBrandRepository
-            .findByIdAndDeletedAtIsNull(request.vehiculeBrandId())
+            .findById(request.vehiculeBrandId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Marque véhicule introuvable avec l'id : " + request.vehiculeBrandId()
             ));
@@ -83,13 +84,16 @@ public class VehiculeService {
 
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
-        Vehicule vehicule = repository
-            .findByIdAndDeletedAtIsNull(id)
-            .orElseThrow(() -> new ResourceNotFoundException(
+    log.info("Suppression du véhicule avec l'id : {}", id);
+    Vehicule vehicule = repository
+        .findById(id)
+        .orElseThrow(() -> {
+            log.warn("Véhicule introuvable avec l'id : {}", id);
+            return new ResourceNotFoundException(
                 "Véhicule introuvable avec l'id : " + id
-            ));
-
-        vehicule.setDeletedAt(LocalDateTime.now());
-        repository.save(vehicule);
-    }
+            );
+        });
+    repository.delete(vehicule);
+    log.info("Véhicule soft-deleted avec l'id : {}", id);
+}
 }

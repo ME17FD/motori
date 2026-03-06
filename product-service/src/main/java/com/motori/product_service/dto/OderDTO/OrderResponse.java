@@ -14,5 +14,6 @@ public record OrderResponse(
     boolean completed,
     String status,
     List<OrderItemResponse> items,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {}

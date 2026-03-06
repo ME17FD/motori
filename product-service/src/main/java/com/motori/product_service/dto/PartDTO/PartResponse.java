@@ -15,6 +15,8 @@ public record PartResponse(
     BigDecimal price,
     PartBrandResponse brand,           
     PartCategoryResponse  category,     
-    LocalDateTime createdAt
+    String imageUrl,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
     
 ) {}

@@ -1,13 +1,17 @@
 package com.motori.product_service.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.motori.product_service.dto.OderDTO.OrderFilterRequest;
 import com.motori.product_service.dto.OderDTO.OrderRequest;
 import com.motori.product_service.dto.OderDTO.OrderResponse;
 import com.motori.product_service.dto.OrderItemDTO.OrderItemRequest;
@@ -20,11 +24,12 @@ import com.motori.product_service.models.Order;
 import com.motori.product_service.models.OrderItem;
 import com.motori.product_service.repository.InventoryRepository;
 import com.motori.product_service.repository.OrderRepository;
-
+import com.motori.product_service.specification.OrderSpecification;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -42,7 +47,7 @@ public class OrderService {
         for (OrderItemRequest itemRequest : request.items()) {
 
             Inventory inventory = inventoryRepository
-                .findByIdAndDeletedAtIsNull(itemRequest.inventoryId())
+                .findById(itemRequest.inventoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "Inventory introuvable avec l'id : " + itemRequest.inventoryId()
                 ));
@@ -57,7 +62,6 @@ public class OrderService {
             OrderItem item = OrderItem.builder()
                 .inventoryId(inventory)
                 .price(itemRequest.price())
-                .createdAt(LocalDateTime.now())
                 .build();
 
             items.add(item);
@@ -71,7 +75,6 @@ public class OrderService {
             .totalPrice(total)
             .completed(false)
             .status(OrderStatus.PENDING)
-            .createdAt(LocalDateTime.now())
             .build();
 
         // 3. Lier chaque item à l'order
@@ -83,7 +86,7 @@ public class OrderService {
     // ─── GET BY ID ────────────────────────────────────────────
     public OrderResponse getById(UUID id) {
         return orderRepository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .map(orderMapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Commande introuvable avec l'id : " + id
@@ -91,31 +94,27 @@ public class OrderService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<OrderResponse> getAll() {
-        return orderRepository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(orderMapper::toResponse)
-            .toList();
+    public Page<OrderResponse> getAll(OrderFilterRequest filter, Pageable pageable) {
+        log.debug("Récupération des commandes avec filtres : {}", filter);
+        Specification<Order> spec = OrderSpecification.withFilters(filter);
+        return orderRepository.findAll(spec, pageable)
+            .map(orderMapper::toResponse);
     }
 
     // ─── GET BY USER ──────────────────────────────────────────
-    // Utile pour afficher les commandes d'un user spécifique
-    public List<OrderResponse> getByUserId(UUID userId) {
-        return orderRepository.findAllByUserIdAndDeletedAtIsNull(userId)
-            .stream()
-            .map(orderMapper::toResponse)
-            .toList();
+    public Page<OrderResponse> getByUserId(UUID userId, Pageable pageable) {
+        log.debug("Récupération des commandes du user : {}", userId);
+        return orderRepository.findByUserId(userId, pageable)
+            .map(orderMapper::toResponse);
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
         Order order = orderRepository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Commande introuvable avec l'id : " + id
             ));
-
-        order.setDeletedAt(LocalDateTime.now());
-        orderRepository.save(order);
+        orderRepository.delete(order);
     }
 }

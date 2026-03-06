@@ -1,9 +1,9 @@
 package com.motori.product_service.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.CompatibilityDTO.CompatibilityRequest;
@@ -19,7 +19,9 @@ import com.motori.product_service.repository.PartRepository;
 import com.motori.product_service.repository.VehiculeRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompatibilityService {
@@ -33,20 +35,20 @@ public class CompatibilityService {
     public CompatibilityResponse create(CompatibilityRequest request) {
 
         Parts part = partRepository
-            .findByIdAndDeletedAtIsNull(request.partId())
+            .findById(request.partId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Pièce introuvable avec l'id : " + request.partId()
             ));
 
         Vehicule vehicule = vehiculeRepository
-            .findByIdAndDeletedAtIsNull(request.vehiculeId())
+            .findById(request.vehiculeId())
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Véhicule introuvable avec l'id : " + request.vehiculeId()
             ));
 
         // Validation métier : cette compatibilité existe déjà ?
         boolean alreadyExists = repository
-            .findByPartIdAndVehiculeIdAndDeletedAtIsNull(
+            .findByPartIdAndVehiculeId(
                 request.partId(),
                 request.vehiculeId()
             ).isPresent();
@@ -60,7 +62,6 @@ public class CompatibilityService {
         Compatibility compatibility = mapper.toEntity(request);
         compatibility.setPart(part);
         compatibility.setVehicule(vehicule);
-        compatibility.setCreatedAt(LocalDateTime.now());
 
         return mapper.toResponse(repository.save(compatibility));
     }
@@ -68,7 +69,7 @@ public class CompatibilityService {
     // ─── GET BY ID ────────────────────────────────────────────
     public CompatibilityResponse getById(UUID id) {
         return repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Compatibilité introuvable avec l'id : " + id
@@ -76,22 +77,19 @@ public class CompatibilityService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<CompatibilityResponse> getAll() {
-        return repository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(mapper::toResponse)
-            .toList();
+    public Page<CompatibilityResponse> getAll(Pageable pageable) {
+        log.debug("Récupération de toutes les compatibilités");
+        return repository.findAll(pageable)
+            .map(mapper::toResponse);
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
         Compatibility compatibility = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Compatibilité introuvable avec l'id : " + id
             ));
-
-        compatibility.setDeletedAt(LocalDateTime.now());
-        repository.save(compatibility);
+        repository.delete(compatibility);
     }
 }

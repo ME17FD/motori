@@ -1,9 +1,10 @@
 package com.motori.product_service.service;
 
-import java.time.LocalDateTime;
-import java.util.List;
+
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.PartCategoryDTO.PartCategoryRequest;
@@ -15,7 +16,8 @@ import com.motori.product_service.models.PartCategory;
 import com.motori.product_service.repository.PartCategoryRepository;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PartCategoryService {
@@ -26,7 +28,7 @@ public class PartCategoryService {
     // ─── CREATE ───────────────────────────────────────────────
     public PartCategoryResponse create(PartCategoryRequest request) {
         boolean nameExists = repository
-            .findByNameAndDeletedAtIsNull(request.name())
+            .findByName(request.name())
             .isPresent();
 
         if (nameExists) {
@@ -40,7 +42,7 @@ public class PartCategoryService {
         // Si parentCategoryId est fourni → on charge le parent
         if (request.parentCategoryId() != null) {
             PartCategory parent = repository
-                .findByIdAndDeletedAtIsNull(request.parentCategoryId())
+                .findById(request.parentCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "Catégorie parente introuvable avec l'id : "
                     + request.parentCategoryId()
@@ -49,14 +51,13 @@ public class PartCategoryService {
         }
         // Si parentCategoryId est null → catégorie racine, pas de parent
 
-        category.setCreatedAt(LocalDateTime.now());
         return mapper.toResponse(repository.save(category));
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
     public PartCategoryResponse getById(UUID id) {
         return repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Catégorie introuvable avec l'id : " + id
@@ -64,24 +65,23 @@ public class PartCategoryService {
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public List<PartCategoryResponse> getAll() {
-        return repository.findAllByDeletedAtIsNull()
-            .stream()
-            .map(mapper::toResponse)
-            .toList();
-    }
+    public Page<PartCategoryResponse> getAll(Pageable pageable) {
+    log.debug("Récupération de toutes les catégories pièce");
+    return repository.findAll(pageable)
+        .map(mapper::toResponse);
+}
 
     // ─── UPDATE ───────────────────────────────────────────────
     public PartCategoryResponse update(UUID id, PartCategoryRequest request) {
 
         PartCategory category = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Catégorie introuvable avec l'id : " + id
             ));
 
         // Validation : nom unique sur une autre catégorie
-        repository.findByNameAndDeletedAtIsNull(request.name())
+        repository.findByName(request.name())
             .ifPresent(existing -> {
                 if (!existing.getId().equals(id)) {
                     throw new DuplicateResourceException(
@@ -103,7 +103,7 @@ public class PartCategoryService {
             }
 
             PartCategory parent = repository
-                .findByIdAndDeletedAtIsNull(request.parentCategoryId())
+                .findById(request.parentCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                     "Catégorie parente introuvable avec l'id : "
                     + request.parentCategoryId()
@@ -119,12 +119,10 @@ public class PartCategoryService {
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
         PartCategory category = repository
-            .findByIdAndDeletedAtIsNull(id)
+            .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 "Catégorie introuvable avec l'id : " + id
             ));
-
-        category.setDeletedAt(LocalDateTime.now());
-        repository.save(category);
+        repository.delete(category);
     }
 }

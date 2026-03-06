@@ -23,7 +23,8 @@ public class CompatibilityMapper {
             compatibility.getId(),
             partMapper.toResponse(compatibility.getPart()),
             vehiculeMapper.toResponse(compatibility.getVehicule()),
-            compatibility.getCreatedAt()
+            compatibility.getCreatedAt(),
+            compatibility.getUpdatedAt()  
         );
     }
 

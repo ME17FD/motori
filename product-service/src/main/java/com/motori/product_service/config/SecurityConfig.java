@@ -15,8 +15,17 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
-                // Swagger — accès libre
-                .anyRequest().permitAll() 
+                .requestMatchers(
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/api-docs/**",
+                    "/api-docs.yaml",
+                    "/actuator/health",  // ← public
+                    "/actuator/info"     // ← public
+                ).permitAll()
+                .requestMatchers("/actuator/**").denyAll()
+                .anyRequest().permitAll()
+                // ↑ tous les autres endpoints Actuator bloqués
             );
 
         return http.build();

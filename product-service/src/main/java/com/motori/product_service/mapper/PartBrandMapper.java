@@ -12,7 +12,9 @@ public class PartBrandMapper {
     public PartBrandResponse toResponse(PartBrand brand) {
         return new PartBrandResponse(
             brand.getId(),
-            brand.getName()
+            brand.getName(),
+            brand.getCreatedAt(),
+            brand.getUpdatedAt() 
         );
     }
 

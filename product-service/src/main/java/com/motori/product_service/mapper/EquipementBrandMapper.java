@@ -12,7 +12,9 @@ public class EquipementBrandMapper {
     public EquipementBrandResponse toResponse(EquipementBrand brand) {
         return new EquipementBrandResponse(
             brand.getId(),
-            brand.getName()
+            brand.getName(),
+            brand.getCreatedAt(),
+            brand.getUpdatedAt() 
         );
     }
 

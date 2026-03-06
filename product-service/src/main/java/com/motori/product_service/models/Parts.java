@@ -1,17 +1,16 @@
 package com.motori.product_service.models;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,14 +23,20 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 @Getter @Setter
-@Table(name = "parts")
-public class Parts {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+@Table(name = "parts",
+    indexes = {
+        @Index(name = "idx_parts_deleted_at", columnList = "deleted_at"),
+        @Index(name = "idx_parts_part_brand_id", columnList = "part_brand_id"),
+        @Index(name = "idx_parts_part_category_id", columnList = "part_category_id")
+    })
+public class Parts extends BaseEntity{
+    
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "description")
     private String description;
@@ -47,12 +52,11 @@ public class Parts {
     @JoinColumn(name = "part_brand_id")
     private PartBrand partBrand;         
 
+    @OneToMany(mappedBy = "part", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Compatibility> compatibilities = new ArrayList<>()
+;
     @Column(name = "price", nullable = false)
     private BigDecimal price;            
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;     
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
 }

@@ -27,7 +27,9 @@ public class PartMapper {
             part.getPrice(),
             partBrandMapper.toResponse(part.getPartBrand()),
             partCategoryMapper.toResponse(part.getPartCategory()),
-            part.getCreatedAt()
+            part.getImageUrl(),
+            part.getCreatedAt(),
+            part.getUpdatedAt()
         );
     }
 
