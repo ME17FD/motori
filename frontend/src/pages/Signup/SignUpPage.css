@@ -1,0 +1,129 @@
+@import "../../styles/global.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Barlow', sans-serif;
+  background: #e8eaed;
+}
+
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Signup section ───────────────────────────────────────────────────────── */
+
+.signup-section {
+  flex: 1;
+  background: #e8eaed;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 52px 20px;
+}
+
+.signup-card {
+  width: 100%;
+  max-width: 600px;
+}
+
+.signup-card h2 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.signup-field {
+  margin-bottom: 16px;
+}
+
+.signup-field input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 1.5px solid #c8cad0;
+  border-radius: 3px;
+  font-size: 16px;
+  font-family: 'Barlow', sans-serif;
+  color: #333;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.signup-field input:focus {
+  border-color: #888;
+}
+
+.signup-field input::placeholder {
+  color: #bbb;
+}
+
+.signup-btn-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+
+.footer {
+  background: #cc0000;
+  color: #fff;
+  padding: 40px 40px 36px;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  max-width: 960px;
+}
+
+.footer-col h4 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 14px;
+  letter-spacing: 0.02em;
+}
+
+.footer-col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-col ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.15s;
+}
+
+.footer-col ul li a::before {
+  content: "•";
+  font-size: 18px;
+  line-height: 1;
+}
+
+.footer-col ul li a:hover {
+  opacity: 0.8;
+}

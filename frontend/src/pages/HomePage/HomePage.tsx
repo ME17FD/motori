@@ -7,13 +7,13 @@ import React, {
 } from "react";
 import "./HomePage.css";
 
-import Navbar         from "../components/Navbar/Navbar";
-import ProductSlider  from "../components/ProductSlider/ProductSlider";
-import Button         from "../components/Button/Button";
+import Navbar         from "../../components/Navbar/Navbar";
+import ProductSlider  from "../../components/ProductSlider/ProductSlider";
+import Button         from "../../components/Button/Button";
 
-import { HERO_IMAGES, ABOUT_DESCRIPTION, FOOTER_LINKS, AUTOPLAY_DELAY_MS } from "../constants/index";
-import { MOCK_PRODUCTS, MOCK_BRANDS, MOCK_CATEGORIES }                       from "../mocks/index";
-import { addToCart }                                                          from "../services/index";
+import { HERO_IMAGES, ABOUT_DESCRIPTION, FOOTER_LINKS, AUTOPLAY_DELAY_MS } from "../../constants/index";
+import { MOCK_PRODUCTS, MOCK_BRANDS, MOCK_CATEGORIES }                       from "../../mocks/index";
+import { addToCart }                                                          from "../../services/index";
 
 // ─── HeroImageSlider ──────────────────────────────────────────────────────────
 // Kept in this file as it is tightly coupled to the hero section layout.

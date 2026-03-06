@@ -1,4 +1,4 @@
-import type { export export export export NavCategory } from "../../types";
+import type { NavCategory } from "../../types";
 
 export interface NavbarProps {
   categories: NavCategory[];
