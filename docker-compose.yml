@@ -13,7 +13,7 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/motori_keycloak
       KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: toor
+      KC_DB_PASSWORD: admin
       KC_LOG_LEVEL: error
     ports:
       - "8082:8080"
