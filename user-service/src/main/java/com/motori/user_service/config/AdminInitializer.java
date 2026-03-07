@@ -36,6 +36,7 @@ public class AdminInitializer implements CommandLineRunner {
     }
 
     private void createSuperAdmin() {
+        System.out.println("Creating super admin...");
         try {
             RegisterRequest request = new RegisterRequest("Super", "Admin", "admin@motori.com", "+1234567890", "System", "admin123", null);
             keycloakService.register(request, User.Role.SUPERADMIN.name());

@@ -66,6 +66,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAll(Exception ex, HttpServletRequest request) {
         String message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+        System.out.println("Unhandled exception: " + ex);
         ApiError apiError = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", message, request.getRequestURI());
         logService.log(CentralizedLogService.LogLevel.ERROR, message, "GlobalExceptionHandler", null, request.getRemoteAddr(), request.getRequestURI(), request.getMethod(), ex.toString(), null);
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);

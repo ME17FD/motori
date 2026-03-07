@@ -330,7 +330,74 @@
       "security-admin-console": [],
       "admin-cli": [],
       "account-console": [],
-      "user-service": [],
+      "user-service": [
+        {
+          "id": "2f66dda5-e1bf-4bad-b5a4-c6c66e005c64",
+          "name": "uma_protection",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "e8fbe399-9b22-47a6-a0db-b7790f602658",
+          "attributes": {}
+        },
+        {
+          "id": "be8a6567-bdc9-495b-9fd5-4e5a67d6ed4e",
+          "name": "user-service-role",
+          "description": "",
+          "composite": true,
+          "composites": {
+            "realm": [
+              "SUPERADMIN",
+              "default-roles-motori_realm",
+              "offline_access",
+              "ADMIN",
+              "uma_authorization",
+              "USER"
+            ],
+            "client": {
+              "realm-management": [
+                "view-identity-providers",
+                "realm-admin",
+                "manage-identity-providers",
+                "query-users",
+                "impersonation",
+                "view-events",
+                "manage-users",
+                "manage-events",
+                "view-realm",
+                "view-authorization",
+                "manage-clients",
+                "create-client",
+                "query-clients",
+                "manage-realm",
+                "view-clients",
+                "manage-authorization",
+                "view-users",
+                "query-realms",
+                "query-groups"
+              ],
+              "user-service": [
+                "uma_protection"
+              ],
+              "broker": [
+                "read-token"
+              ],
+              "account": [
+                "view-applications",
+                "view-consent",
+                "manage-account-links",
+                "manage-account",
+                "view-groups",
+                "delete-account",
+                "manage-consent",
+                "view-profile"
+              ]
+            }
+          },
+          "clientRole": true,
+          "containerId": "e8fbe399-9b22-47a6-a0db-b7790f602658",
+          "attributes": {}
+        }
+      ],
       "broker": [
         {
           "id": "54becf5e-795c-4902-aa32-ad5015187401",
@@ -432,7 +499,53 @@
       ]
     }
   },
-  "groups": [],
+  "groups": [
+    {
+      "id": "b4103929-0dff-4817-acdd-2d95017f89c6",
+      "name": "admins-group",
+      "description": "",
+      "path": "/admins-group",
+      "subGroups": [],
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {
+        "realm-management": [
+          "view-identity-providers",
+          "realm-admin",
+          "manage-identity-providers",
+          "query-users",
+          "impersonation",
+          "view-events",
+          "manage-users",
+          "manage-events",
+          "view-authorization",
+          "view-realm",
+          "manage-clients",
+          "create-client",
+          "query-clients",
+          "manage-realm",
+          "view-clients",
+          "manage-authorization",
+          "view-users",
+          "query-realms",
+          "query-groups"
+        ],
+        "broker": [
+          "read-token"
+        ],
+        "account": [
+          "view-applications",
+          "view-consent",
+          "manage-account-links",
+          "manage-account",
+          "view-groups",
+          "delete-account",
+          "manage-consent",
+          "view-profile"
+        ]
+      }
+    }
+  ],
   "defaultRole": {
     "id": "97ca1d54-4286-4d04-bceb-5855f2c208a6",
     "name": "default-roles-motori_realm",
@@ -485,6 +598,69 @@
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
   "webAuthnPolicyPasswordlessAcceptableAaguids": [],
   "webAuthnPolicyPasswordlessExtraOrigins": [],
+  "users": [
+    {
+      "id": "da918016-0f46-4ff0-a627-2f01ce99a7eb",
+      "username": "service-account-user-service",
+      "emailVerified": false,
+      "enabled": true,
+      "createdTimestamp": 1772845009275,
+      "totp": false,
+      "serviceAccountClientId": "user-service",
+      "disableableCredentialTypes": [],
+      "requiredActions": [],
+      "realmRoles": [
+        "ADMIN",
+        "uma_authorization",
+        "default-roles-motori_realm",
+        "offline_access",
+        "USER",
+        "SUPERADMIN"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "view-identity-providers",
+          "realm-admin",
+          "query-users",
+          "manage-identity-providers",
+          "impersonation",
+          "manage-users",
+          "view-events",
+          "manage-events",
+          "view-authorization",
+          "view-realm",
+          "manage-clients",
+          "create-client",
+          "query-clients",
+          "manage-realm",
+          "view-clients",
+          "manage-authorization",
+          "view-users",
+          "query-realms",
+          "query-groups"
+        ],
+        "user-service": [
+          "uma_protection",
+          "user-service-role"
+        ],
+        "broker": [
+          "read-token"
+        ],
+        "account": [
+          "view-applications",
+          "view-consent",
+          "manage-account-links",
+          "view-groups",
+          "manage-account",
+          "delete-account",
+          "manage-consent",
+          "view-profile"
+        ]
+      },
+      "notBefore": 0,
+      "groups": []
+    }
+  ],
   "scopeMappings": [
     {
       "clientScope": "offline_access",
@@ -831,7 +1007,7 @@
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": false,
+      "serviceAccountsEnabled": true,
       "publicClient": false,
       "frontchannelLogout": true,
       "protocol": "openid-connect",
@@ -841,6 +1017,8 @@
         "client.secret.creation.time": "1771973794",
         "backchannel.logout.session.required": "true",
         "standard.token.exchange.enabled": "false",
+        "frontchannel.logout.session.required": "true",
+        "display.on.consent.screen": "false",
         "oauth2.device.authorization.grant.enabled": "false",
         "backchannel.logout.revoke.offline.tokens": "false"
       },
@@ -849,6 +1027,7 @@
       "nodeReRegistrationTimeout": -1,
       "defaultClientScopes": [
         "web-origins",
+        "service_account",
         "acr",
         "profile",
         "roles",

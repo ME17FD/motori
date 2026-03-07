@@ -94,7 +94,7 @@ public class KeycloakService {
         return KeycloakBuilder.builder()
                 .serverUrl(serverUrl)
                 .realm(realm)
-                .clientId("user-service")
+                .clientId(clientId)
                 .clientSecret(clientSecret)
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .build();
@@ -171,6 +171,7 @@ public class KeycloakService {
                 .manager(manager)
                 .build();
         User savedUser = userRepository.save(user);
+        System.out.println("User saved in DB" + savedUser);
         try {
             String userId = executeWithRetry(keycloak -> {
                 UsersResource usersResource = keycloak.realm(realm).users();
@@ -187,7 +188,18 @@ public class KeycloakService {
                 cred.setTemporary(false);
                 ur.setCredentials(Collections.singletonList(cred));
                 var response = usersResource.create(ur);
-                return response.getLocation().getPath().substring(response.getLocation().getPath().lastIndexOf('/') + 1);
+
+                int status = response.getStatus();
+                log.info("Keycloak create user response status: {}", status);
+
+                if (status != 201) {
+                    String body = response.readEntity(String.class);
+                    log.error("Keycloak user creation failed: {}", body);
+                    throw new RuntimeException("Keycloak user creation failed: " + body);
+                }
+
+                String path = response.getLocation().getPath();
+                return path.substring(path.lastIndexOf('/') + 1);
             }, "createUser");
             savedUser.setKeycloakId(userId);
             userRepository.save(savedUser);
