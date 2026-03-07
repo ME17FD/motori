@@ -6,7 +6,6 @@ import com.motori.user_service.dto.auth.RegisterRequest;
 import com.motori.user_service.dto.auth.TokenResponse;
 import com.motori.user_service.exception.AuthenticationException;
 import com.motori.user_service.exception.UserAlreadyExistsException;
-import com.motori.user_service.exception.UserNotApprovedException;
 import com.motori.user_service.exception.UserNotFoundException;
 import com.motori.user_service.models.User;
 import com.motori.user_service.repository.UserRepository;
@@ -30,6 +29,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -157,18 +157,13 @@ public class KeycloakService {
             logService.businessWarn("Registration failed: User already exists - " + request.email(), "KeycloakService", request.email());
             throw new UserAlreadyExistsException("User with email " + request.email() + " already exists");
         }
-        User manager = request.managerId() != null ? userRepository.findById(request.managerId()).orElse(null) : null;
         User user = User.builder()
                 .firstname(request.firstname())
                 .lastname(request.lastname())
                 .email(request.email())
                 .phone(request.phone())
                 .adress(request.adress())
-                .approved(true)
-                .activated(false)
-                .status(User.Status.TRIAL)
-                .role(User.Role.valueOf(roleName.toUpperCase()))
-                .manager(manager)
+                .createdAt(LocalDateTime.now())
                 .build();
         User savedUser = userRepository.save(user);
         try {
@@ -187,34 +182,37 @@ public class KeycloakService {
                 cred.setTemporary(false);
                 ur.setCredentials(Collections.singletonList(cred));
                 var response = usersResource.create(ur);
-                return response.getLocation().getPath().substring(response.getLocation().getPath().lastIndexOf('/') + 1);
+                if (response.getLocation() != null) {
+                    String path = response.getLocation().getPath();
+                    return path.substring(path.lastIndexOf('/') + 1);
+                }
+                List<UserRepresentation> found = usersResource.search(request.email(), true);
+                if (found.isEmpty()) throw new IllegalStateException("User created but could not be found by email");
+                return found.get(0).getId();
             }, "createUser");
             savedUser.setKeycloakId(userId);
             userRepository.save(savedUser);
-            assignRoleToUser(userId, roleName);
+            try {
+                assignRoleToUser(userId, roleName);
+            } catch (Exception roleEx) {
+                log.warn("Could not assign realm role '{}' to user (create succeeded): {}. Create the role in Keycloak if needed.", roleName, roleEx.getMessage());
+                logService.warn("Keycloak role assignment failed for " + request.email() + ": " + roleEx.getMessage(), "KeycloakService");
+            }
             logService.log(CentralizedLogService.LogLevel.INFO, "User registered in Keycloak: " + request.email(), CentralizedLogService.createLoggerName("KeycloakService", "register"), request.email(), null, "/auth/register", "register", null, null);
             return AuthResponse.fromUser(savedUser, null);
         } catch (Exception e) {
             userRepository.delete(savedUser);
-            logService.externalServiceError("Failed to create user in Keycloak: " + e.getMessage(), "KeycloakService", "keycloak", e.toString());
-            throw new AuthenticationException("Failed to create user in authentication system");
+            String cause = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            logService.externalServiceError("Failed to create user in Keycloak: " + cause, "KeycloakService", "keycloak", e.toString());
+            if (cause.contains("403") || cause.contains("Forbidden")) {
+                throw new AuthenticationException("Keycloak refused the request (403). Configure the client 'user-service' with Service account enabled and assign realm role 'manage-users' (realm-management).");
+            }
+            throw new AuthenticationException("Failed to create user in authentication system: " + cause);
         }
     }
 
     public AuthResponse authenticate(AuthRequest request) {
         User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new UserNotFoundException("User not found"));
-        if (Boolean.FALSE.equals(user.getApproved())) {
-            logService.authWarn("Login failed: User not approved - " + request.email(), "KeycloakService", request.email(), null, "/auth/login", "authenticate");
-            throw new UserNotApprovedException("User account is not approved");
-        }
-        if (Boolean.FALSE.equals(user.getActivated())) {
-            logService.authWarn("Login failed: User not activated - " + request.email(), "KeycloakService", request.email(), null, "/auth/login", "authenticate");
-            throw new UserNotApprovedException("User account is not activated. Please verify your email first.");
-        }
-        if (user.getStatus() == null || !(user.getStatus() == User.Status.TRIAL || user.getStatus() == User.Status.PAID)) {
-            logService.authWarn("Login failed: Status not allowed - " + request.email(), "KeycloakService", request.email(), null, "/auth/login", "authenticate");
-            throw new UserNotApprovedException("User status not allowed to login");
-        }
         TokenResponse tokenResponse = generateTokensFast(request.email(), request.password());
         logService.log(CentralizedLogService.LogLevel.INFO, "User authenticated: " + request.email(), CentralizedLogService.createLoggerName("KeycloakService", "authenticate"), request.email(), null, "/auth/login", "authenticate", null, null);
         return AuthResponse.fromUser(user, tokenResponse.accessToken(), tokenResponse.refreshToken());
@@ -306,10 +304,6 @@ public class KeycloakService {
     public AuthResponse refreshToken(String refreshToken, String userEmail) {
         if (refreshToken == null || refreshToken.trim().isEmpty()) throw new AuthenticationException("Refresh token is required");
         User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new UserNotFoundException("User not found"));
-        if (!user.getApproved()) {
-            logService.authWarn("Token refresh failed: User not approved - " + userEmail, "KeycloakService", userEmail, null, "/auth/refresh", "refreshToken");
-            throw new UserNotApprovedException("User account is not approved");
-        }
         TokenResponse newTokens = refreshKeycloakTokens(refreshToken);
         return AuthResponse.fromUser(user, newTokens.accessToken(), newTokens.refreshToken());
     }

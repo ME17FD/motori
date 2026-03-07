@@ -62,36 +62,6 @@ public class UserController {
         return ResponseEntity.ok(userService.getUsersByIdsBulk(userIds));
     }
 
-    @GetMapping("/admin/{adminId}/agents")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
-    public ResponseEntity<List<UserDto>> getAgentsByAdmin(@PathVariable Long adminId) {
-        return ResponseEntity.ok(userService.getAgentsByAdmin(adminId));
-    }
-
-    @PutMapping("/{id}/approve")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
-    public ResponseEntity<UserDto> approveUser(@PathVariable Long id) {
-        return userService.approveUser(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{id}/disapprove")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
-    public ResponseEntity<UserDto> disapproveUser(@PathVariable Long id) {
-        return userService.disapproveUser(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{id}/activate")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
-    public ResponseEntity<UserDto> activateUser(@PathVariable Long id) {
-        return userService.activateUser(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
-    public ResponseEntity<UserDto> deactivateUser(@PathVariable Long id) {
-        return userService.deactivateUser(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserRequest request) {
@@ -102,42 +72,6 @@ public class UserController {
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         return userService.deleteUser(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/{id}/profile-picture")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or @userService.isOwnerOrManager(#id)")
-    public ResponseEntity<UserDto> updateProfilePicture(@PathVariable Long id, @Valid @RequestBody UpdateUserFileRequest request) {
-        return userService.updateProfilePicture(id, request).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{id}/id-front-picture")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or @userService.isOwnerOrManager(#id)")
-    public ResponseEntity<UserDto> updateIdFrontPicture(@PathVariable Long id, @Valid @RequestBody UpdateUserFileRequest request) {
-        return userService.updateIdFrontPicture(id, request).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @PutMapping("/{id}/id-back-picture")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or @userService.isOwnerOrManager(#id)")
-    public ResponseEntity<UserDto> updateIdBackPicture(@PathVariable Long id, @Valid @RequestBody UpdateUserFileRequest request) {
-        return userService.updateIdBackPicture(id, request).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}/profile-picture")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or @userService.isOwnerOrManager(#id)")
-    public ResponseEntity<UserDto> removeProfilePicture(@PathVariable Long id) {
-        return userService.removeProfilePicture(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}/id-front-picture")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or @userService.isOwnerOrManager(#id)")
-    public ResponseEntity<UserDto> removeIdFrontPicture(@PathVariable Long id) {
-        return userService.removeIdFrontPicture(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}/id-back-picture")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN') or @userService.isOwnerOrManager(#id)")
-    public ResponseEntity<UserDto> removeIdBackPicture(@PathVariable Long id) {
-        return userService.removeIdBackPicture(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     private String extractUserIdFromJwt(String token) {
