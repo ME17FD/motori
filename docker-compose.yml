@@ -35,9 +35,19 @@ services:
       - minio_data:/data
     networks:
       - motori-network
-
+  redis:
+    image: redis:7.2-alpine
+    container_name: motori-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - motori-network
+      
 volumes:
   minio_data:
+  redis_data:
 
 networks:
   motori-network:

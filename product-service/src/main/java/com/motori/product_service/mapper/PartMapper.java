@@ -28,6 +28,7 @@ public class PartMapper {
             partBrandMapper.toResponse(part.getPartBrand()),
             partCategoryMapper.toResponse(part.getPartCategory()),
             part.getImageUrl(),
+            part.getProperties(),
             part.getCreatedAt(),
             part.getUpdatedAt()
         );
@@ -39,6 +40,7 @@ public class PartMapper {
             .ref(request.ref())
             .description(request.description())
             .price(request.price())
+            .properties(request.properties())
             .build();
     }
 }

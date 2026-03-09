@@ -1,6 +1,7 @@
 package com.motori.product_service.service;
 
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -119,6 +120,7 @@ public class PartService {
         part.setRef(request.ref());
         part.setDescription(request.description());
         part.setPrice(request.price());
+        part.setProperties(request.properties());
         part.setPartBrand(brand);
         part.setPartCategory(category);
 
@@ -170,4 +172,15 @@ public class PartService {
         }
         return mapper.toResponse(part);
     }
+
+    public PartResponse updateProperties(UUID id, Map<String, Object> properties) {
+        log.info("Mise à jour des propriétés de la pièce : {}", id);
+        Parts part = repository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Pièce introuvable avec l'id : " + id
+            ));
+        part.setProperties(properties);
+        return mapper.toResponse(repository.save(part));
+    }
 } 
+

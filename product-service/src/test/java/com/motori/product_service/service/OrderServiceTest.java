@@ -43,7 +43,7 @@ class OrderServiceTest {
         UUID inventoryId = UUID.randomUUID();
 
         OrderItemRequest itemRequest = new OrderItemRequest(
-            inventoryId, new BigDecimal("49.99")
+            inventoryId
         );
         OrderRequest request = new OrderRequest(List.of(itemRequest));
 
@@ -74,7 +74,7 @@ class OrderServiceTest {
         UUID inventoryId = UUID.randomUUID();
 
         OrderRequest request = new OrderRequest(
-            List.of(new OrderItemRequest(inventoryId, new BigDecimal("49.99")))
+            List.of(new OrderItemRequest(inventoryId))
         );
 
         when(inventoryRepository.findById(inventoryId)).thenReturn(Optional.empty());
@@ -91,7 +91,7 @@ class OrderServiceTest {
         UUID inventoryId = UUID.randomUUID();
 
         OrderRequest request = new OrderRequest(
-            List.of(new OrderItemRequest(inventoryId, new BigDecimal("49.99")))
+            List.of(new OrderItemRequest(inventoryId))
         );
 
         Inventory soldInventory = Inventory.builder().build();

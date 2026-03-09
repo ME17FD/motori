@@ -1,10 +1,12 @@
 package com.motori.product_service.service;
 
 
+import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.PartBrandDTO.PartBrandRequest;
@@ -25,6 +27,7 @@ public class PartBrandService {
     private final PartBrandMapper mapper;
 
     // ─── CREATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"part-brands", "part-brands-all"}, allEntries = true)
     public PartBrandResponse create(PartBrandRequest request) {
         boolean nameExists = repository
             .findByName(request.name())
@@ -43,25 +46,29 @@ public class PartBrandService {
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
+    @Cacheable(value = "part-brands", key = "#id")
     public PartBrandResponse getById(UUID id) {
-        PartBrand brand = repository
-            .findById(id)
+        log.debug("Recuperation de la marque piece : {}", id);
+        return repository.findById(id)
+            .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Marque véhicule introuvable avec l'id : " + id
+                "Marque piece introuvable avec l'id : " + id
             ));
-
-        return mapper.toResponse(brand);
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public Page<PartBrandResponse> getAll(Pageable pageable) {
-    log.debug("Récupération de toutes les marques pièce");
-    return repository.findAll(pageable)
-        .map(mapper::toResponse);
-}
+    @Cacheable(value = "part-brands-all")
+    public List<PartBrandResponse> getAll() {
+        log.debug("Recuperation de toutes les marques piece");
+        log.info(">>> APPEL BASE DE DONNÉES - pas de cache");
+        return repository.findAll().stream()
+            .map(mapper::toResponse)
+            .toList();
+    }
 
 
     // ─── UPDATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"part-brands", "part-brands-all"}, allEntries = true)
     public PartBrandResponse update(UUID id, PartBrandRequest request) {
 
         PartBrand brand = repository
@@ -84,6 +91,7 @@ public class PartBrandService {
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
+    @CacheEvict(value = {"part-brands", "part-brands-all"}, allEntries = true)
     public void delete(UUID id) {
         PartBrand brand = repository
             .findById(id)

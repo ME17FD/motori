@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,10 +36,10 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final InventoryRepository inventoryRepository;
     private final OrderMapper orderMapper;
+
     // ─── CREATE ───────────────────────────────────────────────
     public OrderResponse create(UUID userId, OrderRequest request) {
 
-        // 1. Construire les items et calculer le total en même temps
         List<OrderItem> items = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
 
@@ -59,16 +58,20 @@ public class OrderService {
                 );
             }
 
+            // Prix récupéré depuis le serveur — jamais depuis le client
+            BigDecimal price = inventory.getPart() != null
+                ? inventory.getPart().getPrice()
+                : inventory.getEquipement().getPrice();
+
             OrderItem item = OrderItem.builder()
                 .inventoryId(inventory)
-                .price(itemRequest.price())
+                .price(price)
                 .build();
 
             items.add(item);
-            total = total.add(itemRequest.price());
+            total = total.add(price);
         }
 
-        // 2. Construire l'Order
         Order order = Order.builder()
             .userId(userId)
             .items(items)
@@ -77,14 +80,15 @@ public class OrderService {
             .status(OrderStatus.PENDING)
             .build();
 
-        // 3. Lier chaque item à l'order
         items.forEach(item -> item.setOrderId(order));
 
+        log.info("Commande creee pour le user : {}", userId);
         return orderMapper.toResponse(orderRepository.save(order));
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
     public OrderResponse getById(UUID id) {
+        log.debug("Recuperation de la commande : {}", id);
         return orderRepository
             .findById(id)
             .map(orderMapper::toResponse)
@@ -95,7 +99,7 @@ public class OrderService {
 
     // ─── GET ALL ──────────────────────────────────────────────
     public Page<OrderResponse> getAll(OrderFilterRequest filter, Pageable pageable) {
-        log.debug("Récupération des commandes avec filtres : {}", filter);
+        log.debug("Recuperation des commandes avec filtres : {}", filter);
         Specification<Order> spec = OrderSpecification.withFilters(filter);
         return orderRepository.findAll(spec, pageable)
             .map(orderMapper::toResponse);
@@ -103,13 +107,14 @@ public class OrderService {
 
     // ─── GET BY USER ──────────────────────────────────────────
     public Page<OrderResponse> getByUserId(UUID userId, Pageable pageable) {
-        log.debug("Récupération des commandes du user : {}", userId);
+        log.debug("Recuperation des commandes du user : {}", userId);
         return orderRepository.findByUserId(userId, pageable)
             .map(orderMapper::toResponse);
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
+        log.info("Suppression de la commande : {}", id);
         Order order = orderRepository
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(

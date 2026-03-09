@@ -1,6 +1,7 @@
 package com.motori.product_service.service;
 
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -103,6 +104,7 @@ public class EquipementService {
         equipement.setPrice(request.price());
         equipement.setEquipementBrandId(brand);
         equipement.setEquipementCategoryId(category);
+        equipement.setProperties(request.properties());
 
         return mapper.toResponse(repository.save(equipement));
     }
@@ -151,6 +153,16 @@ public class EquipementService {
         }
 
         return mapper.toResponse(equipement);
+    }
+
+    public EquipementResponse updateProperties(UUID id, Map<String, Object> properties) {
+        log.info("Mise à jour des propriétés de l'équipement : {}", id);
+        Equipement equipement = repository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Équipement introuvable avec l'id : " + id
+            ));
+        equipement.setProperties(properties);
+        return mapper.toResponse(repository.save(equipement));
     }
 } 
 

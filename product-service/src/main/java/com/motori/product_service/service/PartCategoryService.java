@@ -1,10 +1,11 @@
 package com.motori.product_service.service;
 
 
+import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.PartCategoryDTO.PartCategoryRequest;
@@ -26,6 +27,7 @@ public class PartCategoryService {
     private final PartCategoryMapper mapper;
 
     // ─── CREATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"part-categories", "part-categories-all"}, allEntries = true)
     public PartCategoryResponse create(PartCategoryRequest request) {
         boolean nameExists = repository
             .findByName(request.name())
@@ -55,23 +57,27 @@ public class PartCategoryService {
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
+    @Cacheable(value = "part-categories", key = "#id")
     public PartCategoryResponse getById(UUID id) {
-        return repository
-            .findById(id)
+        log.debug("Recuperation de la categorie piece : {}", id);
+        return repository.findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Catégorie introuvable avec l'id : " + id
+                "Categorie piece introuvable avec l'id : " + id
             ));
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public Page<PartCategoryResponse> getAll(Pageable pageable) {
-    log.debug("Récupération de toutes les catégories pièce");
-    return repository.findAll(pageable)
-        .map(mapper::toResponse);
-}
+    @Cacheable(value = "part-categories-all")
+    public List<PartCategoryResponse> getAll() {
+        log.debug("Recuperation de toutes les categories piece");
+        return repository.findAll().stream()
+            .map(mapper::toResponse)
+            .toList();
+    }
 
     // ─── UPDATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"part-categories", "part-categories-all"}, allEntries = true)
     public PartCategoryResponse update(UUID id, PartCategoryRequest request) {
 
         PartCategory category = repository
@@ -117,6 +123,7 @@ public class PartCategoryService {
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
+    @CacheEvict(value = {"part-categories", "part-categories-all"}, allEntries = true)
     public void delete(UUID id) {
         PartCategory category = repository
             .findById(id)

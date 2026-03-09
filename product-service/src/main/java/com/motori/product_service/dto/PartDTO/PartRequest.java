@@ -1,6 +1,7 @@
 package com.motori.product_service.dto.PartDTO;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
@@ -13,5 +14,6 @@ public record PartRequest(
     String description,
     @NotNull @Positive BigDecimal price,
     @NotNull UUID partBrandId,
-    @NotNull UUID partCategoryId
+    @NotNull UUID partCategoryId,
+    Map<String, Object> properties 
 ) {}

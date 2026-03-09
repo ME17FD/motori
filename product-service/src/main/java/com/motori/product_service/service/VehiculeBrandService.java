@@ -1,9 +1,10 @@
 package com.motori.product_service.service;
 
+import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.VehiculeBrandDTO.VehiculeBrandRequest;
@@ -25,6 +26,7 @@ public class VehiculeBrandService {
     private final VehiculeBrandMapper mapper;
 
     // ─── CREATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"vehicule-brands", "vehicule-brands-all"}, allEntries = true)
     public VehiculeBrandResponse create(VehiculeBrandRequest request) {
         boolean nameExists = repository
             .findByName(request.name())
@@ -41,24 +43,27 @@ public class VehiculeBrandService {
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
+    @Cacheable(value = "vehicule-brands", key = "#id")
     public VehiculeBrandResponse getById(UUID id) {
-        VehiculeBrand brand = repository
-            .findById(id)
+        log.debug("Recuperation de la marque vehicule : {}", id);
+        return repository.findById(id)
+            .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Marque véhicule introuvable avec l'id : " + id
+                "Marque vehicule introuvable avec l'id : " + id
             ));
-
-        return mapper.toResponse(brand);
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public Page<VehiculeBrandResponse> getAll(Pageable pageable) {
-        log.debug("Récupération de toutes les marques véhicule");
-        return repository.findAll(pageable)
-            .map(mapper::toResponse);
+    @Cacheable(value = "vehicule-brands-all")
+    public List<VehiculeBrandResponse> getAll() {
+        log.debug("Recuperation de toutes les marques vehicule");
+        return repository.findAll().stream()
+            .map(mapper::toResponse)
+            .toList();
     }
 
     // ─── UPDATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"vehicule-brands", "vehicule-brands-all"}, allEntries = true)
     public VehiculeBrandResponse update(UUID id, VehiculeBrandRequest request) {
 
         VehiculeBrand brand = repository
@@ -82,6 +87,7 @@ public class VehiculeBrandService {
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
+    @CacheEvict(value = {"vehicule-brands", "vehicule-brands-all"}, allEntries = true)
     public void delete(UUID id) {
         VehiculeBrand brand = repository
             .findById(id)

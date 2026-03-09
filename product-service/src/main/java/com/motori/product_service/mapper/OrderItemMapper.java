@@ -25,7 +25,6 @@ public class OrderItemMapper {
 
     public OrderItem toEntity(OrderItemRequest request) {
         return OrderItem.builder()
-            .price(request.price())
             .build();
     }
 }

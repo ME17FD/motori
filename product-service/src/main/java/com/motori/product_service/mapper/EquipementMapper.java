@@ -29,6 +29,7 @@ public class EquipementMapper{
             equipementBrandMapper.toResponse(equipement.getEquipementBrandId()),
             equipementCategoryMapper.toResponse(equipement.getEquipementCategoryId()),
             equipement.getImageUrl(),
+            equipement.getProperties(),
             equipement.getCreatedAt(),
             equipement.getUpdatedAt()
         );
@@ -41,6 +42,7 @@ public class EquipementMapper{
             .name(request.name())
             .description(request.description())
             .price(request.price())
+            .properties(request.properties())
             .build();   
     }
 }

@@ -51,7 +51,7 @@ class EquipementServiceTest {
         UUID categoryId = UUID.randomUUID();
         EquipementRequest request = new EquipementRequest(
             EquipementSize.L, "Noir", "Casque intégral",
-            "Description", new BigDecimal("299.99"), brandId, categoryId
+            "Description", new BigDecimal("299.99"), brandId, categoryId,null
         );
 
         EquipementBrand brand = EquipementBrand.builder().name("Shoei").build();
@@ -59,7 +59,7 @@ class EquipementServiceTest {
         Equipement entity = Equipement.builder().name("Casque intégral").build();
         EquipementResponse response = new EquipementResponse(
             UUID.randomUUID(), "L", "Noir", "Casque intégral",
-            "Description", new BigDecimal("299.99"), null, null, null, null,null
+            "Description", new BigDecimal("299.99"), null, null, null, null,null,null
         );
 
         when(equipementBrandRepository.findById(brandId)).thenReturn(Optional.of(brand));
@@ -79,7 +79,7 @@ class EquipementServiceTest {
         UUID brandId = UUID.randomUUID();
         EquipementRequest request = new EquipementRequest(
             EquipementSize.L, "Noir", "Casque",
-            null, new BigDecimal("299.99"), brandId, UUID.randomUUID()
+            null, new BigDecimal("299.99"), brandId, UUID.randomUUID(),null
         );
 
         when(equipementBrandRepository.findById(brandId)).thenReturn(Optional.empty());
@@ -97,7 +97,7 @@ class EquipementServiceTest {
         UUID categoryId = UUID.randomUUID();
         EquipementRequest request = new EquipementRequest(
             EquipementSize.L, "Noir", "Casque",
-            null, new BigDecimal("299.99"), brandId, categoryId
+            null, new BigDecimal("299.99"), brandId, categoryId,null
         );
 
         when(equipementBrandRepository.findById(brandId))
@@ -121,7 +121,7 @@ class EquipementServiceTest {
         Equipement entity = Equipement.builder().name("Casque").build();
         EquipementResponse response = new EquipementResponse(
             UUID.randomUUID(), "L", "Noir", "Casque",
-            null, new BigDecimal("299.99"), null, null, null, null,null
+            null, new BigDecimal("299.99"), null, null, null, null,null,null
         );
 
         when(repository.findAll(any(Specification.class), eq(pageable)))
@@ -158,7 +158,7 @@ class EquipementServiceTest {
         Equipement entity = Equipement.builder().name("Casque").build();
         EquipementResponse response = new EquipementResponse(
             id, "L", "Noir", "Casque",
-            null, new BigDecimal("299.99"), null, null, null, null, null
+            null, new BigDecimal("299.99"), null, null, null, null, null, null
         );
 
         when(repository.findById(id)).thenReturn(Optional.of(entity));

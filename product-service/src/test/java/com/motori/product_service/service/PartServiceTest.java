@@ -51,7 +51,7 @@ class PartServiceTest {
 
         PartRequest request = new PartRequest(
             "Filtre à huile", "FA-001", "Description",
-            new BigDecimal("15.99"), brandId, categoryId
+            new BigDecimal("15.99"), brandId, categoryId,null
         );
 
         PartBrand brand = PartBrand.builder().name("Bosch").build();
@@ -59,7 +59,7 @@ class PartServiceTest {
         Parts part = Parts.builder().name("Filtre à huile").ref("FA-001").build();
         PartResponse response = new PartResponse(
             UUID.randomUUID(), "Filtre à huile", "FA-001",
-            "Description", new BigDecimal("15.99"), null, null, null, null,null
+            "Description", new BigDecimal("15.99"), null, null, null, null,null,null
         );
 
         when(repository.findByRef("FA-001")).thenReturn(Optional.empty());
@@ -80,7 +80,7 @@ class PartServiceTest {
     void create_shouldThrowDuplicateException_whenRefAlreadyExists() {
         PartRequest request = new PartRequest(
             "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), UUID.randomUUID(), UUID.randomUUID()
+            new BigDecimal("15.99"), UUID.randomUUID(), UUID.randomUUID(),null
         );
 
         when(repository.findByRef("FA-001"))
@@ -98,7 +98,7 @@ class PartServiceTest {
         UUID brandId = UUID.randomUUID();
         PartRequest request = new PartRequest(
             "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), brandId, UUID.randomUUID()
+            new BigDecimal("15.99"), brandId, UUID.randomUUID(),null
         );
 
         when(repository.findByRef("FA-001")).thenReturn(Optional.empty());
@@ -115,7 +115,7 @@ class PartServiceTest {
         UUID categoryId = UUID.randomUUID();
         PartRequest request = new PartRequest(
             "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), brandId, categoryId
+            new BigDecimal("15.99"), brandId, categoryId,null
         );
 
         when(repository.findByRef("FA-001")).thenReturn(Optional.empty());
@@ -139,7 +139,7 @@ class PartServiceTest {
         Parts part = Parts.builder().name("Filtre").ref("FA-001").build();
         PartResponse response = new PartResponse(
             UUID.randomUUID(), "Filtre", "FA-001",
-            null, new BigDecimal("15.99"), null, null, null, null,null
+            null, new BigDecimal("15.99"), null, null, null, null,null,null
         );
 
         when(repository.findAll(any(Specification.class), eq(pageable)))
@@ -177,7 +177,7 @@ class PartServiceTest {
         Parts part = Parts.builder().name("Filtre").build();
         PartResponse response = new PartResponse(
             id, "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), null, null, null, null, null
+            new BigDecimal("15.99"), null, null, null, null, null, null
         );
 
         when(repository.findById(id)).thenReturn(Optional.of(part));

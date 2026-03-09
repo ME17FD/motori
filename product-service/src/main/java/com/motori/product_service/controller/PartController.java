@@ -1,12 +1,14 @@
 package com.motori.product_service.controller;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -89,5 +91,13 @@ public class PartController {
     @Operation(summary = "Supprimer l'image d'une pièce")
     public ResponseEntity<PartResponse> deleteImage(@PathVariable UUID id) {
         return ResponseEntity.ok(service.deleteImage(id));
+    }
+
+    @PatchMapping("/{id}/properties")
+    @Operation(summary = "Mettre à jour les propriétés d'une pièce")
+    public ResponseEntity<PartResponse> updateProperties(
+        @PathVariable UUID id,
+        @RequestBody Map<String, Object> properties) {
+        return ResponseEntity.ok(service.updateProperties(id, properties));
     }
 }

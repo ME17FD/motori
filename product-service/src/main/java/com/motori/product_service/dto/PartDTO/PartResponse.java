@@ -2,6 +2,7 @@ package com.motori.product_service.dto.PartDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 import com.motori.product_service.dto.PartBrandDTO.PartBrandResponse;
@@ -16,6 +17,7 @@ public record PartResponse(
     PartBrandResponse brand,           
     PartCategoryResponse  category,     
     String imageUrl,
+    Map<String, Object> properties,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
     

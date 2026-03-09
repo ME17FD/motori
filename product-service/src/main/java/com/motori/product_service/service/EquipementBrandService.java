@@ -1,10 +1,12 @@
 package com.motori.product_service.service;
 
 
+import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
+
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.EquipementBrandDTO.EquipementBrandRequest;
@@ -25,6 +27,7 @@ public class EquipementBrandService {
     private final EquipementBrandMapper mapper;
 
     // ─── CREATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"equipement-brands", "equipement-brands-all"}, allEntries = true)
     public EquipementBrandResponse create(EquipementBrandRequest request) {
         boolean nameExists = repository
             .findByName(request.name())
@@ -42,24 +45,28 @@ public class EquipementBrandService {
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
+    @Cacheable(value = "equipement-brands", key = "#id")
     public EquipementBrandResponse getById(UUID id) {
-        EquipementBrand brand = repository
-            .findById(id)
+        log.debug("Recuperation de la marque equipement : {}", id);
+        return repository.findById(id)
+            .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Marque véhicule introuvable avec l'id : " + id
+                "Marque equipement introuvable avec l'id : " + id
             ));
-
-        return mapper.toResponse(brand);
     }
 
+
     // ─── GET ALL ──────────────────────────────────────────────
-    public Page<EquipementBrandResponse> getAll(Pageable pageable) {
-    log.debug("Récupération de toutes les marques équipement");
-    return repository.findAll(pageable)
-        .map(mapper::toResponse);
-}
+    @Cacheable(value = "equipement-brands-all")
+    public List<EquipementBrandResponse> getAll() {
+        log.debug("Recuperation de toutes les marques equipement");
+        return repository.findAll().stream()
+            .map(mapper::toResponse)
+            .toList();
+    }
 
     // ─── UPDATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"equipement-brands", "equipement-brands-all"}, allEntries = true)
     public EquipementBrandResponse update(UUID id, EquipementBrandRequest request) {
 
         EquipementBrand brand = repository
@@ -83,6 +90,7 @@ public class EquipementBrandService {
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
+    @CacheEvict(value = {"equipement-brands", "equipement-brands-all"}, allEntries = true)
     public void delete(UUID id) {
         EquipementBrand brand = repository
             .findById(id)

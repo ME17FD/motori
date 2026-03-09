@@ -1,5 +1,6 @@
 package com.motori.product_service.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.hc.core5.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -45,9 +47,15 @@ public class PartCategoryController {
 
     @GetMapping
     public ResponseEntity<Page<PartCategoryResponse>> getAll(
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable) {
-        return ResponseEntity.ok(service.getAll(pageable));
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+        Pageable pageable) {
+            List<PartCategoryResponse> all = service.getAll();
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), all.size());
+            List<PartCategoryResponse> pageContent = start >= all.size()
+                ? List.of()
+                : all.subList(start, end);
+        return ResponseEntity.ok(new PageImpl<>(pageContent, pageable, all.size()));
     }
 
     @PutMapping("/{id}")

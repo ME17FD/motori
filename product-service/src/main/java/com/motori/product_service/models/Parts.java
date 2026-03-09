@@ -3,8 +3,15 @@ package com.motori.product_service.models;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+
+
+import com.motori.product_service.config.JsonMapConverter;
+
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
@@ -54,7 +61,12 @@ public class Parts extends BaseEntity{
 
     @OneToMany(mappedBy = "part", fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Compatibility> compatibilities = new ArrayList<>()
+    private List<Compatibility> compatibilities = new ArrayList<>();
+
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "jsonb DEFAULT NULL::jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private Map<String, Object> properties;
 ;
     @Column(name = "price", nullable = false)
     private BigDecimal price;            

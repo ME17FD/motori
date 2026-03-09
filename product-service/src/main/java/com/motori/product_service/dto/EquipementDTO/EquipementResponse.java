@@ -2,6 +2,7 @@ package com.motori.product_service.dto.EquipementDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 import com.motori.product_service.dto.EquipementBrandDTO.EquipementBrandResponse;
@@ -16,7 +17,8 @@ public record EquipementResponse(
     BigDecimal price,
     EquipementBrandResponse brand,
     EquipementCategoryResponse category,
-    String imageUrl, 
+    String imageUrl,
+    Map<String, Object> properties,
     LocalDateTime createdAt,
     LocalDateTime updatedAt
 ) {}

@@ -1,11 +1,13 @@
 package com.motori.product_service.models;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
-
+import com.motori.product_service.config.JsonMapConverter;
 import com.motori.product_service.enums.EquipementSize;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -59,6 +61,11 @@ public class Equipement extends BaseEntity{
     
     @Column(name = "description")
     private String description;
+
+    @Convert(converter = JsonMapConverter.class)
+    @Column(columnDefinition = "jsonb DEFAULT NULL::jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private Map<String, Object> properties;
     
     @Column(name = "price")
     private BigDecimal price;

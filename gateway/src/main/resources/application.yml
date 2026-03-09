@@ -5,7 +5,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/motori_gateway}
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:toor}
+    password: ${DB_PASSWORD:admin}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -37,30 +37,82 @@ spring:
             - Path=/api/auth/**
           filters:
             - StripPrefix=1
+
         - id: user-service-route
           uri: lb://user-service
           predicates:
             - Path=/api/users/**
           filters:
             - StripPrefix=1
+
         - id: user-service-actuator-route
           uri: lb://user-service
           predicates:
             - Path=/api/user-service/actuator/**
           filters:
             - StripPrefix=2
+
         - id: gateway-logs-route
           uri: http://localhost:8080
           predicates:
             - Path=/api/gateway/logs/**
           filters:
             - StripPrefix=2
+
         - id: eureka-service-route
           uri: http://localhost:8761
           predicates:
             - Path=/api/eureka/**
           filters:
             - StripPrefix=1
+
+        - id: product-service-webjars
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/webjars/**
+          filters:
+            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+
+        - id: product-service-swagger-ui
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/swagger-ui/**
+          filters:
+            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+
+        - id: product-service-api-docs
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/api-docs/**
+          filters:
+            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+
+        - id: product-service-api-docs-root
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/api-docs
+          filters:
+            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+
+        - id: product-service-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - StripPrefix=1
+
+        - id: product-service-actuator-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/product-service/actuator/**
+          filters:
+            - StripPrefix=2
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8082/realms/motori
 
 server:
   port: 8080
@@ -100,5 +152,6 @@ gateway:
 
 logging:
   level:
-    org.springframework.cloud.gateway: ERROR
-    com.motori.gateway: INFO
+    org.springframework.cloud.gateway: TRACE
+    com.motori.gateway: DEBUG
+    reactor.netty: DEBUG

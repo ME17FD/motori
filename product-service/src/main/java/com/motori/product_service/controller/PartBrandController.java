@@ -1,5 +1,6 @@
 package com.motori.product_service.controller;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.apache.hc.core5.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
@@ -25,8 +27,9 @@ import com.motori.product_service.service.PartBrandService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/api/part-brands")
 @RequiredArgsConstructor
@@ -47,9 +50,16 @@ public class PartBrandController {
 
     @GetMapping
     public ResponseEntity<Page<PartBrandResponse>> getAll(
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable) {
-        return ResponseEntity.ok(service.getAll(pageable));
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+        Pageable pageable) {
+            log.info(">>> CONTROLLER getAll appelé"); 
+            List<PartBrandResponse> all = service.getAll();
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), all.size());
+            List<PartBrandResponse> pageContent = start >= all.size()
+                ? List.of()
+                : all.subList(start, end);
+        return ResponseEntity.ok(new PageImpl<>(pageContent, pageable, all.size()));
     }
 
 

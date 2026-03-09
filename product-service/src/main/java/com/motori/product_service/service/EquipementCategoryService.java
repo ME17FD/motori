@@ -1,10 +1,11 @@
 package com.motori.product_service.service;
 
 
+import java.util.List;
 import java.util.UUID;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Page;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import com.motori.product_service.dto.EquipementCategoryDTO.EquipementCategoryRequest;
@@ -26,6 +27,7 @@ public class EquipementCategoryService {
     private final EquipementCategoryMapper mapper;
 
     // ─── CREATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"equipement-categories", "equipement-categories-all"}, allEntries = true)
     public EquipementCategoryResponse create(EquipementCategoryRequest request) {
 
         // Validation : nom unique dans la même catégorie parente
@@ -57,23 +59,27 @@ public class EquipementCategoryService {
     }
 
     // ─── GET BY ID ────────────────────────────────────────────
+    @Cacheable(value = "equipement-categories", key = "#id")
     public EquipementCategoryResponse getById(UUID id) {
-        return repository
-            .findById(id)
+        log.debug("Recuperation de la categorie equipement : {}", id);
+        return repository.findById(id)
             .map(mapper::toResponse)
             .orElseThrow(() -> new ResourceNotFoundException(
-                "Catégorie introuvable avec l'id : " + id
+                "Categorie equipement introuvable avec l'id : " + id
             ));
     }
 
     // ─── GET ALL ──────────────────────────────────────────────
-    public Page<EquipementCategoryResponse> getAll(Pageable pageable) {
-    log.debug("Récupération de toutes les catégories équipement");
-    return repository.findAll(pageable)
-        .map(mapper::toResponse);
-}
+    @Cacheable(value = "equipement-categories-all")
+    public List<EquipementCategoryResponse> getAll() {
+        log.debug("Recuperation de toutes les categories equipement");
+        return repository.findAll().stream()
+            .map(mapper::toResponse)
+            .toList();
+    }
 
     // ─── UPDATE ───────────────────────────────────────────────
+    @CacheEvict(value = {"equipement-categories", "equipement-categories-all"}, allEntries = true)
     public EquipementCategoryResponse update(UUID id, EquipementCategoryRequest request) {
 
         EquipementCategory category = repository
@@ -119,6 +125,7 @@ public class EquipementCategoryService {
     }
 
     // ─── DELETE (soft) ────────────────────────────────────────
+    @CacheEvict(value = {"equipement-categories", "equipement-categories-all"}, allEntries = true)
     public void delete(UUID id) {
         EquipementCategory category = repository
             .findById(id)

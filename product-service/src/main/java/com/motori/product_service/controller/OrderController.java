@@ -35,7 +35,7 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<OrderResponse> create(
-        @RequestHeader("X-User-Id") UUID userId,
+        @RequestHeader("X-User-ID") UUID userId,
         @RequestBody @Valid OrderRequest request) {
         return ResponseEntity
             .status(HttpStatus.CREATED)
