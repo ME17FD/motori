@@ -21,14 +21,19 @@ import com.motori.product_service.enums.EquipementSize;
  *   <li>categoryId: Exact category equality</li>
  *   <li>minPrice/maxPrice: Price range (inclusive)</li>
  *   <li>size: Equipment size enum (XS, S, M, L, XL, XXL)</li>
- *   <li>propertyKey + propertyValue: Exact JSON property value match</li>
- *   <li>hasProperty: JSON property key existence check</li>
- *   <li>propertiesSearch: Full-text search across all JSON property values</li>
+ *   <li>propertyKey + propertyValue: Exact JSONB property value match</li>
+ *   <li>hasProperty: JSONB property key existence check</li>
+ *   <li>propertiesSearch: Full-text search via tsvector @@ tsquery (GIN indexed)</li>
  * </ul>
  *
  * <p><b>NULL Handling:</b> Null/blank filter fields are ignored in the WHERE clause.
  *
- * @author Motori Team
+ * <p><b>JSONB Filters:</b> All property-related predicates are delegated to
+ * {@link JsonbSpecification} to avoid duplication with {@link PartSpecification}.
+ *
+ * @see EquipementFilterRequest
+ * @see JsonbSpecification
+ * @see Equipement
  * @since 1.0
  */
 public class EquipementSpecification {
@@ -58,7 +63,7 @@ public class EquipementSpecification {
      * Filters by equipment name using case-insensitive substring match.
      *
      * @param name Optional search term
-     * @return Specification matching LIKE pattern, or null to ignore filter
+     * @return Specification matching LIKE pattern, or null to ignore
      */
     private static Specification<Equipement> hasName(String name) {
         return (root, query, cb) -> {
@@ -136,79 +141,46 @@ public class EquipementSpecification {
                 EquipementSize enumSize = EquipementSize.valueOf(size.toUpperCase());
                 return cb.equal(root.get("size"), enumSize);
             } catch (IllegalArgumentException e) {
-                return null;
-                // ↑ taille invalide → filtre ignoré
+                return null; // invalid size → filter ignored
             }
         };
     }
 
     /**
-     * Filters by exact JSON property value.
-     * Both key and value must be provided, otherwise the filter is ignored.
-     * <p>Example: ?propertyKey=material&propertyValue=kevlar</p>
+     * Delegates to {@link JsonbSpecification#hasPropertyValue} for exact JSONB key/value match.
      *
-     * @param key   Optional JSON property key
-     * @param value Optional JSON property value
-     * @return Specification matching exact JSON property value, or null to ignore
+     * <p>Query pattern: ?propertyKey=material&propertyValue=kevlar
+     *
+     * @param key   JSONB property key name
+     * @param value Expected property value
+     * @return Specification matching property value, or null to ignore
      */
     private static Specification<Equipement> hasPropertyValue(String key, String value) {
-        return (root, query, cb) -> {
-            if (key == null || key.isBlank() || value == null || value.isBlank()) return null;
-            return cb.equal(
-                cb.function(
-                    "jsonb_extract_path_text",
-                    String.class,
-                    root.get("properties"),
-                    cb.literal(key)
-                ),
-                value
-            );
-        };
+        return (root, query, cb) -> JsonbSpecification.hasPropertyValue(key, value, root, cb);
     }
 
     /**
-     * Filters by JSON property key existence.
-     * Returns equipment that have the specified key in their properties JSON.
-     * <p>Example: ?hasProperty=weight</p>
+     * Delegates to {@link JsonbSpecification#hasPropertyKey} for JSONB key existence check.
      *
-     * @param key Optional JSON property key to check existence
+     * <p>Query pattern: ?hasProperty=weight
+     *
+     * @param key JSONB property key name to check
      * @return Specification matching key existence, or null to ignore
      */
     private static Specification<Equipement> hasPropertyKey(String key) {
-        return (root, query, cb) -> {
-            if (key == null || key.isBlank()) return null;
-            return cb.isTrue(
-                cb.function(
-                    "jsonb_exists",
-                    Boolean.class,
-                    root.get("properties"),
-                    cb.literal(key)
-                )
-            );
-        };
+        return (root, query, cb) -> JsonbSpecification.hasPropertyKey(key, root, cb);
     }
 
     /**
-     * Full-text search across all JSON property values.
-     * Case-insensitive search using PostgreSQL cast_to_text function.
-     * <p>Example: ?propertiesSearch=kevlar</p>
+     * Delegates to {@link JsonbSpecification#hasPropertySearch} for full-text search.
      *
-     * @param search Optional search string
-     * @return Specification matching search string in any property value, or null to ignore
+     * <p>Query pattern: ?propertiesSearch=kevlar
+     * Uses GIN-indexed tsvector column for O(log n) search on large tables.
+     *
+     * @param search Optional search term
+     * @return Specification matching full-text search, or null to ignore
      */
     private static Specification<Equipement> hasPropertySearch(String search) {
-        return (root, query, cb) -> {
-            if (search == null || search.isBlank()) return null;
-            return cb.like(
-                cb.lower(
-                    cb.function(
-                        "cast_to_text",
-                        String.class,
-                        root.get("properties")
-                    )
-                ),
-                "%" + search.toLowerCase() + "%"
-            );
-        };
+        return (root, query, cb) -> JsonbSpecification.hasPropertySearch(search, root, cb);
     }
 }

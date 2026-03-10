@@ -3,8 +3,10 @@ package com.motori.product_service.models;
 import java.math.BigDecimal;
 import java.util.Map;
 
+import com.motori.product_service.config.CustomFunctionContributor;
 import com.motori.product_service.config.JsonMapConverter;
 import com.motori.product_service.enums.EquipementSize;
+import com.motori.product_service.specification.JsonbSpecification;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
@@ -67,6 +69,21 @@ public class Equipement extends BaseEntity{
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     private Map<String, Object> properties;
     
+/**
+ * Pre-computed full-text search vector generated automatically by PostgreSQL
+ * from the {@code properties} JSONB column via {@code GENERATED ALWAYS AS}.
+ *
+ * <p>This column is never written by Spring — PostgreSQL maintains it on every
+ * INSERT/UPDATE. The GIN index on this column enables O(log n) full-text
+ * search even on tables with millions of rows.
+ *
+ * <p>Used by {@link JsonbSpecification#hasPropertySearch} via the
+ * {@code tsmatch} function registered in {@link CustomFunctionContributor}.
+ */
+    @Column(name = "search_vector", columnDefinition = "tsvector", insertable = false, updatable = false)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.OTHER)
+    private String searchVector;
+
     @Column(name = "price")
     private BigDecimal price;
 
