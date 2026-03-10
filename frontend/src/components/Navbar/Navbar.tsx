@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 import "../../styles/Navbar/Navbar.css";
-import type { NavbarProps, CategoryItemProps } from "./Navbar.types";
+import type { NavbarProps, CategoryItemProps } from "../../types/ui/Navbar.types";
 import type { NavCategory } from "../../types";
 
 // ─── CategoryItem (internal sub-component) ───────────────────────────────────

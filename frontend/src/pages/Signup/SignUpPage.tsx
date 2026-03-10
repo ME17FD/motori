@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { userService } from "../../services/userService";
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
+import Footer         from "../../components/Footer/Footer";
+
 import type { NavCategory } from "../../types";
 import "./SignUpPage.css";
 
@@ -135,28 +137,7 @@ const SignupPage: React.FC = () => {
       </main>
 
       {/* ── Footer ── */}
-      <footer className="footer">
-        <div className="footer-grid">
-          <div className="footer-col">
-            <h4>Produits</h4>
-            <ul>
-              <li><a href="/casques">Casques</a></li>
-              <li><a href="/equipements">Equipements</a></li>
-              <li><a href="/consomables">Consomables</a></li>
-              <li><a href="/divers">divers</a></li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Liens Utiles</h4>
-            <ul>
-              <li><a href="/contact">Contactez-nous</a></li>
-              <li><a href="/cgv">Condition générale de vente</a></li>
-              <li><a href="/mentions">Mentions légales</a></li>
-              <li><a href="/retour">Conditions de retour &amp; Garantie</a></li>
-            </ul>
-          </div>
-        </div>
-      </footer>
+      <footer/>
 
     </div>
   );
