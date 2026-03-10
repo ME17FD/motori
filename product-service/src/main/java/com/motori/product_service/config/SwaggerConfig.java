@@ -1,4 +1,3 @@
-// SwaggerConfig.java
 package com.motori.product_service.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
@@ -8,6 +7,16 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * OpenAPI/Swagger documentation configuration.
+ * 
+ * Configures the OpenAPI 3.0 specification for API documentation with:
+ * - API title, version, and description
+ * - JWT Bearer token authentication scheme
+ * - Security requirement for protected endpoints
+ * 
+ * The API documentation is accessible at /swagger-ui.html and /api-docs endpoints.
+ */
 @Configuration
 @OpenAPIDefinition(
     info = @Info(

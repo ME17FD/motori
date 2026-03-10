@@ -8,9 +8,60 @@ import com.motori.product_service.dto.PartCategoryDTO.PartCategoryRequest;
 import com.motori.product_service.dto.PartCategoryDTO.PartCategoryResponse;
 import com.motori.product_service.models.PartCategory;
 
+/**
+ * Mapper for converting PartCategory entities to/from DTOs.
+ * 
+ * <p>Handles bidirectional conversion between {@link PartCategory} JPA entities
+ * and {@link PartCategoryRequest}/{@link PartCategoryResponse} DTOs.
+ * 
+ * <p><b>Key Responsibility:</b> Maps hierarchical parts categories with parent
+ * category name resolution to prevent N+1 queries.
+ * 
+ * <p><b>Conversion Patterns:</b>
+ * <ul>
+ *   <li><b>toResponse():</b> Entity → DTO conversion with parent name resolution
+ *     <ul>
+ *       <li>Checks if parent category exists (self-reference field)</li>
+ *       <li>Extracts parent UUID and name to populate response fields</li>
+ *       <li>Prevents recursive loading of full parent object (N+1 problem)</li>
+ *       <li>Maps id, name, parentCategoryId, parentCategoryName, timestamps</li>
+ *     </ul>
+ *   </li>
+ *   <li><b>toEntity():</b> Request → Entity conversion for persistence
+ *     <ul>
+ *       <li>Extracts category name from request</li>
+ *       <li>Service layer validates parent existence and prevents self-reference</li>
+ *       <li>Parent category entity set by service (not by mapper)</li>
+ *     </ul>
+ *   </li>
+ * </ul>
+ * 
+ * <p><b>Hierarchy Pattern:</b> Categories use self-referential FK (parentCategoryId → PartCategory.id)
+ * for building tree structures (e.g., Engine Parts → Pistons → Piston Rings).
+ * The mapper includes parentCategoryName to avoid full parent object loading.
+ * 
+ * @see PartCategoryRequest
+ * @see PartCategoryResponse
+ * @see PartCategory
+ * @since 1.0
+ */
 @Component
 public class PartCategoryMapper {
 
+    /**
+     * Converts PartCategory entity to DTO response.
+     * 
+     * <p>Extracts category hierarchy information with parent name resolution.
+     * The parentCategoryName field is included to prevent N+1 queries: clients can display
+     * category paths (e.g., "Engine > Pistons") without additional database queries
+     * to fetch parent details.
+     * 
+     * <p>Note: Does NOT recursively load grandparent categories. If full hierarchy
+     * traversal is needed, use dedicated category tree endpoint.
+     * 
+     * @param category Entity with optional parent reference
+     * @return PartCategoryResponse with parent name populated (if parent exists)
+     */
     public PartCategoryResponse toResponse(PartCategory category) {
 
         UUID parentId = null;
@@ -31,6 +82,21 @@ public class PartCategoryMapper {
         );
     }
 
+    /**
+     * Converts PartCategoryRequest DTO to entity for persistence.
+     * 
+     * <p>Extracts category name and initializes builder. Parent category entity
+     * is NOT set by mapper; it is resolved and set by {@link PartCategoryService}
+     * which validates:
+     * <ul>
+     *   <li>Parent category exists in database (if parentCategoryId provided)</li>
+     *   <li>Category does not reference itself (prevents self-loops)</li>
+     *   <li>No circular references in hierarchy (A → B → A)</li>
+     * </ul>
+     * 
+     * @param request DTO with name and optional parentCategoryId
+     * @return PartCategory entity ready for persistence (parent set by service)
+     */
     public PartCategory toEntity(PartCategoryRequest request) {
         return PartCategory.builder()
             .name(request.name())

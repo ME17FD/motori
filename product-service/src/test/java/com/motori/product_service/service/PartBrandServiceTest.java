@@ -21,6 +21,44 @@ import com.motori.product_service.mapper.PartBrandMapper;
 import com.motori.product_service.models.PartBrand;
 import com.motori.product_service.repository.PartBrandRepository;
 
+/**
+ * Unit tests for PartBrandService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link PartBrandService} which manages
+ * auto parts manufacturer data with Redis caching. Uses Mockito to mock
+ * repository and mapper dependencies for isolated testing.
+ * 
+ * <p><b>Test Framework:</b> Mockito @ExtendWith, AssertJ assertions, JUnit5 @Test
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link PartBrandRepository} - Brand CRUD operations</li>
+ *   <li>{@link PartBrandMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Unique brand name, duplicate detection</li>
+ *   <li>READ: GetById existing/non-existent, GetAll with caching</li>
+ *   <li>DELETE: Existing brand, non-existent brand</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Part brand name must be unique (DuplicateResourceException)</li>
+ *   <li>Duplicate check uses repository.findByName() before save</li>
+ *   <li>Deletion of non-existent brand throws ResourceNotFoundException</li>
+ *   <li>Service applies @Cacheable/@CacheEvict decorators (tested at service level)</li>
+ * </ul>
+ * 
+ * <p><b>Caching Strategy:</b> Service layer caches getById() and getAll() results
+ * with 10-minute TTL. Cache is invalidated on create/update/delete. Unit tests
+ * mock repository directly, bypassing cache logic for deterministic testing.
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see PartBrandService
+ */
 @ExtendWith(MockitoExtension.class)
 class PartBrandServiceTest {
 

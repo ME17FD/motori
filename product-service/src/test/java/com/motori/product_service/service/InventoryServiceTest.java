@@ -24,6 +24,46 @@ import java.util.Optional;
 import java.util.UUID;
 
 
+/**
+ * Unit tests for InventoryService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link InventoryService} which manages flexible
+ * stock tracking for either Parts OR Equipment (XOR constraint). Uses Mockito to mock
+ * repository and mapper dependencies for isolated testing.
+ * 
+ * <p><b>Test Framework:</b> Mockito @ExtendWith, AssertJ assertions, JUnit5 @Test
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link InventoryRepository} - Stock item CRUD and queries</li>
+ *   <li>{@link PartRepository}, {@link EquipementRepository} - Product existence validation</li>
+ *   <li>{@link InventoryMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Key Business Rule - XOR Constraint:</b> Each inventory record links to
+ * EITHER a Part OR Equipment, but never both. Tests verify this critical discriminator:
+ * <pre>
+ * ✗ Invalid: partId=123, equipementId=456 (both set)
+ * ✓ Valid: partId=123, equipementId=null (only Part)
+ * ✓ Valid: partId=null, equipementId=456 (only Equipment)
+ * </pre>
+ * 
+ * <p><b>Availability Tracking:</b>
+ * <ul>
+ *   <li>soldAt=null → inventory available for purchase</li>
+ *   <li>soldAt=timestamp → inventory sold (immutable after order)</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: XOR validation, product existence checks</li>
+ *   <li>READ: Filter by availability, payment status, product type</li>
+ * </ul>
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see InventoryService
+ */
 @ExtendWith(MockitoExtension.class)
 class InventoryServiceTest {
 

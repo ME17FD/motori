@@ -25,6 +25,55 @@ import com.motori.product_service.repository.CompatibilityRepository;
 import com.motori.product_service.repository.PartRepository;
 import com.motori.product_service.repository.VehiculeRepository;
 
+/**
+ * Unit tests for CompatibilityService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link CompatibilityService} which manages
+ * part-to-vehicle compatibility mappings. Uses Mockito to mock repository and mapper
+ * dependencies, enabling isolated testing of service logic without database I/O.
+ * 
+ * <p><b>Test Framework:</b>
+ * <ul>
+ *   <li><b>Mockito:</b> @ExtendWith(MockitoExtension.class) for dependency mocking</li>
+ *   <li><b>AssertJ:</b> assertThat() for fluent assertions</li>
+ *   <li><b>JUnit5:</b> @Test annotation for test methods</li>
+ * </ul>
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link CompatibilityRepository} - Data access (find, save, delete)</li>
+ *   <li>{@link PartRepository} - Part existence validation</li>
+ *   <li>{@link VehiculeRepository} - Vehicle existence validation</li>
+ *   <li>{@link CompatibilityMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Valid record, duplicate detection, missing part, missing vehicle</li>
+ *   <li>DELETE: Existing record, non-existent record</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Duplicate compatibility cannot be created (same part + vehicle)</li>
+ *   <li>Foreign key validation: part and vehicle must exist before creating mapping</li>
+ *   <li>Deletion requires record to exist (throws ResourceNotFoundException)</li>
+ * </ul>
+ * 
+ * <p><b>Testing Pattern:</b> Each test follows naming convention:
+ * <code>methodName_shouldExpectation_whenCondition</code>
+ * <pre>
+ * ✓ create_shouldReturnResponse_whenValid()
+ * ✓ create_shouldThrowDuplicateException_whenCompatibilityAlreadyExists()
+ * ✓ create_shouldThrowNotFoundException_whenPartNotFound()
+ * </pre>
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see CompatibilityService
+ * @see org.mockito.Mockito
+ * @see org.assertj.core.api.Assertions
+ */
 @ExtendWith(MockitoExtension.class)
 class CompatibilityServiceTest {
 

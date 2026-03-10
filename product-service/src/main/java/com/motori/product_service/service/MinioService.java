@@ -9,6 +9,23 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
+/**
+ * Service responsible for file storage operations with MinIO S3 compatibility.
+ * <p>
+ * Manages image uploads and deletions for equipment and parts using MinIO, an S3-compatible object storage.
+ * Handles bucket creation, unique file naming with UUIDs, content type detection, and URL generation.
+ * Integrates with Spring's MultipartFile for request processing.
+ * </p>
+ * <p>
+ * File Organization:
+ * - Files are organized by folder (e.g., 'parts', 'equipements')
+ * - Each file is renamed with UUID to ensure uniqueness
+ * - Original file extension is preserved
+ * - Public URLs are generated for HTTP access
+ * </p>
+ * @author Motori Team
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -22,6 +39,18 @@ public class MinioService {
     @Value("${minio.url}")
     private String minioUrl;
 
+    /**
+     * Uploads an image file to MinIO S3 storage.
+     * <p>
+     * Creates the bucket if it doesn't exist, generates a unique filename with UUID, uploads the file with
+     * proper content type, and returns the publicly accessible URL. File size and stream handling is delegated
+     * to Spring's MultipartFile.
+     * </p>
+     * @param file the image file to upload (MultipartFile from HTTP request)
+     * @param folder the subfolder path within the bucket (e.g., 'parts', 'equipements')
+     * @return the public URL of the uploaded image (format: {minioUrl}/{bucket}/{folder}/{uuid}.{extension})
+     * @throws RuntimeException if bucket creation or file upload to MinIO fails
+     */
     public String uploadImage(MultipartFile file, String folder) {
         try {
             // Vérifie que le bucket existe, sinon le crée
@@ -61,6 +90,14 @@ public class MinioService {
         }
     }
 
+    /**
+     * Deletes an image file from MinIO S3 storage.
+     * <p>
+     * Extracts the object key from the full public URL and removes it from the bucket.
+     * Errors during deletion are logged but not rethrown to allow graceful failure.
+     * </p>
+     * @param imageUrl the public URL of the image to delete (obtained from uploadImage())
+     */
     public void deleteImage(String imageUrl) {
         try {
             // Extrait le nom de l'objet depuis l'URL
@@ -79,6 +116,14 @@ public class MinioService {
         }
     }
 
+    /**
+     * Extracts the file extension from a filename, with .jpg as default.
+     * <p>
+     * Handles null filenames gracefully by returning .jpg as fallback.
+     * </p>
+     * @param filename the original filename from the uploaded file
+     * @return the file extension including the dot (e.g., '.jpg', '.png')
+     */
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) return ".jpg";
         return filename.substring(filename.lastIndexOf("."));

@@ -23,6 +23,42 @@ import static org.mockito.Mockito.*;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Unit tests for VehiculeBrandService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link VehiculeBrandService} which manages
+ * motorcycle/vehicle manufacturer data with Redis caching support. Uses Mockito
+ * to mock repository and mapper dependencies for isolated testing.
+ * 
+ * <p><b>Test Framework:</b> Mockito, AssertJ, JUnit5
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link VehiculeBrandRepository} - Brand CRUD operations</li>
+ *   <li>{@link VehiculeBrandMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Unique brand name, duplicate detection</li>
+ *   <li>READ: GetById existing/non-existent, GetAll with pagination</li>
+ *   <li>DELETE: Existing brand, non-existent brand</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Vehicle brand name must be unique (DuplicateResourceException)</li>
+ *   <li>Duplicate check uses repository.findByName() before save</li>
+ *   <li>Deletion of non-existent brand throws ResourceNotFoundException</li>
+ * </ul>
+ * 
+ * <p><b>Supported Brands:</b> Honda, Yamaha, Kawasaki, Ducati, KTM, BMW, Harley-Davidson
+ * (business context for parts compatibility matching)
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see VehiculeBrandService
+ */
 @ExtendWith(MockitoExtension.class)
 class VehiculeBrandServiceTest {
 

@@ -34,17 +34,87 @@ import com.motori.product_service.repository.EquipementBrandRepository;
 import com.motori.product_service.repository.EquipementCategoryRepository;
 import com.motori.product_service.repository.EquipementRepository;
 
+/**
+ * Test unitaires pour la classe EquipementService.
+ * 
+ * Cette classe teste tous les scénarios de la gestion des équipements:
+ * - Création d'équipements avec validation des dépendances (marque, catégorie)
+ * - Récupération de tous les équipements avec filtres et pagination
+ * - Récupération d'un équipement par ID
+ * - Suppression d'équipements
+ * 
+ * Les tests utilisent Mockito pour mocker les repositories et le mapper,
+ * permettant une isolation complète de la couche service.
+ */
+/**
+ * Unit tests for EquipementService with mocked dependencies.
+ * 
+ * <p>Tests the complex business logic of {@link EquipementService} which manages
+ * protective equipment products with image upload/delete, filtering, and property
+ * updates. Uses Mockito to isolate service logic from database and file storage.
+ * 
+ * <p><b>Test Framework:</b> Mockito @ExtendWith, AssertJ assertions, JUnit5 @Test
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link EquipementRepository} - Equipment CRUD and Specification filtering</li>
+ *   <li>{@link EquipementBrandRepository}, {@link EquipementCategoryRepository} - FK validation</li>
+ *   <li>{@link MinioService} - S3 image upload/delete (mocked to avoid storage I/O)</li>
+ *   <li>{@link EquipementMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Unique name, duplicate detection, image upload validation</li>
+ *   <li>READ: With and without filters (brand, category, price, size)</li>
+ *   <li>UPDATE: Name changes, property updates, size modifications</li>
+ *   <li>DELETE: Image cleanup during deletion</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Equipment name must be unique within catalog</li>
+ *   <li>Brand and category FKs must exist before creation</li>
+ *   <li>Image upload/delete delegates to MinioService</li>
+ *   <li>Size enum validation (XS, S, M, L, XL, XXL)</li>
+ *   <li>JSONB properties flexible attribute support</li>
+ * </ul>
+ * 
+ * <p><b>File Operation Mocking:</b> MinioService.upload() and delete() are mocked
+ * to avoid creating actual S3 files during testing. Tests verify correct method calls
+ * without performing I/O.
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see EquipementService
+ */
 @ExtendWith(MockitoExtension.class)
 class EquipementServiceTest {
 
+    // ─── MOCKS DES DÉPENDANCES ────────────────────────────────
+    /** Repository pour accéder aux données des équipements */
     @Mock private EquipementRepository repository;
+    
+    /** Repository pour accéder aux données des marques d'équipements */
     @Mock private EquipementBrandRepository equipementBrandRepository;
+    
+    /** Repository pour accéder aux données des catégories d'équipements */
     @Mock private EquipementCategoryRepository equipementCategoryRepository;
+    
+    /** Mapper pour convertir entre Entity et DTO */
     @Mock private EquipementMapper mapper;
+    
+    /** Service testé avec ses dépendances injectées */
     @InjectMocks private EquipementService service;
 
     // ─── CREATE ───────────────────────────────────────────────
 
+    /**
+     * Teste la création d'un équipement avec tous les paramètres valides.
+     * 
+     * Scénario: Créer un équipement avec une marque et une catégorie valides
+     * Résultat attendu: L'équipement est créé et retourné avec les bonnes données
+     */
     @Test
     void create_shouldReturnResponse_whenValid() {
         UUID brandId = UUID.randomUUID();
@@ -74,6 +144,12 @@ class EquipementServiceTest {
         verify(repository).save(entity);
     }
 
+    /**
+     * Teste la création d'un équipement avec une marque inexistante.
+     * 
+     * Scénario: Créer un équipement avec un ID de marque qui n'existe pas
+     * Résultat attendu: Une ResourceNotFoundException est levée
+     */
     @Test
     void create_shouldThrowNotFoundException_whenBrandNotFound() {
         UUID brandId = UUID.randomUUID();
@@ -91,6 +167,13 @@ class EquipementServiceTest {
         verify(repository, never()).save(any());
     }
 
+    /**
+     * Teste la création d'un équipement avec une catégorie inexistante.
+     * 
+     * Scénario: Créer un équipement avec un ID de catégorie qui n'existe pas
+     * La marque existe, mais la catégorie n'existe pas
+     * Résultat attendu: Une ResourceNotFoundException est levée avec l'ID de la catégorie
+     */
     @Test
     void create_shouldThrowNotFoundException_whenCategoryNotFound() {
         UUID brandId = UUID.randomUUID();
@@ -110,12 +193,17 @@ class EquipementServiceTest {
             .hasMessageContaining(categoryId.toString());
     }
 
-    // ─── GET ALL avec filtres ──────────────────────────────────
-
+    /**
+     * Teste la récupération de tous les équipements sans filtres.
+     * 
+     * Scénario: Récupérer tous les équipements avec pagination par défaut (page 0, 20 éléments)
+     * Sans appliquer de filtres
+     * Résultat attendu: Une page contenant les équipements est retournée
+     */
     @Test
     void getAll_shouldReturnPage_whenNoFilters() {
         EquipementFilterRequest filter = new EquipementFilterRequest(
-            null, null, null, null, null, null
+            null, null, null, null, null, null, null , null , null, null
         );
         PageRequest pageable = PageRequest.of(0, 20);
         Equipement entity = Equipement.builder().name("Casque").build();
@@ -134,10 +222,17 @@ class EquipementServiceTest {
         verify(repository).findAll(any(Specification.class), eq(pageable));
     }
 
+    /**
+     * Teste la récupération des équipements filtrés par taille.
+     * 
+     * Scénario: Récupérer les équipements avec un filtre sur la taille "L"
+     * Résultat attendu: Une page d'équipements correspondant au filtre est retournée
+     * (dans ce cas, la page est vide)
+     */
     @Test
     void getAll_shouldReturnPage_whenFilterBySize() {
         EquipementFilterRequest filter = new EquipementFilterRequest(
-            null, null, null, null, null, "L"
+            null, null, null, null, null, "L" , null ,null, null,null
         );
         PageRequest pageable = PageRequest.of(0, 20);
 
@@ -150,8 +245,12 @@ class EquipementServiceTest {
         verify(repository).findAll(any(Specification.class), eq(pageable));
     }
 
-    // ─── GET BY ID ────────────────────────────────────────────
-
+    /**
+     * Teste la récupération d'un équipement par son ID quand il existe.
+     * 
+     * Scénario: Rechercher un équipement avec un ID valide qui existe en base
+     * Résultat attendu: L'équipement est retourné avec toutes ses informations
+     */
     @Test
     void getById_shouldReturnResponse_whenExists() {
         UUID id = UUID.randomUUID();
@@ -167,6 +266,12 @@ class EquipementServiceTest {
         assertThat(service.getById(id).id()).isEqualTo(id);
     }
 
+    /**
+     * Teste la récupération d'un équipement par son ID quand il n'existe pas.
+     * 
+     * Scénario: Rechercher un équipement avec un ID qui n'existe pas en base
+     * Résultat attendu: Une ResourceNotFoundException est levée
+     */
     @Test
     void getById_shouldThrowNotFoundException_whenNotExists() {
         UUID id = UUID.randomUUID();
@@ -178,6 +283,12 @@ class EquipementServiceTest {
 
     // ─── DELETE ───────────────────────────────────────────────
 
+    /**
+     * Teste la suppression d'un équipement quand il existe.
+     * 
+     * Scénario: Supprimer un équipement avec un ID valide qui existe en base
+     * Résultat attendu: L'équipement est supprimé et la méthode delete du repository est appelée
+     */
     @Test
 void delete_shouldCallRepositoryDelete_whenExists() {
     UUID id = UUID.randomUUID();

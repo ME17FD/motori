@@ -33,6 +33,54 @@ import com.motori.product_service.repository.PartBrandRepository;
 import com.motori.product_service.repository.PartCategoryRepository;
 import com.motori.product_service.repository.PartRepository;
 
+/**
+ * Unit tests for PartService with mocked dependencies.
+ * 
+ * <p>Tests the comprehensive business logic of {@link PartService} which manages
+ * auto parts products with unique SKU tracking, image upload/delete, filtering,
+ * and JSONB properties. Uses Mockito to isolate service logic from database and
+ * file storage I/O.
+ * 
+ * <p><b>Test Framework:</b> Mockito @ExtendWith, AssertJ assertions, JUnit5 @Test
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link PartRepository} - Parts CRUD, SKU lookup, Specification filtering</li>
+ *   <li>{@link PartBrandRepository}, {@link PartCategoryRepository} - FK validation</li>
+ *   <li>{@link MinioService} - Image upload/delete (mocked to avoid S3 I/O)</li>
+ *   <li>{@link PartMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Unique SKU enforcement, duplicate detection, image upload validation</li>
+ *   <li>READ: With and without filters (name, brand, category, price, vehicle)</li>
+ *   <li>UPDATE: SKU immutability after creation, property updates, image changes</li>
+ *   <li>DELETE: Image cleanup, soft-delete behavior</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li><b>SKU (ref):</b> Must be globally unique (DuplicateResourceException)</li>
+ *   <li><b>Brand & Category FKs:</b> Must exist before part creation</li>
+ *   <li><b>Price:</b> Must be positive (BigDecimal > 0)</li>
+ *   <li><b>Image:</b> Optional multipart upload, cleanup on delete</li>
+ *   <li><b>JSONB Properties:</b> Flexible technical specifications storage</li>
+ * </ul>
+ * 
+ * <p><b>SKU (Stock Keeping Unit):</b> Unique identifier for inventory tracking.
+ * Example: "FA-001", "BRK-2024-001". Immutable after creation.
+ * 
+ * <p><b>Vehicle Compatibility:</b> Parts can be filtered by compatible vehicle
+ * via JOIN to Compatibility table. This enables: "Show all parts for Honda CBR".
+ * 
+ * <p><b>JSONB Properties:</b> Flexible technical specs (torque, material, etc.)
+ * stored as JSON object in PostgreSQL JSONB column. Supports dynamic attributes.
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see PartService
+ */
 @ExtendWith(MockitoExtension.class)
 class PartServiceTest {
 
@@ -51,7 +99,7 @@ class PartServiceTest {
 
         PartRequest request = new PartRequest(
             "Filtre à huile", "FA-001", "Description",
-            new BigDecimal("15.99"), brandId, categoryId,null
+            new BigDecimal("15.99"), brandId, categoryId,null,null,null,null,null
         );
 
         PartBrand brand = PartBrand.builder().name("Bosch").build();
@@ -80,7 +128,7 @@ class PartServiceTest {
     void create_shouldThrowDuplicateException_whenRefAlreadyExists() {
         PartRequest request = new PartRequest(
             "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), UUID.randomUUID(), UUID.randomUUID(),null
+            new BigDecimal("15.99"), UUID.randomUUID(), UUID.randomUUID(),null,null,null,null,null
         );
 
         when(repository.findByRef("FA-001"))
@@ -98,7 +146,7 @@ class PartServiceTest {
         UUID brandId = UUID.randomUUID();
         PartRequest request = new PartRequest(
             "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), brandId, UUID.randomUUID(),null
+            new BigDecimal("15.99"), brandId, UUID.randomUUID(),null,null,null,null,null
         );
 
         when(repository.findByRef("FA-001")).thenReturn(Optional.empty());
@@ -115,7 +163,7 @@ class PartServiceTest {
         UUID categoryId = UUID.randomUUID();
         PartRequest request = new PartRequest(
             "Filtre", "FA-001", null,
-            new BigDecimal("15.99"), brandId, categoryId,null
+            new BigDecimal("15.99"), brandId, categoryId,null,null,null,null,null
         );
 
         when(repository.findByRef("FA-001")).thenReturn(Optional.empty());
@@ -133,7 +181,7 @@ class PartServiceTest {
     @Test
     void getAll_shouldReturnPage_whenNoFilters() {
         PartFilterRequest filter = new PartFilterRequest(
-            null, null, null, null, null, null
+            null, null, null, null, null, null,null,null,null,null
         );
         PageRequest pageable = PageRequest.of(0, 20);
         Parts part = Parts.builder().name("Filtre").ref("FA-001").build();
@@ -156,7 +204,7 @@ class PartServiceTest {
     void getAll_shouldReturnPage_whenFilterByBrand() {
         UUID brandId = UUID.randomUUID();
         PartFilterRequest filter = new PartFilterRequest(
-            null, brandId, null, null, null, null
+            null, brandId, null, null, null, null,null,null,null,null
         );
         PageRequest pageable = PageRequest.of(0, 20);
 

@@ -18,11 +18,36 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
+/**
+ * Configuration for Redis caching infrastructure.
+ * 
+ * This configuration enables Spring's caching abstraction using Redis and configures:
+ * - Cache manager for managing cache operations
+ * - Jackson serialization for safe JSON storage of objects in Redis
+ * - Time-To-Live (TTL) of 10 minutes for all cached entries
+ * - Support for Java 8+ LocalDateTime types
+ * 
+ * This enables the use of @Cacheable, @CacheEvict, and other caching annotations
+ * throughout the application to improve performance.
+ */
 @Slf4j
 @Configuration
 @EnableCaching
 public class RedisConfig {
 
+    /**
+     * Creates and configures the Redis cache manager.
+     * 
+     * The cache manager is configured with:
+     * - Jackson2 JSON serialization for reliable object storage
+     * - 10-minute TTL for all cache entries
+     * - String serialization for cache keys
+     * - Java 8 date/time support
+     * - Null values are not cached
+     * 
+     * @param factory the Redis connection factory
+     * @return configured RedisCacheManager
+     */
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
         log.info(">>> RedisConfig chargé");

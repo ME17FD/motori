@@ -18,6 +18,20 @@ import com.motori.product_service.repository.VehiculeRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+/**
+ * Service responsible for managing vehicle/motorcycle models.
+ * <p>
+ * Provides CRUD operations for vehicle models with support for model year tracking and brand relationships.
+ * Each vehicle model must reference an existing vehicle brand. Validates foreign key relationships before
+ * entity creation and deletion.
+ * </p>
+ * <p>
+ * Vehicles represent specific motorcycle or scooter models (e.g., Honda CB500F, Yamaha MT-09, etc.)
+ * with associated manufacturing year and brand. Used for tracking vehicle-part compatibility.
+ * </p>
+ * @author Motori Team
+ * @since 1.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -27,6 +41,16 @@ public class VehiculeService {
     private final VehiculeBrandRepository vehiculeBrandRepository;
     private final VehiculeMapper mapper;
 
+    /**
+     * Creates a new vehicle model.
+     * <p>
+     * Validates that the referenced brand exists before creation.
+     * Initializes the vehicle with model name, year, and brand relationship.
+     * </p>
+     * @param request the vehicle creation request containing name, brand ID, and year
+     * @return the created vehicle with assigned UUID
+     * @throws ResourceNotFoundException if the specified brand does not exist
+     */
     // ─── CREATE ───────────────────────────────────────────────
     public VehiculeResponse create(VehiculeRequest request) {
         
@@ -43,6 +67,12 @@ public class VehiculeService {
         return mapper.toResponse(repository.save(vehicule));
     }
 
+    /**
+     * Retrieves a vehicle model by its unique identifier.
+     * @param id the unique identifier of the vehicle
+     * @return the vehicle details with brand information
+     * @throws ResourceNotFoundException if no vehicle is found with the given ID
+     */
     // ─── GET BY ID ────────────────────────────────────────────
     public VehiculeResponse getById(UUID id) {
         return repository
@@ -53,6 +83,11 @@ public class VehiculeService {
             ));
     }
 
+    /**
+     * Retrieves all vehicles with pagination support.
+     * @param pageable pagination parameters (page number, size, sorting)
+     * @return a page of all vehicle models with brand relationship data
+     */
     // ─── GET ALL ──────────────────────────────────────────────
     public Page<VehiculeResponse> getAll(Pageable pageable) {
     log.debug("Récupération de tous les véhicules");
@@ -60,6 +95,16 @@ public class VehiculeService {
         .map(mapper::toResponse);
     }
 
+    /**
+     * Updates an existing vehicle model.
+     * <p>
+     * Validates that the referenced brand exists. Updates model name, year, and brand association.
+     * </p>
+     * @param id the unique identifier of the vehicle to update
+     * @param request the update request with new vehicle details
+     * @return the updated vehicle
+     * @throws ResourceNotFoundException if the vehicle or brand is not found
+     */
     // ─── UPDATE ───────────────────────────────────────────────
     public VehiculeResponse update(UUID id, VehiculeRequest request) {
 
@@ -82,6 +127,15 @@ public class VehiculeService {
         return mapper.toResponse(repository.save(vehicule));
     }
 
+    /**
+     * Soft-deletes a vehicle model by its ID.
+     * <p>
+     * The vehicle is marked as deleted via the deletedAt field. Associated compatibility mappings and inventory
+     * retain references to the deleted vehicle. The vehicle is excluded from future queries.
+     * </p>
+     * @param id the unique identifier of the vehicle to delete
+     * @throws ResourceNotFoundException if no vehicle is found with the given ID
+     */
     // ─── DELETE (soft) ────────────────────────────────────────
     public void delete(UUID id) {
     log.info("Suppression du véhicule avec l'id : {}", id);

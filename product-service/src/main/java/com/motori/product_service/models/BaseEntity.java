@@ -17,32 +17,53 @@ import jakarta.persistence.MappedSuperclass;
 import lombok.Getter;
 import lombok.Setter;
 
-// BaseEntity.java
+/**
+ * Abstract base class for all JPA entities in the application.
+ * 
+ * This class provides common audit fields for all entities:
+ * - id: Primary key generated as UUID
+ * - createdAt: Automatically set when entity is first created
+ * - updatedAt: Automatically updated whenever entity is modified
+ * - deletedAt: Used for soft delete functionality (data is not physically deleted)
+ * 
+ * All domain models should extend this class to inherit these audit fields.
+ * The class uses JPA's AuditingEntityListener to automatically manage audit timestamps.
+ */
 @MappedSuperclass
-// ↑ dit à JPA que cette classe n'est pas une entité elle-même
-// mais que ses champs sont hérités par les entités filles
 @EntityListeners(AuditingEntityListener.class)
-// ↑ active l'écoute des événements JPA pour remplir automatiquement
-// createdAt et updatedAt
 @Getter
 @Setter
 public abstract class BaseEntity {
 
+    /**
+     * Unique identifier for the entity.
+     * Generated as a UUID by the database.
+     */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    /**
+     * Timestamp when this entity was created.
+     * Automatically set on first save() and is immutable thereafter.
+     */
     @CreatedDate
-    // ↑ rempli automatiquement au moment du premier save()
     @Column(name = "created_at", nullable = false, updatable = false)
-    // updatable = false → cette valeur ne change jamais après la création
     private LocalDateTime createdAt;
 
+    /**
+     * Timestamp when this entity was last modified.
+     * Automatically updated on each save() call.
+     */
     @LastModifiedDate
-    // ↑ mis à jour automatiquement à chaque save()
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    /**
+     * Timestamp when this entity was soft-deleted.
+     * Null if entity is not deleted.
+     * Used for logical deletion without removing data from database.
+     */
     @SoftDelete
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;

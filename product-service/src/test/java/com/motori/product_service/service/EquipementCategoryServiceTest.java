@@ -21,6 +21,55 @@ import com.motori.product_service.mapper.EquipementCategoryMapper;
 import com.motori.product_service.models.EquipementCategory;
 import com.motori.product_service.repository.EquipementCategoryRepository;
 
+/**
+ * Unit tests for EquipementCategoryService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link EquipementCategoryService} which manages
+ * hierarchical equipment categories with parent-child relationships. Uses Mockito
+ * to mock repository and mapper dependencies for isolated service testing.
+ * 
+ * <p><b>Test Framework:</b>
+ * <ul>
+ *   <li><b>Mockito:</b> @ExtendWith(MockitoExtension.class) for mocking</li>
+ *   <li><b>AssertJ:</b> assertThat() and assertThatThrownBy()</li>
+ *   <li><b>JUnit5:</b> @Test annotation</li>
+ * </ul>
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link EquipementCategoryRepository} - Category CRUD and hierarchy queries</li>
+ *   <li>{@link EquipementCategoryMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Unique root category, duplicate category detection</li>
+ *   <li>UPDATE: Prevent self-referencing parent (circular reference)</li>
+ *   <li>DELETE: Existing category</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Category name must be unique (DuplicateResourceException)</li>
+ *   <li>Category cannot be its own parent (IllegalArgumentException)</li>
+ *   <li>Parent category must exist if parentCategoryId provided</li>
+ *   <li>Hierarchical structure prevents circular references</li>
+ * </ul>
+ * 
+ * <p><b>Hierarchy Example:</b>
+ * <pre>
+ * Root: Helmets
+ *   ├─ Full Face
+ *   ├─ Open Face
+ *   └─ Modular
+ * </pre>
+ * Tests prevent: Helmets → Full Face → Helmets (circular reference).
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see EquipementCategoryService
+ * @see org.mockito.Mockito
+ */
 @ExtendWith(MockitoExtension.class)
 class EquipementCategoryServiceTest {
 

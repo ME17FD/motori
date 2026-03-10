@@ -21,6 +21,49 @@ import com.motori.product_service.mapper.PartCategoryMapper;
 import com.motori.product_service.models.PartCategory;
 import com.motori.product_service.repository.PartCategoryRepository;
 
+/**
+ * Unit tests for PartCategoryService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link PartCategoryService} which manages
+ * hierarchical auto parts categories with parent-child relationships. Uses Mockito
+ * to mock repository and mapper dependencies for isolated testing.
+ * 
+ * <p><b>Test Framework:</b> Mockito, AssertJ, JUnit5
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link PartCategoryRepository} - Category CRUD and hierarchy queries</li>
+ *   <li>{@link PartCategoryMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Unique root category, subcategories with parent references</li>
+ *   <li>UPDATE: Prevent self-referencing parent (circular reference detection)</li>
+ *   <li>DELETE: Existing category</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Category name must be unique (DuplicateResourceException)</li>
+ *   <li>Category cannot be its own parent (IllegalArgumentException)</li>
+ *   <li>Parent category must exist if parentCategoryId provided</li>
+ *   <li>Hierarchical structure prevents circular references</li>
+ * </ul>
+ * 
+ * <p><b>Hierarchy Example:</b>
+ * <pre>
+ * Root: Engine Components
+ *   ├─ Oil Filters
+ *   ├─ Air Filters
+ *   └─ Spark Plugs
+ * </pre>
+ * Tests prevent: Engine Components → Oil Filters → Engine Components (cycle).
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see PartCategoryService
+ */
 @ExtendWith(MockitoExtension.class)
 class PartCategoryServiceTest {
 

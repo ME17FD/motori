@@ -15,6 +15,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * JPA entity representing the compatibility relationship between auto parts and vehicles.
+ * 
+ * Establishes many-to-many relationships indicating which parts are compatible with which vehicles.
+ * For example: A brake pad part is compatible with multiple vehicle models.
+ * 
+ * This is a join table entity that links Parts to Vehicles.
+ * 
+ * Attributes:
+ * - part: Reference to the auto part (lazy loaded)
+ * - vehicule: Reference to the vehicle model (lazy loaded)
+ * 
+ * Database table: compatibility
+ * Soft delete support: Yes (uses deletedAt field from BaseEntity)
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor

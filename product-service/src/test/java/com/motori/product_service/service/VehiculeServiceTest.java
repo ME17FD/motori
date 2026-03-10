@@ -22,6 +22,45 @@ import com.motori.product_service.models.VehiculeBrand;
 import com.motori.product_service.repository.VehiculeBrandRepository;
 import com.motori.product_service.repository.VehiculeRepository;
 
+/**
+ * Unit tests for VehiculeService with mocked dependencies.
+ * 
+ * <p>Tests the business logic of {@link VehiculeService} which manages
+ * motorcycle/vehicle model data with nested brand information. Uses Mockito
+ * to mock repository and mapper dependencies for isolated testing.
+ * 
+ * <p><b>Test Framework:</b> Mockito, AssertJ, JUnit5
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link VehiculeRepository} - Vehicle model CRUD operations</li>
+ *   <li>{@link VehiculeBrandRepository} - Brand existence validation</li>
+ *   <li>{@link VehiculeMapper} - Entity ↔ DTO conversion with nested brand</li>
+ * </ul>
+ * 
+ * <p><b>Test Coverage:</b>
+ * <ul>
+ *   <li>CREATE: Valid vehicle with existing brand, missing brand FK validation</li>
+ *   <li>READ: GetById existing/non-existent, GetAll paginated results</li>
+ *   <li>UPDATE: Model and name modifications</li>
+ *   <li>DELETE: Existing vehicle</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Vehicle brand must exist before vehicle creation (FK validation)</li>
+ *   <li>VehicleResponse includes nested VehiculeBrandResponse (eager loading)</li>
+ *   <li>Deletion of non-existent vehicle throws ResourceNotFoundException</li>
+ * </ul>
+ * 
+ * <p><b>Nested Brand Mapping:</b> Vehicle responses include complete brand details
+ * to enable client-side vehicle identification without additional API calls.
+ * Example: "Honda CBR600RR" includes manufacturer "Honda" in response.
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see VehiculeService
+ */
 @ExtendWith(MockitoExtension.class)
 class VehiculeServiceTest {
 

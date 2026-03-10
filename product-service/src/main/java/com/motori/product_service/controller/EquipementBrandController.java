@@ -27,6 +27,27 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 
+/**
+ * REST controller for managing protective equipment brand operations.
+ * <p>
+ * Provides endpoints for CRUD operations on equipment manufacturers/brands (e.g., helmet makers, glove brands).
+ * All brand data is cached with a 10-minute TTL for performance optimization, with automatic invalidation on mutations.
+ * </p>
+ * Endpoints:
+ * <ul>
+ *   <li>POST /api/equipement-brands - Create a new equipment brand</li>
+ *   <li>GET /api/equipement-brands - List all brands with pagination</li>
+ *   <li>GET /api/equipement-brands/{id} - Retrieve a specific brand (cached)</li>
+ *   <li>PUT /api/equipement-brands/{id} - Update a brand</li>
+ *   <li>DELETE /api/equipement-brands/{id} - Soft-delete a brand</li>
+ * </ul>
+ * 
+ * Caching Strategy: @Cacheable on getById() with 10-minute Redis TTL; @CacheEvict on mutations
+ * Authentication: OAuth2 JWT Bearer token required (Keycloak)
+ * 
+ * @author Motori Team
+ * @since 1.0
+ */
 @RestController
 @RequestMapping("/api/equipement-brands")
 @RequiredArgsConstructor
@@ -34,17 +55,46 @@ public class EquipementBrandController {
 
     private final EquipementBrandService service;
 
+    /**
+     * Creates a new equipment brand.
+     * <p>
+     * Validates the request and ensures the brand name is unique across the system.
+     * Clears the brand cache on successful creation to maintain consistency.
+     * </p>
+     * @param request the {@link EquipementBrandRequest} containing brand details (name, description)
+     * @return {@link ResponseEntity} with HTTP 201 CREATED status and the created {@link EquipementBrandResponse}
+     * @throws DuplicateResourceException if a brand with the same name already exists
+     */
     @PostMapping
     public ResponseEntity<EquipementBrandResponse> create(
             @RequestBody @Valid EquipementBrandRequest request) {
         return ResponseEntity.status(HttpStatus.SC_CREATED).body(service.create(request));
     }
 
+    /**
+     * Retrieves a specific equipment brand by its unique identifier.
+     * <p>
+     * Results are cached with a 10-minute TTL using Spring Cache with Redis backend.
+     * Subsequent calls for the same brand within the TTL will return the cached result.
+     * </p>
+     * @param id the unique UUID of the equipment brand
+     * @return {@link ResponseEntity} with HTTP 200 OK status and the cached {@link EquipementBrandResponse}
+     * @throws ResourceNotFoundException if no brand with the specified ID is found
+     */
     @GetMapping("/{id}")
     public ResponseEntity<EquipementBrandResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
+    /**
+     * Lists all active (non-deleted) equipment brands with pagination.
+     * <p>
+     * Results are paginated with a default page size of 20 items, sorted by creation date in descending order.
+     * Uses manual pagination on client-fetched data (not database-level pagination).
+     * </p>
+     * @param pageable the pagination and sorting configuration. Default: 20 items/page, sorted by createdAt DESC
+     * @return {@link ResponseEntity} with HTTP 200 OK status containing a {@link Page} of {@link EquipementBrandResponse}
+     */
     @GetMapping
     public ResponseEntity<Page<EquipementBrandResponse>> getAll(
         @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
@@ -58,6 +108,18 @@ public class EquipementBrandController {
         return ResponseEntity.ok(new PageImpl<>(pageContent, pageable, all.size()));
     }
 
+    /**
+     * Updates an existing equipment brand with new details.
+     * <p>
+     * Validates the updated name for uniqueness and clears the brand cache to ensure
+     * fresh data is returned on next getById() call.
+     * </p>
+     * @param id the unique UUID of the brand to update
+     * @param request the {@link EquipementBrandRequest} containing updated brand details
+     * @return {@link ResponseEntity} with HTTP 200 OK status and the updated {@link EquipementBrandResponse}
+     * @throws ResourceNotFoundException if no brand with the specified ID is found
+     * @throws DuplicateResourceException if the updated name conflicts with an existing brand
+     */
     @PutMapping("/{id}")
     public ResponseEntity<EquipementBrandResponse> update(
             @PathVariable UUID id,
@@ -65,6 +127,16 @@ public class EquipementBrandController {
         return ResponseEntity.ok(service.update(id, request));
     }
 
+    /**
+     * Soft-deletes an equipment brand by marking it with a deletion timestamp.
+     * <p>
+     * Associated equipment items are not deleted; they retain their brand references for audit purposes.
+     * The cache is cleared to prevent future queries from returning deleted brands.
+     * </p>
+     * @param id the unique UUID of the brand to delete
+     * @return {@link ResponseEntity} with HTTP 204 NO_CONTENT status (empty response body)
+     * @throws ResourceNotFoundException if no brand with the specified ID is found
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);

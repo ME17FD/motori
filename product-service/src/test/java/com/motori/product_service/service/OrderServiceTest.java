@@ -28,6 +28,46 @@ import com.motori.product_service.models.Order;
 import com.motori.product_service.repository.InventoryRepository;
 import com.motori.product_service.repository.OrderRepository;
 
+/**
+ * Unit tests for OrderService with mocked dependencies.
+ * 
+ * <p>Tests the complex business logic of {@link OrderService} which manages
+ * e-commerce order lifecycle from creation through fulfillment. Uses Mockito
+ * to mock repository and mapper dependencies for isolated service testing.
+ * 
+ * <p><b>Test Framework:</b> Mockito, AssertJ, JUnit5
+ * 
+ * <p><b>Mocked Components:</b>
+ * <ul>
+ *   <li>{@link OrderRepository} - Order CRUD and status queries</li>
+ *   <li>{@link InventoryRepository} - Inventory availability checks</li>
+ *   <li>{@link OrderMapper}, {@link OrderItemMapper} - Entity ↔ DTO conversion</li>
+ * </ul>
+ * 
+ * <p><b>Order Lifecycle Tested:</b>
+ * <ul>
+ *   <li><b>PENDING:</b> Order created, inventory reserved (soldAt=null check)</li>
+ *   <li><b>CONFIRMED:</b> Payment validated, inventory marked sold (soldAt=now)</li>
+ *   <li><b>DELIVERED:</b> Physical shipment completed</li>
+ *   <li><b>CANCELLED:</b> Can cancel at any point (reversible state)</li>
+ * </ul>
+ * 
+ * <p><b>Business Rules Tested:</b>
+ * <ul>
+ *   <li>Order must contain at least 1 item (non-empty OrderItem list)</li>
+ *   <li>Inventory items must be available (soldAt IS NULL) before order creation</li>
+ *   <li>Cannot order same inventory item twice in single order</li>
+ *   <li>Price calculated server-side (client price ignored for security)</li>
+ *   <li>Total price = sum of all item prices at order time (immutable)</li>
+ * </ul>
+ * 
+ * <p><b>Price Snapshot:</b> Each OrderItem captures price at order time.
+ * This prevents price manipulation attacks: client cannot override server prices.
+ * 
+ * @author Motori Team
+ * @since 1.0
+ * @see OrderService
+ */
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
