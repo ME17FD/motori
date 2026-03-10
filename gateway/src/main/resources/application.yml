@@ -18,95 +18,112 @@ spring:
 
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowed-origins: "http://localhost:5173"
-            allowed-methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
-            allowed-headers: "*"
-            allow-credentials: true
-            max-age: 3600
-      routes:
-        - id: auth-service-route
-          uri: lb://user-service
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=1
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: "http://localhost:5173"
+                allowed-methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
+                allowed-headers: "*"
+                allow-credentials: true
+                max-age: 3600
+          routes:
+            # Route pour Swagger
+            - id: product-service-swagger
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/swagger-ui/**,/api/products/api-docs/**,/api/products/webjars/**
+              filters:
+                - RewritePath=/api/products/(?<segment>.*), /$\{segment}
 
-        - id: user-service-route
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - StripPrefix=1
+            # Route pour l'API
+            - id: product-service-api
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - RewritePath=/api/products/(?<segment>.*), /api/parts/$\{segment}
+            - id: auth-service-route
+              uri: lb://user-service
+              predicates:
+                - Path=/api/auth/**
+              filters:
+                - StripPrefix=1
 
-        - id: user-service-actuator-route
-          uri: lb://user-service
-          predicates:
-            - Path=/api/user-service/actuator/**
-          filters:
-            - StripPrefix=2
+            - id: user-service-route
+              uri: lb://user-service
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - StripPrefix=1
 
-        - id: gateway-logs-route
-          uri: http://localhost:8080
-          predicates:
-            - Path=/api/gateway/logs/**
-          filters:
-            - StripPrefix=2
+            - id: user-service-actuator-route
+              uri: lb://user-service
+              predicates:
+                - Path=/api/user-service/actuator/**
+              filters:
+                - StripPrefix=2
 
-        - id: eureka-service-route
-          uri: http://localhost:8761
-          predicates:
-            - Path=/api/eureka/**
-          filters:
-            - StripPrefix=1
+            - id: gateway-logs-route
+              uri: http://localhost:8080
+              predicates:
+                - Path=/api/gateway/logs/**
+              filters:
+                - StripPrefix=2
 
-        - id: product-service-webjars
-          uri: lb://product-service
-          predicates:
-            - Path=/api/products/webjars/**
-          filters:
-            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+            - id: eureka-service-route
+              uri: http://localhost:8761
+              predicates:
+                - Path=/api/eureka/**
+              filters:
+                - StripPrefix=1
 
-        - id: product-service-swagger-ui
-          uri: lb://product-service
-          predicates:
-            - Path=/api/products/swagger-ui/**
-          filters:
-            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+            - id: product-service-webjars
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/webjars/**
+              filters:
+                - RewritePath=/api/products/(?<segment>.*), /$\{segment}
 
-        - id: product-service-api-docs
-          uri: lb://product-service
-          predicates:
-            - Path=/api/products/api-docs/**
-          filters:
-            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+            - id: product-service-swagger-ui
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/swagger-ui/**
+              filters:
+                - RewritePath=/api/products/swagger-ui/(?<segment>.*), /swagger-ui/$\{segment}
 
-        - id: product-service-api-docs-root
-          uri: lb://product-service
-          predicates:
-            - Path=/api/products/api-docs
-          filters:
-            - RewritePath=/api/products/(?<segment>.*), /$\{segment}
+            - id: product-service-api-docs
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/api-docs/**
+              filters:
+                - RewritePath=/api/products/api-docs/(?<segment>.*), /api-docs/$\{segment}
 
-        - id: product-service-route
-          uri: lb://product-service
-          predicates:
-            - Path=/api/products/**
-          filters:
-            - StripPrefix=1
+            - id: product-service-api-docs-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/api-docs
+              filters:
+                - RewritePath=/api/products/api-docs, /api-docs
 
-        - id: product-service-actuator-route
-          uri: lb://product-service
-          predicates:
-            - Path=/api/product-service/actuator/**
-          filters:
-            - StripPrefix=2
+            - id: product-service-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - RewritePath=/api/products/(?<segment>.*), /api/parts/$\{segment}
+
+            - id: product-service-actuator-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/product-service/actuator/**
+              filters:
+                - RewritePath=/api/product-service/actuator/(?<segment>.*), /actuator/$\{segment}
 
   security:
     oauth2:
