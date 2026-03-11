@@ -137,7 +137,7 @@ const SignupPage: React.FC = () => {
       </main>
 
       {/* ── Footer ── */}
-      <footer/>
+      <Footer />
 
     </div>
   );

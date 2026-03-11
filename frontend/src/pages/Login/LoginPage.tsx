@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
 import Footer         from "../../components/Footer/Footer";
+import useLogin from "../../hooks/useLogin";
 
-import { authApi } from "../../api/authApi";
 import type { NavCategory } from "../../types";
 import "./LoginPage.css";
 
@@ -27,30 +27,9 @@ const CATEGORIES: NavCategory[] = [
 // ─── LoginPage ────────────────────────────────────────────────────────────────
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
 
-   
-    const handleLogin = async () => {
-    setErrorMsg(null);
-    setLoading(true);
-    try {
-      const { token, user } = await authApi.login({ email, password });
-      localStorage.setItem("token", token);
-      console.log("Logged in as:", user);
-      // TODO: redirect to home e.g. navigate("/")
-    } catch (err) {
-      if (err instanceof Error) {
-        setErrorMsg(err.message);
-      } else {
-        setErrorMsg("Une erreur est survenue.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+ const { email, setEmail, password, setPassword, errorMsg, loading, handleLogin } = useLogin();
+ 
   return (
     <div className="page">
 
@@ -101,7 +80,7 @@ const LoginPage: React.FC = () => {
       </main>
 
       {/* ── Footer ── */}
-      <footer/>
+      <Footer />
 
     </div>
   );
