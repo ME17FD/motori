@@ -7,13 +7,14 @@ import React, {
 } from "react";
 import "./HomePage.css";
 
-import Navbar         from "../components/Navbar/Navbar";
-import ProductSlider  from "../components/ProductSlider/ProductSlider";
-import Button         from "../components/Button/Button";
+import Navbar         from "../../components/Navbar/Navbar";
+import ProductSlider  from "../../components/ProductSlider/ProductSlider";
+import Button         from "../../components/Button/Button";
+import Footer         from "../../components/Footer/Footer";
 
-import { HERO_IMAGES, ABOUT_DESCRIPTION, FOOTER_LINKS, AUTOPLAY_DELAY_MS } from "../constants/index";
-import { MOCK_PRODUCTS, MOCK_BRANDS, MOCK_CATEGORIES }                       from "../mocks/index";
-import { addToCart }                                                          from "../services/index";
+import { HERO_IMAGES, ABOUT_DESCRIPTION, FOOTER_LINKS, AUTOPLAY_DELAY_MS } from "../../constants/index";
+import { MOCK_PRODUCTS, MOCK_BRANDS, MOCK_CATEGORIES }                       from "../../mocks/index";
+import { addToCart }                                                          from "../../services/index";
 
 // ─── HeroImageSlider ──────────────────────────────────────────────────────────
 // Kept in this file as it is tightly coupled to the hero section layout.
@@ -249,23 +250,7 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="home-page__section" style={{ backgroundColor: "#111111" }}>
-        <nav style={{ display: "flex", justifyContent: "center", gap: "24px", marginBottom: "16px" }}>
-          {FOOTER_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              style={{ color: "rgba(255,255,255,0.7)", fontFamily: "Assistant, sans-serif", fontSize: "14px", textDecoration: "none" }}
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-        <p style={{ color: "rgba(255,255,255,0.4)", textAlign: "center", fontFamily: "Assistant, sans-serif", fontSize: "13px", margin: 0 }}>
-          &copy; {new Date().getFullYear()} MotoShop. Tous droits réservés.
-        </p>
-      </footer>
-
+            <Footer />
     </div>
   );
 };
