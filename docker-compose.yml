@@ -16,7 +16,7 @@ services:
     volumes:
       - ./keycloak/motori_realm.json:/opt/keycloak/data/import/motori_realm.json
     ports:
-      - "8082:8080"
+      - "${PORT_KEYCLOAK}:8080"
     command:
       - start
       - --http-enabled=true
@@ -37,7 +37,7 @@ services:
         SERVICE_DIR: discovery
     container_name: motori-discovery
     ports:
-      - "8761:8761"
+      - "${PORT_DISCOVERY}:8761"
     networks:
       - motori-network
 
@@ -49,7 +49,7 @@ services:
         SERVICE_DIR: gateway
     container_name: motori-gateway
     ports:
-      - "8080:8080"
+      - "${PORT_GATEWAY}:8080"
     depends_on:
       - discovery
       - keycloak
@@ -158,8 +158,8 @@ services:
     image: quay.io/minio/minio:latest
     container_name: motori-minio
     ports:
-      - "9002:9000"
-      - "9090:9090"
+      - "${PORT_MINIO}:9000"
+      - "${PORT_MINIO_CONSOLE}:9090"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
@@ -173,7 +173,7 @@ services:
     image: redis:7.2-alpine
     container_name: motori-redis
     ports:
-      - "6379:6379"
+      - "${PORT_REDIS}:6379"
     volumes:
       - redis_data:/data
     networks:
