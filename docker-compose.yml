@@ -1,8 +1,3 @@
-# Reusable infrastructure: Keycloak + MinIO
-# Use with: docker compose up -d
-# Keycloak expects PostgreSQL at host.docker.internal:5432 (database: motori_keycloak)
-# Services register with Eureka (discovery) and gateway routes use lb://service-name
-
 services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.3.1
@@ -11,13 +6,151 @@ services:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://host.docker.internal:5432/motori_keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: toor
+      KC_DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_keycloak
+      KC_DB_USERNAME: ${DB_USERNAME}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
       KC_LOG_LEVEL: error
+      KC_HEALTH_ENABLED: true
+      KC_HOSTNAME: motori-keycloak
+      KC_HOSTNAME_STRICT: "false"
+    volumes:
+      - ./keycloak/motori_realm.json:/opt/keycloak/data/import/motori_realm.json
     ports:
       - "8082:8080"
-    command: start-dev
+    command:
+      - start
+      - --http-enabled=true
+      - --import-realm
+    healthcheck:
+      test: ["CMD-SHELL", "{ printf 'HEAD /health/ready HTTP/1.0\\r\\n\\r\\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    networks:
+      - motori-network
+
+  discovery:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_DIR: discovery
+    container_name: motori-discovery
+    ports:
+      - "8761:8761"
+    networks:
+      - motori-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_DIR: gateway
+    container_name: motori-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - discovery
+      - keycloak
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_gateway
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
+      KEYCLOAK_SECRET_KEY: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+    networks:
+      - motori-network
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_DIR: user-service
+    container_name: motori-user-service
+    depends_on:
+      discovery:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_users
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      KEYCLOAK_ADMIN_SERVER_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      KEYCLOAK_CREDENTIALS_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      GATEWAY_SERVICE_URL: ${GATEWAY_URL}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
+    networks:
+      - motori-network
+
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_DIR: product-service
+    container_name: motori-product-service
+    depends_on:
+      - discovery
+      - redis
+      - minio
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_products
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
+      MINIO_URL: ${MINIO_URL}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+    networks:
+      - motori-network
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_DIR: payment-service
+    container_name: motori-payment-service
+    depends_on:
+      - discovery
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_payments
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - motori-network
+
+  backoffice-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.spring
+      args:
+        SERVICE_DIR: backoffice-service
+    container_name: motori-backoffice-service
+    depends_on:
+      - discovery
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_backoffice
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
     networks:
       - motori-network
 
@@ -25,16 +158,17 @@ services:
     image: quay.io/minio/minio:latest
     container_name: motori-minio
     ports:
-      - "9002:9000"   # S3 API
-      - "9090:9090"   # Web console
+      - "9002:9000"
+      - "9090:9090"
     environment:
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: supersecret
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
     command: server /data --console-address ":9090"
     volumes:
       - minio_data:/data
     networks:
       - motori-network
+
   redis:
     image: redis:7.2-alpine
     container_name: motori-redis
@@ -44,7 +178,7 @@ services:
       - redis_data:/data
     networks:
       - motori-network
-      
+
 volumes:
   minio_data:
   redis_data:
