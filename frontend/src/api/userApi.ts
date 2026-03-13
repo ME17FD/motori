@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { User, UserCreatePayload, UserUpdatePayload } from "../types/userType";
+import type { User, UserCreatePayload, UserUpdatePayload } from "../types/user";
 
 const BASE = "/api/users";
 

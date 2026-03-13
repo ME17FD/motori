@@ -1,46 +1,51 @@
-import { userApi } from "../api/userApi";
-import type { User, UserCreatePayload, UserUpdatePayload } from "../types/userType";
+import axiosInstance from '../api/axiosInstance';
+import type { User, UserFilters, UpdateUserRequest } from '../types/user';
+import type { PageResponse } from '../types/api';
 
-export const userService = {
-  getAllUsers: async (): Promise<User[]> => {
-    return await userApi.getAll();
-  },
+const BASE = '/api/users';
 
-  getUserById: async (id: number): Promise<User> => {
-    return await userApi.getById(id);
-  },
+/**
+ * GET /api/users — paginated + filtered list.
+ */
+export async function fetchUsers(
+  params: UserFilters = {},
+): Promise<PageResponse<User>> {
+  const { data } = await axiosInstance.get<PageResponse<User>>(BASE, { params });
+  return data;
+}
 
-  createUser: async (payload: UserCreatePayload): Promise<User> => {
-    if (!payload.firstname || !payload.lastname) {
-      throw new Error("First name and last name are required.");
-    }
-    if (!payload.email || !payload.email.includes("@")) {
-      throw new Error("A valid email is required.");
-    }
-    return await userApi.create(payload);
-  },
+/**
+ * GET /api/users/:id
+ */
+export async function fetchUser(id: number): Promise<User> {
+  const { data } = await axiosInstance.get<User>(`${BASE}/${id}`);
+  return data;
+}
 
-  updateUser: async (id: number, payload: UserUpdatePayload): Promise<User> => {
-    if (!payload.firstname || !payload.lastname) {
-      throw new Error("First name and last name are required.");
-    }
-    if (!payload.email || !payload.email.includes("@")) {
-      throw new Error("A valid email is required.");
-    }
-    return await userApi.update(id, payload);
-  },
+/**
+ * PATCH /api/users/:id
+ * Updates enabled status or roles.
+ */
+export async function updateUser(
+  id: number,
+  payload: UpdateUserRequest,
+): Promise<User> {
+  const { data } = await axiosInstance.patch<User>(`${BASE}/${id}`, payload);
+  return data;
+}
 
-  deleteUser: async (id: number): Promise<null> => {
-    return await userApi.delete(id);
-  },
+/**
+ * GET /api/users/:id/stats
+ * Returns order count and total spend for a user.
+ */
+export async function fetchUserStats(id: number): Promise<UserStats> {
+  const { data } = await axiosInstance.get<UserStats>(`${BASE}/${id}/stats`);
+  return data;
+}
 
-  searchUsers: (users: User[], query: string): User[] => {
-    const q = query.toLowerCase();
-    return users.filter(u =>
-      `${u.firstname} ${u.lastname} ${u.email} ${u.phone}`
-        .toLowerCase()
-        .includes(q)
-    );
-  },
-};
-
+export interface UserStats {
+  userId: number;
+  totalOrders: number;
+  totalSpent: number;
+  lastOrderAt?: string;
+}

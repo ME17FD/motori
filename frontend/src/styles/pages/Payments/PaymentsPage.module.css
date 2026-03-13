@@ -1,0 +1,133 @@
+@import '../../variables.css';
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray);
+  margin: var(--space-1) 0 0;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.select {
+  height: 38px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  background: var(--bo-card-bg);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.select:focus { border-color: var(--color-red); }
+
+.clearBtn {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  background: none;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--bo-status-cancelled);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.clearBtn:hover { background: rgba(239,68,68,0.08); }
+
+.tableWrapper {
+  position: relative;
+}
+
+.actionsColumn {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rowActions {
+  height: 53px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding-right: var(--space-4);
+  border-bottom: 1px solid var(--color-bg-light);
+}
+
+.validateBtn,
+.rejectBtn {
+  padding: 4px var(--space-3);
+  border-radius: 6px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-primary);
+  cursor: pointer;
+  border: 1px solid;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.validateBtn {
+  border-color: rgba(16,185,129,0.3);
+  background: none;
+  color: #065f46;
+}
+
+.validateBtn:hover {
+  background: var(--bo-status-delivered);
+  color: #fff;
+  border-color: var(--bo-status-delivered);
+}
+
+.rejectBtn {
+  border-color: rgba(239,68,68,0.3);
+  background: none;
+  color: var(--bo-status-cancelled);
+}
+
+.rejectBtn:hover {
+  background: var(--bo-status-cancelled);
+  color: #fff;
+  border-color: var(--bo-status-cancelled);
+}
+
+.skeletonRow {
+  height: 52px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  margin-bottom: 1px;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

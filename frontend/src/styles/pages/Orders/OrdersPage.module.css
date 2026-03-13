@@ -1,0 +1,100 @@
+@import '../../variables.css';
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin: 0;
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray);
+  margin: var(--space-1) 0 0;
+}
+
+.exportGroup {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.exportBtn {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--bo-card-bg);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.exportBtn:hover:not(:disabled) {
+  background: var(--color-black);
+  color: #fff;
+  border-color: var(--color-black);
+}
+
+.exportBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.searchInput,
+.select {
+  height: 38px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  background: var(--bo-card-bg);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput { width: 220px; }
+
+.searchInput:focus,
+.select:focus {
+  border-color: var(--color-red);
+}
+
+.clearBtn {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  background: none;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--bo-status-cancelled);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.clearBtn:hover {
+  background: rgba(239,68,68,0.08);
+}

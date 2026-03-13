@@ -1,0 +1,36 @@
+@import '../variables.css';
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  background: rgba(59,130,246,0.08);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 10px;
+  color: #1d4ed8;
+}
+
+.icon { font-size: 18px; flex-shrink: 0; }
+
+.text {
+  flex: 1;
+  font-size: var(--font-size-sm);
+}
+
+.actionBtn {
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid rgba(59,130,246,0.4);
+  border-radius: 6px;
+  background: none;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-primary);
+  color: #1d4ed8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast);
+}
+
+.actionBtn:hover {
+  background: rgba(59,130,246,0.12);
+}
