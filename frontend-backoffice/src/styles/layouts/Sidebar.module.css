@@ -1,0 +1,124 @@
+@import '../variables.css';
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--bo-sidebar-width);
+  height: 100vh;
+  background: var(--bo-color-sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  z-index: var(--bo-z-sidebar);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Logo ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-5);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.logoText {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-white);
+  letter-spacing: -0.5px;
+}
+
+.logoBadge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--bo-color-sidebar-accent);
+  background: rgba(193,18,31,0.15);
+  padding: 2px var(--space-2);
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Navigation ── */
+.nav {
+  flex: 1;
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-radius: 8px;
+  color: var(--bo-color-sidebar-text);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  transition: background var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--bo-color-sidebar-active);
+}
+
+.navItemActive {
+  background: rgba(193,18,31,0.18);
+  color: var(--bo-color-sidebar-active);
+  border-left: 3px solid var(--bo-color-sidebar-accent);
+  padding-left: calc(var(--space-3) - 3px);
+}
+
+.navIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.navLabel {
+  flex: 1;
+}
+
+/* ── Footer ── */
+.footer {
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.userEmail {
+  font-size: var(--font-size-xs);
+  color: var(--bo-color-sidebar-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logoutBtn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--bo-color-sidebar-text);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 6px;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  text-align: left;
+}
+
+.logoutBtn:hover {
+  background: rgba(193,18,31,0.2);
+  color: var(--bo-color-sidebar-active);
+  border-color: var(--bo-color-sidebar-accent);
+}

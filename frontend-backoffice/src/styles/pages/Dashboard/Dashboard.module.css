@@ -1,0 +1,89 @@
+@import '../../variables.css';
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.periodTabs {
+  display: flex;
+  gap: var(--space-2);
+  background: var(--bo-card-bg);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: var(--bo-card-shadow);
+}
+
+.periodBtn {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-gray);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.periodBtn:hover {
+  background: var(--color-bg-light);
+  color: var(--color-black);
+}
+
+.periodBtnActive {
+  background: var(--color-red);
+  color: #fff;
+  font-weight: var(--font-weight-medium);
+}
+
+.periodBtnActive:hover {
+  background: #a30f1a;
+  color: #fff;
+}
+
+/* ── KPI grid ── */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-5);
+}
+
+/* ── Charts grid ── */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.chartSkeleton {
+  background: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+  height: 320px;
+  animation: shimmer 1.4s infinite;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .kpiGrid    { grid-template-columns: repeat(2, 1fr); }
+  .chartsGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .kpiGrid { grid-template-columns: 1fr; }
+}

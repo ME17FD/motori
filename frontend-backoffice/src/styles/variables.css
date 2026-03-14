@@ -1,0 +1,106 @@
+/* ─────────────────────────────────────────────────────────────
+   Design tokens — import this file first in every component CSS
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Palette */
+  --color-white:        #FFFFFF;
+  --color-black:        #111111;
+  --color-gray:         #5C5C5C;
+  --color-red:          #C1121F;
+  --color-border:       #e0e0e0;
+  --color-bg-light:     #f9f9f9;
+  --color-image-shadow: #D9D9D9;
+
+  /* Typography */
+  --font-primary:       "Assistant", sans-serif;
+  --font-size-xs:       12px;
+  --font-size-sm:       14px;
+  --font-size-md:       16px;
+  --font-size-lg:       20px;
+  --font-size-xl:       28px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium:  500;
+  --font-weight-bold:    700;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* Shadows */
+  --shadow-card:  0px 8px 25px rgba(0, 0, 0, 0.08);
+  --shadow-image: 0px 8px 25px var(--color-image-shadow);
+
+  /* Transitions */
+  --transition-fast:   0.2s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* Dark mode tokens (opt-in via .dark class) */
+.dark {
+  --color-white: #111111;
+  --color-black: #FFFFFF;
+}
+
+/* Base reset */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-primary);
+  background-color: var(--color-white);
+  color: var(--color-black);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Backoffice design tokens — extends global variables.css
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Backoffice sidebar */
+  --bo-sidebar-width:        240px;
+  --bo-sidebar-collapsed:    64px;
+  --bo-topbar-height:        60px;
+
+  /* Backoffice palette */
+  --bo-color-sidebar-bg:     #0f1117;
+  --bo-color-sidebar-text:   #a0a6b8;
+  --bo-color-sidebar-active: #ffffff;
+  --bo-color-sidebar-accent: #c1121f;
+  --bo-color-topbar-bg:      #ffffff;
+  --bo-color-content-bg:     #f4f5f7;
+
+  /* Status colors */
+  --bo-status-pending:       #f59e0b;
+  --bo-status-confirmed:     #3b82f6;
+  --bo-status-processing:    #8b5cf6;
+  --bo-status-shipped:       #06b6d4;
+  --bo-status-delivered:     #10b981;
+  --bo-status-cancelled:     #ef4444;
+
+  /* Card */
+  --bo-card-bg:              #ffffff;
+  --bo-card-radius:          12px;
+  --bo-card-shadow:          0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+
+  /* Z-indexes */
+  --bo-z-sidebar:            100;
+  --bo-z-topbar:             90;
+  --bo-z-modal:              200;
+  --bo-z-toast:              300;
+}
+
+.dark {
+  --bo-color-topbar-bg:      #1a1d27;
+  --bo-color-content-bg:     #0f1117;
+  --bo-card-bg:              #1a1d27;
+  --bo-card-shadow:          0 1px 4px rgba(0,0,0,0.3);
+}
