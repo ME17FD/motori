@@ -1,0 +1,41 @@
+@import '../../variables.css';
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-light);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-4);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.summaryLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  flex-shrink: 0;
+}
+
+.summaryValue {
+  font-size: var(--font-size-sm);
+  color: var(--color-black);
+  text-align: right;
+}
+
+.rejectBtn {
+  background: var(--bo-status-cancelled) !important;
+}
+
+.rejectBtn:hover:not(:disabled) {
+  background: #b91c1c !important;
+}

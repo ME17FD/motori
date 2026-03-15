@@ -1,0 +1,32 @@
+@import '../variables.css';
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.pending   { background: rgba(245,158,11,0.12);  color: #b45309; }
+.validated { background: rgba(16,185,129,0.12);  color: #065f46; }
+.rejected  { background: rgba(239,68,68,0.12);   color: #b91c1c; }
+.refunded  { background: rgba(139,92,246,0.12);  color: #6d28d9; }
+
+.methodBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  background: rgba(92,92,92,0.08);
+  color: var(--color-gray);
+}
+
+.cash     { background: rgba(6,182,212,0.1);  color: #0e7490; }
+.card     { background: rgba(59,130,246,0.1); color: #1d4ed8; }
+.transfer { background: rgba(139,92,246,0.1); color: #6d28d9; }

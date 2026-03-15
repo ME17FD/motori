@@ -1,0 +1,14 @@
+@import '../variables.css';
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.admin { background: rgba(193,18,31,0.1);   color: #9b0e18; }
+.user  { background: rgba(92,92,92,0.08);   color: var(--color-gray); }

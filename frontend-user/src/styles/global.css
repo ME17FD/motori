@@ -1,0 +1,14 @@
+@import "./variables.css";
+
+/* ── Shared section wrapper used across all page sections ── */
+.section-wrapper {
+  padding: var(--space-8) var(--space-5);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 639px) {
+  .section-wrapper {
+    padding: var(--space-6) var(--space-4);
+  }
+}

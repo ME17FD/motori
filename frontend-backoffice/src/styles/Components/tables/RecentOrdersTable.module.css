@@ -1,0 +1,79 @@
+@import "../../variables.css";
+
+.card {
+  background: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+  box-shadow: var(--bo-card-shadow);
+  padding: var(--space-5) var(--space-6);
+}
+
+.title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin: 0 0 var(--space-5);
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table th {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table td {
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--color-bg-light);
+  color: var(--color-black);
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: var(--color-bg-light);
+}
+
+.orderId {
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray);
+}
+
+.muted {
+  color: var(--color-gray);
+}
+
+.amount {
+  font-weight: var(--font-weight-bold);
+}
+
+.skeletonRow {
+  height: 44px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  margin-bottom: var(--space-2);
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
