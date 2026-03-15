@@ -37,3 +37,16 @@ export interface UpdateUserRequest {
   enabled?: boolean;
   roles?: UserRole[];
 }
+
+/**
+ * Request body for creating or updating a user.
+ */
+export interface UserPayload {
+  email?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  roles?: UserRole[];
+  enabled?: boolean;
+}

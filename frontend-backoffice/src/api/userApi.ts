@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiClient";
-import type { User, UserCreatePayload, UserUpdatePayload } from "../types/user";
+import type { User, UserPayload } from "../types/user";
 
 const BASE = "/api/users";
 
@@ -10,13 +10,13 @@ export const userApi = {
   getById: (id: number): Promise<User> =>
     apiFetch<User>(`${BASE}/${id}`),
 
-  create: (payload: UserCreatePayload): Promise<User> =>
+  create: (payload: UserPayload): Promise<User> =>
     apiFetch<User>(BASE, {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
-  update: (id: number, payload: UserUpdatePayload): Promise<User> =>
+  update: (id: number, payload: UserPayload): Promise<User> =>
     apiFetch<User>(`${BASE}/${id}`, {
       method: "PUT",
       body: JSON.stringify(payload),

@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
 import Footer         from "../../components/Footer/Footer";
@@ -28,7 +27,7 @@ const CATEGORIES: NavCategory[] = [
 
 const LoginPage: React.FC = () => {
 
- const { email, setEmail, password, setPassword, errorMsg, loading, handleLogin } = useLogin();
+ const { email, setEmail, password, setPassword, errorMsg, handleLogin } = useLogin();
  
   return (
     <div className="page">

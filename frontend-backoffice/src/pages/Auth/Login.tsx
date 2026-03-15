@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../../hooks/useAuth';
 import type { LoginRequest } from '../../types/auth';
 import styles from '../../styles/pages/Login.module.css';
+import type { AxiosError } from 'axios';
 
 /**
  * Admin login page.
@@ -20,8 +21,7 @@ export default function LoginPage() {
     loginMutation.mutate(data);
   };
 
-  const apiError = loginMutation.error?.response?.data?.message;
-
+const apiError = (loginMutation.error as AxiosError<{ message: string }>)?.response?.data?.message;
   return (
     <div className={styles.page}>
       <div className={styles.card}>
