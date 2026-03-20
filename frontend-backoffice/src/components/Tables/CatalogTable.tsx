@@ -1,5 +1,16 @@
+/**
+ * Generic Catalog Table Component
+ * Reusable data table for displaying and managing catalog entities.
+ * Supports templated columns with custom rendering, loading states,
+ * and edit/delete action handlers.
+ */
+
 import styles from '../../styles/Components/tables/CatalogTable.module.css';
 
+/**
+ * Column definition for CatalogTable.
+ * @template T - Row data type (must have id field for React key)
+ */
 export interface CatalogColumn<T> {
   key: string;
   header: string;

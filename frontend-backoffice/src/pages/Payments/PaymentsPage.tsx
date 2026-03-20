@@ -1,3 +1,10 @@
+/**
+ * Payments Management Page
+ * Admin page for cash payment validation and processing.
+ * Displays pending and historical payments with status filtering.
+ * Features include validate/reject modal, refund processing, and audit trail.
+ */
+
 import { useState } from 'react';
 import { usePayments, usePaymentMutations } from '../../hooks/usePayments';
 import CatalogTable from '../../components/Tables/CatalogTable';

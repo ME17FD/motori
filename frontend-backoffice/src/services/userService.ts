@@ -1,3 +1,9 @@
+/**
+ * User Service
+ * API client for admin user management.
+ * Handles user CRUD, role/permission updates, and user statistics.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type { User, UserFilters, UpdateUserRequest } from '../types/user';
 import type { PageResponse } from '../types/api';

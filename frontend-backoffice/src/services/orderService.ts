@@ -1,3 +1,9 @@
+/**
+ * Order Service
+ * API client for order CRUD operations, search, and status updates.
+ * Endpoints hit the /api/orders gateway endpoint.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type { Order, OrderStatus, UpdateTrackingRequest } from '../types/order';
 import type { PageResponse, PageableParams } from '../types/api';

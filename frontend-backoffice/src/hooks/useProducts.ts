@@ -1,3 +1,10 @@
+/**
+ * Products Hook
+ * Provides TanStack Query hooks for product queries and mutations.
+ * Includes hooks for product list, single product detail, and CRUD operations.
+ * Image upload mutation is included for product creation/update workflows.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchProducts, fetchProduct,
@@ -8,6 +15,11 @@ import type { ProductFilters } from '../services/productService';
 import { QUERY_KEYS } from '../constants/queryKeys';
 import type { CreateProductRequest, UpdateProductRequest } from '../types/product';
 
+/**
+ * Fetch products with pagination, filtering, and sorting.
+ * @param params - Product filters and pagination
+ * @returns Query result with products array and metadata
+ */
 export function useProducts(params: ProductFilters = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.products(params),

@@ -1,3 +1,9 @@
+/**
+ * Users Hook
+ * Provides TanStack Query hooks for user management queries and mutations.
+ * Handles paginated user list, single user detail, user statistics, and role updates.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchUsers,

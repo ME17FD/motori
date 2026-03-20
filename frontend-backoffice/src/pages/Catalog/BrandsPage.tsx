@@ -1,3 +1,10 @@
+/**
+ * Brands Management Page
+ * Admin page for CRUD operations on vehicle/product brands.
+ * Displays paginated list with create, read, update, delete actions.
+ * Features modal dialogs for edit/create and confirmation for delete.
+ */
+
 import { useState } from 'react';
 import { useBrands, useBrandMutations } from '../../hooks/useBrands';
 import CatalogTable from '../../components/Tables/CatalogTable';

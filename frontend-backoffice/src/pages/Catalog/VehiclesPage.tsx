@@ -1,3 +1,10 @@
+/**
+ * Vehicles Catalog Management Page
+ * Admin page for CRUD operations on vehicle inventory.
+ * Displays vehicle makes, models, engines, types with pagination.
+ * Features modal dialogs for edit/create, and confirmation for delete.
+ */
+
 import { useState } from 'react';
 import { useVehicles, useVehicleMutations } from '../../hooks/useVehicles';
 import CatalogTable from '../../components/Tables/CatalogTable';

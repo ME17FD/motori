@@ -1,9 +1,18 @@
+/**
+ * Category Service
+ * API client for category CRUD operations and queries.
+ * Endpoints hit the /api/categories gateway endpoint.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type { Category, CreateCategoryRequest, UpdateCategoryRequest } from '../types/category';
 import type { PageResponse, PageableParams } from '../types/api';
 
 const BASE = '/api/categories';
 
+/**
+ * GET /api/categories - Fetch paginated categories list.
+ */
 export async function fetchCategories(params: PageableParams = {}): Promise<PageResponse<Category>> {
   const { data } = await axiosInstance.get<PageResponse<Category>>(BASE, { params });
   return data;

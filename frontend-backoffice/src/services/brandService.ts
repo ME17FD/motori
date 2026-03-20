@@ -1,3 +1,9 @@
+/**
+ * Brand Service
+ * API client for brand CRUD operations and queries.
+ * Endpoints hit the /api/brands gateway endpoint.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type { Brand, CreateBrandRequest, UpdateBrandRequest } from '../types/brand';
 import type { PageResponse, PageableParams } from '../types/api';

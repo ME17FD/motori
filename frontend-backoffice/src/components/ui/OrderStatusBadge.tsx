@@ -1,3 +1,9 @@
+/**
+ * Order Status Badge Component
+ * Displays order status with semantic colors (pending, confirmed, shipped, etc.).
+ * Used throughout orders and payment tables for visual status indication.
+ */
+
 import type { OrderStatus } from '../../types/order';
 import styles from '../../styles/ui/OrderStatusBadge.module.css';
 

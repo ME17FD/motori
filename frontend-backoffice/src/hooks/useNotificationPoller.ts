@@ -1,3 +1,10 @@
+/**
+ * Background Notification Poller Hook
+ * Polls API endpoints at regular intervals (90s) to surface alerts.
+ * Generates notifications for: pending payments, low stock items, pending orders.
+ * Mount once at AdminLayout level to run continuously during admin session.
+ */
+
 import { useEffect, useRef } from 'react';
 import { useNotificationStore, NOTIFICATION_ROUTES } from '../store/notificationStore';
 import { fetchPendingPayments } from '../services/paymentService';

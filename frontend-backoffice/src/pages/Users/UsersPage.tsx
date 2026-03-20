@@ -1,3 +1,10 @@
+/**
+ * Users Management Page
+ * Admin page for user account and role management.
+ * Supports search by email/name, filter by role (Admin/User) and enabled status.
+ * Opens detail modal with order history, spending stats, and account actions.
+ */
+
 import { useState } from 'react';
 import { useUsers } from '../../hooks/useUsers';
 import CatalogTable from '../../components/Tables/CatalogTable';

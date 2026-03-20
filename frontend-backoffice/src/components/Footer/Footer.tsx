@@ -1,7 +1,17 @@
+/**
+ * Application Footer Component
+ * Displays footer with product links, useful links, and copyright information.
+ * Layout: Two-column structure (Produits, Liens Utiles)
+ * Links are defined in constants/index.ts and dynamically rendered.
+ */
+
 import React from "react";
 import { FOOTER_LINKS } from "../../constants/index";
 import "../../styles/Footer/Footer.css";
 
+/**
+ * Footer component rendered on all pages.
+ */
 const Footer: React.FC = () => {
   return (
     <footer className="footer">

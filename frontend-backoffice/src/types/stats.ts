@@ -1,3 +1,9 @@
+/**
+ * Statistics & Dashboard Types
+ * Data models for KPIs, dashboard metrics, and report generation.
+ * Includes today's summary, period dashboards, and top products ranking.
+ */
+
 export interface TodaySummary {
   ordersToday: number;
   revenueToday: number;

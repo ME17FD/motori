@@ -1,3 +1,10 @@
+/**
+ * Products (Parts/Equipment) Management Page
+ * Unified page for managing motor parts and equipment.
+ * Supports type filtering (PART vs EQUIPMENT), search, pagination, CRUD operations.
+ * Handles image uploads alongside product creation/editing.
+ */
+
 import { useState } from 'react';
 import { useProducts, useProductMutations } from '../../hooks/useProducts';
 import { uploadProductImages } from '../../services/productService';

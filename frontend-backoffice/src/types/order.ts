@@ -1,4 +1,14 @@
-export type OrderStatus =
+/**
+ * Order Types & Interfaces
+ * Defines the complete order data model including status lifecycle,
+ * line items, and operations (tracking updates).
+ */
+
+/**
+ * Order lifecycle status enumeration.
+ * PENDING -> CONFIRMED -> PROCESSING -> SHIPPED -> DELIVERED
+ * Can transition to CANCELLED from any state.
+ */
   | 'PENDING'
   | 'CONFIRMED'
   | 'PROCESSING'

@@ -1,3 +1,9 @@
+/**
+ * Brands Hook
+ * Provides TanStack Query hooks for brand queries and mutations.
+ * Handles paginated brand list, full brand list (for selects), single brand, and CRUD.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchBrands, fetchAllBrands, fetchBrand,

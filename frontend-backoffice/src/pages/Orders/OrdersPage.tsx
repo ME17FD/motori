@@ -1,3 +1,10 @@
+/**
+ * Orders Management Page
+ * Admin page for full order lifecycle management.
+ * Features include: search by tracking number, filter by status/date range,
+ * detail view, status updates, tracking updates, and export (CSV/JSON).
+ */
+
 import { useState } from 'react';
 import { useOrders } from '../../hooks/useOrders';
 import { exportOrders } from '../../services/orderService';

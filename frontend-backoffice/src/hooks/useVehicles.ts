@@ -1,3 +1,9 @@
+/**
+ * Vehicles Hook
+ * Provides TanStack Query hooks for vehicle catalog queries and mutations.
+ * Handles paginated vehicle list, single vehicle detail, and CRUD operations.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchVehicles, fetchVehicle,
@@ -7,6 +13,11 @@ import { QUERY_KEYS } from '../constants/queryKeys';
 import type { PageableParams } from '../types/api';
 import type { CreateVehicleRequest, UpdateVehicleRequest } from '../types/vehicle';
 
+/**
+ * Fetch vehicles with pagination and filtering.
+ * @param params - Pagination and filter parameters
+ * @returns Query result with vehicles array and metadata
+ */
 export function useVehicles(params: PageableParams = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.vehicles(params),

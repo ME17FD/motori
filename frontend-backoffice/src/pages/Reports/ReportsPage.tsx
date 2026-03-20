@@ -1,3 +1,11 @@
+/**
+ * Reports / Analytics Page
+ * Comprehensive reporting dashboard with period selection.
+ * Features: multiple export formats (CSV, Excel, JSON, PDF),
+ * charts (sales, top products, orders by status),
+ * and date range customization for analysis.
+ */
+
 import { useState, useId } from 'react';
 import { useReport } from '../../hooks/useReport';
 import KpiCard from '../../components/ui/KpiCard';

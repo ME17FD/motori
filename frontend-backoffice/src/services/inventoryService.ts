@@ -1,3 +1,9 @@
+/**
+ * Inventory Service
+ * API client for stock management, tracking, and low-stock monitoring.
+ * Endpoints hit the /api/inventory gateway endpoint.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type { Inventory, UpdateInventoryRequest, InventoryFilters } from '../types/inventory';
 import type { PageResponse } from '../types/api';

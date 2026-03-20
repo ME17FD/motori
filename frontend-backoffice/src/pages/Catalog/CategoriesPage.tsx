@@ -1,3 +1,10 @@
+/**
+ * Categories Management Page
+ * Admin page for CRUD operations on product categories.
+ * Displays paginated table with create, read, update, delete actions.
+ * Features modal dialogs for edit/create, and confirmation for delete.
+ */
+
 import { useState } from 'react';
 import { useCategories, useCategoryMutations } from '../../hooks/useCategories';
 import CatalogTable from '../../components/Tables/CatalogTable';

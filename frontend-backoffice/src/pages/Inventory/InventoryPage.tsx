@@ -1,3 +1,10 @@
+/**
+ * Inventory / Stock Management Page
+ * Admin page for tracking product stock levels.
+ * Features: filter by status (Available, Out of Stock, Discontinued),
+ * search, low-stock highlighting, and quantity adjustments.
+ */
+
 import { useState } from 'react';
 import { useInventory, useInventoryMutations } from '../../hooks/useInventory';
 import CatalogTable from '../../components/Tables/CatalogTable';

@@ -1,3 +1,9 @@
+/**
+ * Report Generation Hook
+ * Assembles comprehensive report data from multiple statistics endpoints.
+ * Fetches today's summary, period dashboards, and top products in parallel.
+ */
+
 import { useQuery } from '@tanstack/react-query';
 import { fetchTodaySummary, fetchDashboard, fetchTopProducts } from '../services/statsService';
 import type { ReportParams, ReportData } from '../types/report';

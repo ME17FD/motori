@@ -1,3 +1,10 @@
+/**
+ * Categories Hook
+ * Provides TanStack Query hooks for category queries and mutations.
+ * Exports individual hooks for paginated list, all categories, single category,
+ * and CRUD mutations with automatic cache invalidation.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchCategories, fetchAllCategories, fetchCategory,
@@ -7,6 +14,11 @@ import { QUERY_KEYS } from '../constants/queryKeys';
 import type { PageableParams } from '../types/api';
 import type { CreateCategoryRequest, UpdateCategoryRequest } from '../types/category';
 
+/**
+ * Fetch categories with pagination and filtering.
+ * @param params - Pagination and filter parameters
+ * @returns Query result with categories array
+ */
 export function useCategories(params: PageableParams = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.categories(params),

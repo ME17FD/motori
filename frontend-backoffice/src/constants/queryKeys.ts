@@ -1,3 +1,12 @@
+/**
+ * TanStack Query Key Factory
+ * Centralized management of React Query cache keys.
+ * Each queryFn usage should map to exactly one key creator function.
+ * Format: ['domain', 'entity', ...params]
+ * Used to enable automatic cache invalidation on mutations.
+ * Reference: https://tanstack.com/query/latest/docs/react/query-keys
+ */
+
 export const QUERY_KEYS = {
   me: () => ['me'] as const,
 

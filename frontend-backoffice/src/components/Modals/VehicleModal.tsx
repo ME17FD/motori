@@ -1,3 +1,10 @@
+/**
+ * Vehicle Create/Edit Modal Dialog
+ * Form modal for adding or editing vehicle catalog entries.
+ * Validates required fields (make, model, year) and manages form state.
+ * Used in VehiclesPage for CRUD operations.
+ */
+
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import type { Vehicle, CreateVehicleRequest } from '../../types/vehicle';

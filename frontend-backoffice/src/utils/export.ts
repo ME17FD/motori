@@ -1,4 +1,10 @@
 /**
+ * Export/Download Utilities
+ * Provides helper functions for exporting application data to various formats.
+ * Supports CSV, JSON, Excel (TSV), and PDF exports with automatic file downloads.
+ */
+
+/**
  * Triggers a browser file download from a Blob.
  */
 export function downloadBlob(blob: Blob, filename: string): void {

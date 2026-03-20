@@ -1,3 +1,14 @@
+/**
+ * Main Admin Dashboard Page
+ * Comprehensive overview of key business metrics and alerts.
+ * Features:
+ * - KPI cards (orders, revenue, pending, shipping)
+ * - Sales trend chart and top products bar chart
+ * - Recent orders table
+ * - Low stock and pending payment alerts
+ * - Period selector (7/30/90 days)
+ */
+
 import { useState } from 'react';
 import { useTodaySummary, useDashboard, useTopProducts } from '../../hooks/useStats';
 import { useRecentOrders } from '../../hooks/useOrders';

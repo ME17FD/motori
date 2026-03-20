@@ -1,3 +1,9 @@
+/**
+ * Statistics Service
+ * API client for dashboard analytics and KPIs.
+ * Provides today's summary, full period dashboards, and top products ranking.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type {
   TodaySummary,
