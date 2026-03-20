@@ -6,7 +6,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import styles from '../../styles/components/Charts/Chart.module.css';
+import styles from '../../styles/Components/charts/Chart.module.css';
 
 interface OrdersByStatusPieChartProps {
   data: Record<string, number>;

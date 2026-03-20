@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate} from 'react-router-dom';
 import { ROUTES } from '../../constants/routes';
 import { useAuthStore } from '../../store/authStore';
 import styles from '../../styles/layouts/Sidebar.module.css';
@@ -50,7 +50,6 @@ const GROUPS = groupItems(NAV_ITEMS);
  */
 export default function Sidebar() {
   const navigate  = useNavigate();
-  const location  = useLocation();
   const { clearAuth, user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
 

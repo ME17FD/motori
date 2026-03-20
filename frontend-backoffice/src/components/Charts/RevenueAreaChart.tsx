@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import type { DashboardStats } from '../../types/stats';
 import { formatCurrency } from '../../utils/formatters';
-import styles from '../../styles/components/Charts/Chart.module.css';
+import styles from '../../styles/Components/charts/Chart.module.css';
 
 interface RevenueAreaChartProps {
   stats: DashboardStats;
