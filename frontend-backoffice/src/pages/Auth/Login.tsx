@@ -1,12 +1,12 @@
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../hooks/useAuth';
-import type { LoginRequest } from '../../types/auth';
+import type { LoginRequest } from '../../hooks/useAuth';
 import styles from '../../styles/pages/Login.module.css';
-import type { AxiosError } from 'axios';
 
 /**
  * Admin login page.
- * On success, useAuth redirects to /dashboard automatically.
+ * Authenticates directly against Keycloak using Resource Owner Password flow.
+ * No gateway involved — Keycloak URL is set via VITE_KEYCLOAK_URL env variable.
  */
 export default function LoginPage() {
   const { loginMutation } = useAuth();
@@ -14,14 +14,18 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginRequest>();
+    formState: { errors },
+  } = useForm<LoginRequest>({
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
 
   const onSubmit = (data: LoginRequest) => {
     loginMutation.mutate(data);
   };
 
-const apiError = (loginMutation.error as AxiosError<{ message: string }>)?.response?.data?.message;
   return (
     <div className={styles.page}>
       <div className={styles.card}>
@@ -31,31 +35,40 @@ const apiError = (loginMutation.error as AxiosError<{ message: string }>)?.respo
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
-          {/* Email */}
+          {/* Username */}
           <div className={styles.field}>
-            <label htmlFor="email" className={styles.label}>Email</label>
+            <label htmlFor="username" className={styles.label}>
+              Username
+            </label>
             <input
-              id="email"
-              type="email"
-              className={[styles.input, errors.email ? styles.inputError : ''].join(' ')}
-              placeholder="admin@motori.com"
-              {...register('email', {
-                required: 'Email is required',
-                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Invalid email address' },
-              })}
+              id="username"
+              type="text"
+              autoComplete="username"
+              className={[
+                styles.input,
+                errors.username ? styles.inputError : '',
+              ].join(' ')}
+              placeholder="backoffice-admin"
+              {...register('username', { required: 'Username is required' })}
             />
-            {errors.email && (
-              <span className={styles.errorMsg}>{errors.email.message}</span>
+            {errors.username && (
+              <span className={styles.errorMsg}>{errors.username.message}</span>
             )}
           </div>
 
           {/* Password */}
           <div className={styles.field}>
-            <label htmlFor="password" className={styles.label}>Password</label>
+            <label htmlFor="password" className={styles.label}>
+              Password
+            </label>
             <input
               id="password"
               type="password"
-              className={[styles.input, errors.password ? styles.inputError : ''].join(' ')}
+              autoComplete="current-password"
+              className={[
+                styles.input,
+                errors.password ? styles.inputError : '',
+              ].join(' ')}
               placeholder="••••••••"
               {...register('password', { required: 'Password is required' })}
             />
@@ -65,16 +78,32 @@ const apiError = (loginMutation.error as AxiosError<{ message: string }>)?.respo
           </div>
 
           {/* API error */}
-          {apiError && (
+          {loginMutation.isError && (
             <div className={styles.apiError} role="alert">
-              {apiError}
+              {loginMutation.error?.message ?? 'Login failed. Check your credentials.'}
+            </div>
+          )}
+
+          {/* Debug info in development */}
+          {import.meta.env.DEV && (
+            <div style={{
+              fontSize: 11,
+              color: '#888',
+              padding: '8px',
+              background: '#f4f5f7',
+              borderRadius: 6,
+              fontFamily: 'monospace',
+            }}>
+              Keycloak: {import.meta.env.VITE_KEYCLOAK_URL}/realms/{import.meta.env.VITE_KEYCLOAK_REALM}
+              <br />
+              Client: {import.meta.env.VITE_KEYCLOAK_CLIENT_ID}
             </div>
           )}
 
           <button
             type="submit"
             className={styles.submitBtn}
-            disabled={isSubmitting || loginMutation.isPending}
+            disabled={loginMutation.isPending}
           >
             {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
           </button>

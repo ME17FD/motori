@@ -1,39 +1,33 @@
 /**
- * Credentials sent to the login endpoint via the API Gateway.
+ * Login credentials sent to Keycloak.
+ * Uses username (not email) for Resource Owner Password flow.
  */
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
 /**
- * Successful authentication response from the gateway.
- * The token is a signed JWT containing the user's roles.
- */
-export interface AuthResponse {
-  token: string;
-  refreshToken?: string;
-  expiresIn?: number;   // seconds
-}
-
-/**
- * Decoded JWT payload (relevant fields only).
- * Roles are stored as Spring Security GrantedAuthority strings.
+ * Keycloak JWT payload structure.
+ * Roles are under realm_access.roles as "ADMIN", "SUPERADMIN", "USER".
  */
 export interface JwtPayload {
-  sub: string;          // email or username
-  roles: string[];      // e.g. ["ROLE_ADMIN", "ROLE_USER"]
+  sub: string;
+  email?: string;
+  preferred_username: string;
+  realm_access: {
+    roles: string[];
+  };
+  resource_access?: Record<string, { roles: string[] }>;
   iat: number;
   exp: number;
 }
 
-/**
- * The authenticated user stored in Zustand after login.
- */
 export interface AuthUser {
-  email: string;
+  username: string;
+  email?: string;
   roles: string[];
   token: string;
   refreshToken?: string;
-  expiresAt: number;    // Unix timestamp (ms)
+  expiresAt: number;
 }

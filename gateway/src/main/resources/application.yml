@@ -33,6 +33,44 @@ spring:
                 allow-credentials: true
                 max-age: 3600
           routes:
+            # Backoffice service routes
+            - id: backoffice-orders-route
+              uri: lb://backoffice-service
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - StripPrefix=0
+
+            - id: backoffice-statistics-route
+              uri: lb://backoffice-service
+              predicates:
+                - Path=/api/statistics/**
+              filters:
+                - StripPrefix=0
+            # Backoffice service — orders
+            - id: backoffice-orders-route
+              uri: lb://backoffice-service
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - StripPrefix=0
+
+            # Backoffice service — statistics
+            - id: backoffice-statistics-route
+              uri: lb://backoffice-service
+              predicates:
+                - Path=/api/statistics/**
+              filters:
+                - StripPrefix=0
+                
+            # Payment service route
+            - id: payment-service-route
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - StripPrefix=0
+                
             # Route pour Swagger
             - id: product-service-swagger
               uri: lb://product-service
@@ -129,7 +167,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8082/realms/motori
+          issuer-uri: http://motori-keycloak:8080/realms/motori_realm
 
 server:
   port: 8080
