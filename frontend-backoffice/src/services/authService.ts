@@ -2,8 +2,9 @@ import axios from 'axios';
 import { TOKEN_KEY } from '../api/axiosInstance';
 
 /**
- * Keycloak token endpoint — called directly from the frontend.
- * The gateway is NOT used for authentication, only for API calls.
+ * The frontend calls Keycloak on localhost:8082 (Docker mapped port).
+ * After this change, Keycloak will sign tokens with issuer = motori-keycloak:8080
+ * which matches what the Spring services expect.
  */
 const KEYCLOAK_URL   = import.meta.env.VITE_KEYCLOAK_URL   ?? 'http://localhost:8082';
 const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? 'motori_realm';
@@ -20,7 +21,7 @@ export interface KeycloakTokenResponse {
 
 /**
  * Authenticates via Keycloak Resource Owner Password flow.
- * Sends credentials directly to Keycloak — not through the gateway.
+ * Keycloak is accessible on localhost:8082 (mapped from motori-keycloak:8080).
  */
 export async function login(credentials: {
   username: string;
@@ -56,7 +57,6 @@ export function getStoredToken(): string | null {
 
 /**
  * Decodes a JWT payload without verifying the signature.
- * Verification is handled server-side by each microservice.
  */
 export function decodeToken<T>(token: string): T | null {
   try {

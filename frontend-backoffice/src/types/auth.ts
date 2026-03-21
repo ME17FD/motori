@@ -1,5 +1,5 @@
 /**
- * Login credentials sent to Keycloak.
+ * Login credentials sent directly to Keycloak.
  * Uses username (not email) for Resource Owner Password flow.
  */
 export interface LoginRequest {
@@ -7,14 +7,23 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface AuthResponse {
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
+}
+
 /**
- * Keycloak JWT payload structure.
- * Roles are under realm_access.roles as "ADMIN", "SUPERADMIN", "USER".
+ * Decoded Keycloak JWT payload.
+ * Roles are stored under realm_access.roles.
+ * Values in motori_realm: "ADMIN", "USER", "SUPERADMIN" — no "ROLE_" prefix.
  */
 export interface JwtPayload {
   sub: string;
   email?: string;
   preferred_username: string;
+  given_name?: string;
+  family_name?: string;
   realm_access: {
     roles: string[];
   };
@@ -23,11 +32,14 @@ export interface JwtPayload {
   exp: number;
 }
 
+/**
+ * Authenticated user stored in Zustand after successful login.
+ */
 export interface AuthUser {
   username: string;
   email?: string;
   roles: string[];
   token: string;
   refreshToken?: string;
-  expiresAt: number;
+  expiresAt: number;    // Unix timestamp in ms
 }

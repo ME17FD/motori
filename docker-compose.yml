@@ -56,12 +56,14 @@ services:
     depends_on:
       - discovery
       - keycloak
+    extra_hosts:
+      - "localhost:host-gateway"
     environment:
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_gateway
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
       KEYCLOAK_SECRET_KEY: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
     networks:
       - motori-network
@@ -78,6 +80,8 @@ services:
         condition: service_started
       keycloak:
         condition: service_healthy
+    extra_hosts:
+      - "localhost:host-gateway"
     environment:
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_users
       DB_USERNAME: ${DB_USERNAME}
@@ -89,8 +93,8 @@ services:
       KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID}
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
       KEYCLOAK_CREDENTIALS_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/motori_realm
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/motori_realm/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
       GATEWAY_SERVICE_URL: ${GATEWAY_URL}
       SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
@@ -108,12 +112,15 @@ services:
       - discovery
       - redis
       - minio
+    extra_hosts:
+      - "localhost:host-gateway"
     environment:
       DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_products
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
       MINIO_URL: ${MINIO_URL}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}

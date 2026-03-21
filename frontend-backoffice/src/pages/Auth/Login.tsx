@@ -12,9 +12,9 @@ export default function LoginPage() {
   const { loginMutation } = useAuth();
 
   const {
-    register,
+    register,     
     handleSubmit,
-    formState: { errors },
+    formState: { errors },    
   } = useForm<LoginRequest>({
     defaultValues: {
       username: '',
@@ -83,8 +83,8 @@ export default function LoginPage() {
               {loginMutation.error?.message ?? 'Login failed. Check your credentials.'}
             </div>
           )}
-
-          {/* Debug info in development */}
+          
+          {/* Debug info in development 
           {import.meta.env.DEV && (
             <div style={{
               fontSize: 11,
@@ -99,7 +99,7 @@ export default function LoginPage() {
               Client: {import.meta.env.VITE_KEYCLOAK_CLIENT_ID}
             </div>
           )}
-
+          */}
           <button
             type="submit"
             className={styles.submitBtn}

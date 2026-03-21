@@ -1,147 +1,80 @@
-/**
- * Order Service
- * API client for order CRUD operations, search, and status updates.
- * Endpoints hit the /api/orders gateway endpoint.
- */
-
 import axiosInstance from '../api/axiosInstance';
 import type { Order, OrderStatus, UpdateTrackingRequest } from '../types/order';
-import type { PageResponse, PageableParams } from '../types/api';
+import type { PagedModel } from '../types/api';
 
-export interface OrderFilters extends PageableParams {
-  trackingNumber?: string;
-  status?: OrderStatus;
-  userId?: number;
-  startDate?: string;
-  endDate?: string;
+/**
+ * Orders are managed by product-service.
+ * Gateway route: /api/products/orders/** → /api/orders/** on product-service.
+ */
+
+export interface OrderFilters {
+  status?: string;
+  completed?: boolean;
+  userId?: string;
+  page?: number;
+  size?: number;
+  [key: string]: unknown;
 }
 
 /**
- * GET /api/orders — paginated list.
+ * GET /api/products/orders — paginated list.
+ * Supports optional status and completed filters.
  */
-export async function fetchOrders(params: OrderFilters = {}): Promise<PageResponse<Order>> {
-  const { data } = await axiosInstance.get<PageResponse<Order>>('/api/orders', {
-    params: {
-      page: params.page,
-      size: params.size,
-      sort: params.sort,
-    },
-  });
-  return data;
-}
-
-/**
- * GET /api/orders/search — filtered search.
- */
-export async function searchOrders(params: OrderFilters = {}): Promise<PageResponse<Order>> {
-  const { data } = await axiosInstance.get<PageResponse<Order>>('/api/orders/search', {
-    params: {
-      arg0: params.trackingNumber,
-      arg1: params.status,
-      arg2: params.userId,
-      arg3: params.startDate,
-      arg4: params.endDate,
-      page: params.page,
-      size: params.size,
-      sort: params.sort,
-    },
-  });
-  return data;
-}
-
-/**
- * GET /api/orders/:id
- */
-export async function fetchOrder(id: string): Promise<Order> {
-  const { data } = await axiosInstance.get<Order>(`/api/orders/${id}`);
-  return data;
-}
-
-/**
- * GET /api/orders/recent
- */
-export async function fetchRecentOrders(limit = 10): Promise<Order[]> {
-  const { data } = await axiosInstance.get<Order[]>('/api/orders/recent', {
-    params: { arg0: limit },
-  });
-  return data;
-}
-
-/**
- * GET /api/orders/status/:status
- */
-export async function fetchOrdersByStatus(
-  status: OrderStatus,
-  params: PageableParams = {},
-): Promise<PageResponse<Order>> {
-  const { data } = await axiosInstance.get<PageResponse<Order>>(
-    `/api/orders/status/${status}`,
+export async function fetchOrders(
+  params: OrderFilters = {},
+): Promise<PagedModel<Order>> {
+  const { data } = await axiosInstance.get<PagedModel<Order>>(
+    '/api/products/orders',
     { params },
   );
   return data;
 }
 
 /**
- * GET /api/orders/user/:userId
+ * GET /api/products/orders/:id
  */
-export async function fetchOrdersByUser(
-  userId: number,
-  params: PageableParams = {},
-): Promise<PageResponse<Order>> {
-  const { data } = await axiosInstance.get<PageResponse<Order>>(
-    `/api/orders/user/${userId}`,
-    { params: { arg1: params } },
-  );
+export async function fetchOrder(id: string): Promise<Order> {
+  const { data } = await axiosInstance.get<Order>(`/api/products/orders/${id}`);
   return data;
 }
 
 /**
- * PATCH /api/orders/:id/status
+ * GET /api/products/orders/user/:userId
  */
+export async function fetchRecentOrders(limit = 10): Promise<Order[]> {
+  const { data } = await axiosInstance.get<PagedModel<Order>>(
+    '/api/products/orders',
+    { params: { size: limit, page: 0 } },
+  );
+  return data.content;
+}
+
+/**
+ * DELETE /api/products/orders/:id
+ */
+export async function deleteOrder(id: string): Promise<void> {
+  await axiosInstance.delete(`/api/products/orders/${id}`);
+}
+
 export async function updateOrderStatus(
   id: string,
   status: OrderStatus,
 ): Promise<Order> {
   const { data } = await axiosInstance.patch<Order>(
-    `/api/orders/${id}/status`,
+    `/api/products/orders/${id}/status`,
     null,
-    { params: { arg1: status } },
+    { params: { status } },
   );
   return data;
 }
 
-/**
- * PATCH /api/orders/:id/tracking
- */
 export async function updateOrderTracking(
   id: string,
   payload: UpdateTrackingRequest,
 ): Promise<Order> {
   const { data } = await axiosInstance.patch<Order>(
-    `/api/orders/${id}/tracking`,
+    `/api/products/orders/${id}/tracking`,
     payload,
   );
-  return data;
-}
-
-/**
- * GET /api/orders/export
- * Returns raw blob for CSV or JSON download.
- */
-export async function exportOrders(params: {
-  format?: 'csv' | 'json';
-  status?: OrderStatus;
-  startDate?: string;
-  endDate?: string;
-}): Promise<Blob> {
-  const { data } = await axiosInstance.get('/api/orders/export', {
-    params: {
-      arg0: params.format ?? 'csv',
-      arg1: params.status,
-      arg2: params.startDate,
-      arg3: params.endDate,
-    },
-    responseType: 'blob',
-  });
   return data;
 }

@@ -1,5 +1,5 @@
 /**
- * Internal notification category.
+ * Internal notification category — used by the notification store.
  */
 export type NotificationType =
   | 'ORDER_PENDING'
@@ -9,14 +9,15 @@ export type NotificationType =
   | 'NEW_USER';
 
 /**
- * Internal backoffice notification.
+ * Internal backoffice notification — stored locally in Zustand.
+ * Not persisted to any backend — client-side only.
  */
 export interface AppNotification {
-  id: string;               // local UUID
+  id: string;
   type: NotificationType;
   title: string;
   message: string;
   read: boolean;
-  createdAt: string;        // ISO datetime
-  linkTo?: string;          // route to navigate on click
+  createdAt: string;
+  linkTo?: string;
 }

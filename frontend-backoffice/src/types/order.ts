@@ -1,14 +1,7 @@
 /**
- * Order Types & Interfaces
- * Defines the complete order data model including status lifecycle,
- * line items, and operations (tracking updates).
+ * Order status values from product-service.
  */
-
-/**
- * Order lifecycle status enumeration.
- * PENDING -> CONFIRMED -> PROCESSING -> SHIPPED -> DELIVERED
- * Can transition to CANCELLED from any state.
- */
+export type OrderStatus =
   | 'PENDING'
   | 'CONFIRMED'
   | 'PROCESSING'
@@ -16,23 +9,33 @@
   | 'DELIVERED'
   | 'CANCELLED';
 
+/**
+ * Order item — maps to OrderItemResponse from product-service.
+ * Each item references an inventory entry with its part or equipment.
+ */
 export interface OrderItem {
-  productId: number;
-  quantity: number;
-  unitPrice: number;
-  productName?: string;
+  id: string;
+  inventory: {
+    id: string;
+    part?: { id: string; name: string; price: number; imageUrl?: string };
+    equipement?: { id: string; name: string; price: number; imageUrl?: string };
+    paymentStatus?: string;
+  };
+  price: number;
 }
 
+/**
+ * Order — maps to OrderResponse from product-service.
+ */
 export interface Order {
-  id: string;        // UUID — string, not number
-  userId: number;
-  status: OrderStatus;
-  totalAmount: number;
-  shippingAddress?: string;
-  trackingNumber?: string;
+  id: string;
+  userId: string;
+  totalPrice: number;
+  completed: boolean;
+  status: string;
+  items: OrderItem[];
   createdAt: string;
   updatedAt: string;
-  items: OrderItem[];
 }
 
 export interface UpdateTrackingRequest {

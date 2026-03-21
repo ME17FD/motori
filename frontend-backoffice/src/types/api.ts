@@ -1,5 +1,22 @@
 /**
- * Generic Spring Boot paginated response wrapper.
+ * Spring HATEOAS PagedModel — response shape from product-service.
+ * Used for all product-service paginated endpoints.
+ */
+export interface PagedModel<T> {
+  content: T[];
+  page: PageMetadata;
+}
+
+export interface PageMetadata {
+  size: number;
+  number: number;        // current page index (0-based)
+  totalElements: number;
+  totalPages: number;
+}
+
+/**
+ * Spring Boot standard Page<T> — response shape from backoffice-service.
+ * Used for orders, statistics endpoints.
  */
 export interface PageResponse<T> {
   content: T[];
@@ -11,35 +28,17 @@ export interface PageResponse<T> {
   last: boolean;
   empty: boolean;
   numberOfElements: number;
-  sort: SortObject;
-  pageable: PageableObject;
-}
-
-export interface SortObject {
-  empty: boolean;
-  sorted: boolean;
-  unsorted: boolean;
-}
-
-export interface PageableObject {
-  offset: number;
-  pageSize: number;
-  pageNumber: number;
-  paged: boolean;
-  unpaged: boolean;
-  sort: SortObject;
 }
 
 /**
  * Query params for Spring Boot Pageable requests.
- * Index signature added so it's assignable to Record<string, unknown>
- * when used as a TanStack Query key.
+ * Index signature required for TanStack Query key compatibility.
  */
 export interface PageableParams {
   page?: number;
   size?: number;
   sort?: string[];
-  [key: string]: unknown;   // index signature — required for query key compatibility
+  [key: string]: unknown;
 }
 
 /**
@@ -50,4 +49,5 @@ export interface ApiError {
   message: string;
   timestamp?: string;
   path?: string;
+  requestId?: string;
 }

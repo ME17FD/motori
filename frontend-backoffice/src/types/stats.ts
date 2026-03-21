@@ -1,9 +1,6 @@
 /**
- * Statistics & Dashboard Types
- * Data models for KPIs, dashboard metrics, and report generation.
- * Includes today's summary, period dashboards, and top products ranking.
+ * Today's KPI summary — maps to TodaySummaryDto from backoffice-service.
  */
-
 export interface TodaySummary {
   ordersToday: number;
   revenueToday: number;
@@ -11,6 +8,9 @@ export interface TodaySummary {
   toShipOrders: number;
 }
 
+/**
+ * Top selling product over a period — maps to TopProductDto.
+ */
 export interface TopProduct {
   productId: number;
   productName: string;
@@ -18,6 +18,9 @@ export interface TopProduct {
   totalAmount: number;
 }
 
+/**
+ * Full dashboard statistics — maps to StatisticsDto from backoffice-service.
+ */
 export interface DashboardStats {
   totalOrders: number;
   totalRevenue: number;
@@ -30,8 +33,8 @@ export interface DashboardStats {
 }
 
 /**
- * Index signatures added on all param interfaces used as TanStack Query keys.
- * Without [key: string]: unknown, TypeScript rejects assignment to Record<string, unknown>.
+ * Query params for GET /api/statistics/dashboard.
+ * Index signature required for TanStack Query key compatibility.
  */
 export interface DashboardParams {
   days?: number;
@@ -41,8 +44,43 @@ export interface DashboardParams {
   [key: string]: unknown;
 }
 
+/**
+ * Query params for GET /api/statistics/top-products.
+ */
 export interface TopProductsParams {
   days?: number;
   limit?: number;
   [key: string]: unknown;
+}
+
+/**
+ * Period options for report generation.
+ */
+export type ReportPeriod = 'today' | '7d' | '30d' | '90d' | 'custom';
+
+/**
+ * Parameters used to generate a report.
+ */
+export interface ReportParams {
+  period: ReportPeriod;
+  startDate?: string;
+  endDate?: string;
+  topLimit?: number;
+}
+
+/**
+ * Full report data assembled from multiple API calls.
+ */
+export interface ReportData {
+  generatedAt: string;
+  params: ReportParams;
+  todaySummary: TodaySummary;
+  stats: {
+    totalOrders: number;
+    totalRevenue: number;
+    ordersInPeriod: number;
+    revenueInPeriod: number;
+    ordersByStatus: Record<string, number>;
+  };
+  topProducts: TopProduct[];
 }

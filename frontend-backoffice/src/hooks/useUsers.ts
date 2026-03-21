@@ -1,9 +1,3 @@
-/**
- * Users Hook
- * Provides TanStack Query hooks for user management queries and mutations.
- * Handles paginated user list, single user detail, user statistics, and role updates.
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchUsers,
@@ -25,24 +19,24 @@ export function useUsers(params: UserFilters = {}) {
 }
 
 /**
- * Single user by id.
+ * Single user by id — id is a string UUID.
  */
-export function useUser(id: number) {
+export function useUser(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.user(id),
     queryFn: () => fetchUser(id),
-    enabled: id > 0,
+    enabled: !!id,
   });
 }
 
 /**
  * Order count and total spend for a user.
  */
-export function useUserStats(id: number) {
+export function useUserStats(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.userStats(id),
     queryFn: () => fetchUserStats(id),
-    enabled: id > 0,
+    enabled: !!id,
   });
 }
 
@@ -52,13 +46,13 @@ export function useUserStats(id: number) {
 export function useUserMutations() {
   const qc = useQueryClient();
 
-  const invalidate = (id?: number) => {
+  const invalidate = (id?: string) => {
     qc.invalidateQueries({ queryKey: ['users'] });
     if (id) qc.invalidateQueries({ queryKey: QUERY_KEYS.user(id) });
   };
 
   const update = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdateUserRequest }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateUserRequest }) =>
       updateUser(id, payload),
     onSuccess: (_, { id }) => invalidate(id),
   });

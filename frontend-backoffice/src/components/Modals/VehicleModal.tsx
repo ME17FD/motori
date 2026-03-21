@@ -1,48 +1,36 @@
-/**
- * Vehicle Create/Edit Modal Dialog
- * Form modal for adding or editing vehicle catalog entries.
- * Validates required fields (make, model, year) and manages form state.
- * Used in VehiclesPage for CRUD operations.
- */
-
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import type { Vehicle, CreateVehicleRequest } from '../../types/vehicle';
-import styles from '../../styles/Components/modals/FormModal.module.css';
+import type { Vehicule, VehiculeRequest } from '../../types/vehicle';
+import styles from './FormModal.module.css';
 
 interface VehicleModalProps {
   open: boolean;
-  initial?: Vehicle | null;
+  initial?: Vehicule | null;
   loading?: boolean;
-  onSubmit: (data: CreateVehicleRequest) => void;
+  onSubmit: (data: VehiculeRequest) => void;
   onClose: () => void;
 }
 
-export default function VehicleModal({
-  open,
+export default function VehicleModal(props: VehicleModalProps) {
+  if (!props.open) return null;
+  return <VehicleModalInner {...props} />;
+}
+
+function VehicleModalInner({
   initial,
   loading = false,
   onSubmit,
   onClose,
-}: VehicleModalProps) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateVehicleRequest>();
-
-  useEffect(() => {
-    if (open) {
-      reset(
-        initial
-          ? { make: initial.make, model: initial.model, year: initial.year, engine: initial.engine, type: initial.type }
-          : { make: '', model: '', year: new Date().getFullYear(), engine: '', type: '' },
-      );
-    }
-  }, [open, initial, reset]);
-
-  if (!open) return null;
+}: Omit<VehicleModalProps, 'open'>) {
+  const { register, handleSubmit, formState: { errors } } =
+    useForm<VehiculeRequest>({
+      defaultValues: initial
+        ? {
+            name:            initial.name,
+            model:           initial.model,
+            vehiculeBrandId: initial.brand.id,
+          }
+        : { name: '', model: '', vehiculeBrandId: '' },
+    });
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
@@ -53,61 +41,36 @@ export default function VehicleModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label className={styles.label}>Make *</label>
-              <input
-                className={[styles.input, errors.make ? styles.inputError : ''].join(' ')}
-                placeholder="e.g. Honda"
-                {...register('make', { required: 'Make is required' })}
-              />
-              {errors.make && <span className={styles.errorMsg}>{errors.make.message}</span>}
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Model *</label>
-              <input
-                className={[styles.input, errors.model ? styles.inputError : ''].join(' ')}
-                placeholder="e.g. CBR 600"
-                {...register('model', { required: 'Model is required' })}
-              />
-              {errors.model && <span className={styles.errorMsg}>{errors.model.message}</span>}
-            </div>
-          </div>
-
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label className={styles.label}>Year *</label>
-              <input
-                type="number"
-                className={[styles.input, errors.year ? styles.inputError : ''].join(' ')}
-                {...register('year', {
-                  required: 'Year is required',
-                  valueAsNumber: true,
-                  min: { value: 1900, message: 'Invalid year' },
-                  max: { value: new Date().getFullYear() + 1, message: 'Invalid year' },
-                })}
-              />
-              {errors.year && <span className={styles.errorMsg}>{errors.year.message}</span>}
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Engine</label>
-              <input
-                className={styles.input}
-                placeholder="e.g. 600cc"
-                {...register('engine')}
-              />
-            </div>
+          <div className={styles.field}>
+            <label className={styles.label}>Name *</label>
+            <input
+              className={[styles.input, errors.name ? styles.inputError : ''].join(' ')}
+              placeholder="e.g. CBR 600"
+              {...register('name', { required: 'Name is required' })}
+            />
+            {errors.name && <span className={styles.errorMsg}>{errors.name.message}</span>}
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Type</label>
+            <label className={styles.label}>Model *</label>
             <input
-              className={styles.input}
-              placeholder="e.g. Sport, Trail, Naked…"
-              {...register('type')}
+              className={[styles.input, errors.model ? styles.inputError : ''].join(' ')}
+              placeholder="e.g. Sport"
+              {...register('model', { required: 'Model is required' })}
             />
+            {errors.model && <span className={styles.errorMsg}>{errors.model.message}</span>}
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Brand ID *</label>
+            <input
+              className={[styles.input, errors.vehiculeBrandId ? styles.inputError : ''].join(' ')}
+              placeholder="Vehicle brand UUID"
+              {...register('vehiculeBrandId', { required: 'Brand is required' })}
+            />
+            {errors.vehiculeBrandId && (
+              <span className={styles.errorMsg}>{errors.vehiculeBrandId.message}</span>
+            )}
           </div>
 
           <div className={styles.footer}>

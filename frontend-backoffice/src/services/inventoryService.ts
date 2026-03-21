@@ -1,56 +1,28 @@
-/**
- * Inventory Service
- * API client for stock management, tracking, and low-stock monitoring.
- * Endpoints hit the /api/inventory gateway endpoint.
- */
-
 import axiosInstance from '../api/axiosInstance';
-import type { Inventory, UpdateInventoryRequest, InventoryFilters } from '../types/inventory';
-import type { PageResponse } from '../types/api';
+import type { Inventory, InventoryRequest, InventoryFilters } from '../types/inventory';
+import type { PagedModel } from '../types/api';
 
-const BASE = '/api/inventory';
+const BASE = '/api/products/inventories';
 
-/**
- * GET /api/inventory — paginated + filtered list.
- */
 export async function fetchInventory(
   params: InventoryFilters = {},
-): Promise<PageResponse<Inventory>> {
-  const { data } = await axiosInstance.get<PageResponse<Inventory>>(BASE, { params });
+): Promise<PagedModel<Inventory>> {
+  const { data } = await axiosInstance.get<PagedModel<Inventory>>(BASE, { params });
   return data;
 }
 
-/**
- * GET /api/inventory/:id
- */
-export async function fetchInventoryItem(id: number): Promise<Inventory> {
+export async function fetchInventoryItem(id: string): Promise<Inventory> {
   const { data } = await axiosInstance.get<Inventory>(`${BASE}/${id}`);
   return data;
 }
 
-/**
- * GET /api/inventory/product/:productId
- */
-export async function fetchInventoryByProduct(productId: number): Promise<Inventory> {
-  const { data } = await axiosInstance.get<Inventory>(`${BASE}/product/${productId}`);
-  return data;
-}
-
-/**
- * PATCH /api/inventory/:id
- */
-export async function updateInventoryItem(
-  id: number,
-  payload: UpdateInventoryRequest,
+export async function createInventoryItem(
+  payload: InventoryRequest,
 ): Promise<Inventory> {
-  const { data } = await axiosInstance.patch<Inventory>(`${BASE}/${id}`, payload);
+  const { data } = await axiosInstance.post<Inventory>(BASE, payload);
   return data;
 }
 
-/**
- * GET /api/inventory/low-stock — items below their threshold.
- */
-export async function fetchLowStockItems(): Promise<Inventory[]> {
-  const { data } = await axiosInstance.get<Inventory[]>(`${BASE}/low-stock`);
-  return data;
+export async function deleteInventoryItem(id: string): Promise<void> {
+  await axiosInstance.delete(`${BASE}/${id}`);
 }

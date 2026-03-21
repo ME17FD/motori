@@ -1,51 +1,43 @@
 /**
- * Payment method supported by the platform.
+ * Payment method — cash validation is done manually by an admin.
  */
 export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER';
 
 /**
  * Payment status lifecycle.
+ * PENDING → VALIDATED or REJECTED → optionally REFUNDED.
  */
-export type PaymentStatus =
-  | 'PENDING'
-  | 'VALIDATED'
-  | 'REJECTED'
-  | 'REFUNDED';
+export type PaymentStatus = 'PENDING' | 'VALIDATED' | 'REJECTED' | 'REFUNDED';
 
 /**
- * Payment entity linked to an order.
+ * Payment entity — to be wired when payment-service is ready.
  */
 export interface Payment {
   id: number;
-  orderId: string;           // UUID
+  orderId: string;
   userId: number;
   amount: number;
   method: PaymentMethod;
   status: PaymentStatus;
-  reference?: string;        // manual reference or transaction id
-  notes?: string;            // admin notes
-  validatedBy?: string;      // admin email who validated
+  reference?: string;
+  notes?: string;
+  validatedBy?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-/**
- * Request body for manual cash payment validation.
- */
 export interface ValidatePaymentRequest {
   notes?: string;
   reference?: string;
 }
 
-/**
- * Request body for rejecting a payment.
- */
 export interface RejectPaymentRequest {
   notes: string;
 }
 
 /**
  * Filters for the payments list.
+ * Index signature required for TanStack Query key compatibility.
  */
 export interface PaymentFilters {
   page?: number;

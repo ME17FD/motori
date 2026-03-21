@@ -33,45 +33,7 @@ spring:
                 allow-credentials: true
                 max-age: 3600
           routes:
-            # Backoffice service routes
-            - id: backoffice-orders-route
-              uri: lb://backoffice-service
-              predicates:
-                - Path=/api/orders/**
-              filters:
-                - StripPrefix=0
-
-            - id: backoffice-statistics-route
-              uri: lb://backoffice-service
-              predicates:
-                - Path=/api/statistics/**
-              filters:
-                - StripPrefix=0
-            # Backoffice service — orders
-            - id: backoffice-orders-route
-              uri: lb://backoffice-service
-              predicates:
-                - Path=/api/orders/**
-              filters:
-                - StripPrefix=0
-
-            # Backoffice service — statistics
-            - id: backoffice-statistics-route
-              uri: lb://backoffice-service
-              predicates:
-                - Path=/api/statistics/**
-              filters:
-                - StripPrefix=0
-                
-            # Payment service route
-            - id: payment-service-route
-              uri: lb://payment-service
-              predicates:
-                - Path=/api/payments/**
-              filters:
-                - StripPrefix=0
-                
-            # Route pour Swagger
+            # ── Swagger routes ──
             - id: product-service-swagger
               uri: lb://product-service
               predicates:
@@ -79,13 +41,161 @@ spring:
               filters:
                 - RewritePath=/api/products/(?<segment>.*), /$\{segment}
 
-            # Route pour l'API
-            - id: product-service-api
+            # ── Specific product-service routes (must be before generic) ──
+            - id: product-part-brands-root
               uri: lb://product-service
               predicates:
-                - Path=/api/products/**
+                - Path=/api/products/part-brands
               filters:
-                - RewritePath=/api/products/(?<segment>.*), /api/parts/$\{segment}
+                - RewritePath=/api/products/part-brands, /api/part-brands
+
+            - id: product-part-brands-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/part-brands/**
+              filters:
+                - RewritePath=/api/products/part-brands/(?<segment>.*), /api/part-brands/$\{segment}
+
+            - id: product-equipement-brands-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/equipement-brands
+              filters:
+                - RewritePath=/api/products/equipement-brands, /api/equipement-brands
+
+            - id: product-equipement-brands-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/equipement-brands/**
+              filters:
+                - RewritePath=/api/products/equipement-brands/(?<segment>.*), /api/equipement-brands/$\{segment}
+
+            - id: product-part-categories-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/part-categories
+              filters:
+                - RewritePath=/api/products/part-categories, /api/part-categories
+
+            - id: product-part-categories-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/part-categories/**
+              filters:
+                - RewritePath=/api/products/part-categories/(?<segment>.*), /api/part-categories/$\{segment}
+
+            - id: product-equipement-categories-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/equipement-categories
+              filters:
+                - RewritePath=/api/products/equipement-categories, /api/equipement-categories
+
+            - id: product-equipement-categories-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/equipement-categories/**
+              filters:
+                - RewritePath=/api/products/equipement-categories/(?<segment>.*), /api/equipement-categories/$\{segment}
+
+            - id: product-vehicule-brands-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/vehicule-brands
+              filters:
+                - RewritePath=/api/products/vehicule-brands, /api/vehicule-brands
+
+            - id: product-vehicule-brands-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/vehicule-brands/**
+              filters:
+                - RewritePath=/api/products/vehicule-brands/(?<segment>.*), /api/vehicule-brands/$\{segment}
+
+            - id: product-vehicules-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/vehicules
+              filters:
+                - RewritePath=/api/products/vehicules, /api/vehicules
+
+            - id: product-vehicules-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/vehicules/**
+              filters:
+                - RewritePath=/api/products/vehicules/(?<segment>.*), /api/vehicules/$\{segment}
+
+            - id: product-parts-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/parts
+              filters:
+                - RewritePath=/api/products/parts, /api/parts
+
+            - id: product-parts-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/parts/**
+              filters:
+                - RewritePath=/api/products/parts/(?<segment>.*), /api/parts/$\{segment}
+
+            - id: product-equipements-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/equipements
+              filters:
+                - RewritePath=/api/products/equipements, /api/equipements
+
+            - id: product-equipements-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/equipements/**
+              filters:
+                - RewritePath=/api/products/equipements/(?<segment>.*), /api/equipements/$\{segment}
+
+            - id: product-inventories-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/inventories
+              filters:
+                - RewritePath=/api/products/inventories, /api/inventories
+
+            - id: product-inventories-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/inventories/**
+              filters:
+                - RewritePath=/api/products/inventories/(?<segment>.*), /api/inventories/$\{segment}
+
+            - id: product-compatibilities-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/compatibilities
+              filters:
+                - RewritePath=/api/products/compatibilities, /api/compatibilities
+
+            - id: product-compatibilities-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/compatibilities/**
+              filters:
+                - RewritePath=/api/products/compatibilities/(?<segment>.*), /api/compatibilities/$\{segment}
+            # Orders via product-service (X-User-Id header required for creation)
+            - id: product-orders-root
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/orders
+              filters:
+                - RewritePath=/api/products/orders, /api/orders
+
+            - id: product-orders-route
+              uri: lb://product-service
+              predicates:
+                - Path=/api/products/orders/**
+              filters:
+                - RewritePath=/api/products/orders/(?<segment>.*), /api/orders/$\{segment}
+            # ── Auth service ──
             - id: auth-service-route
               uri: lb://user-service
               predicates:
@@ -93,6 +203,7 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # ── User service ──
             - id: user-service-route
               uri: lb://user-service
               predicates:
@@ -100,61 +211,36 @@ spring:
               filters:
                 - StripPrefix=1
 
+            # ── Backoffice service ──
+            - id: backoffice-orders-route
+              uri: lb://backoffice-service
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - StripPrefix=0
+
+            - id: backoffice-statistics-route
+              uri: lb://backoffice-service
+              predicates:
+                - Path=/api/statistics/**
+              filters:
+                - StripPrefix=0
+
+            # ── Payment service ──
+            - id: payment-service-route
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - StripPrefix=0
+
+            # ── Actuator routes ──
             - id: user-service-actuator-route
               uri: lb://user-service
               predicates:
                 - Path=/api/user-service/actuator/**
               filters:
                 - StripPrefix=2
-
-            - id: gateway-logs-route
-              uri: http://localhost:8080
-              predicates:
-                - Path=/api/gateway/logs/**
-              filters:
-                - StripPrefix=2
-
-            - id: eureka-service-route
-              uri: http://localhost:8761
-              predicates:
-                - Path=/api/eureka/**
-              filters:
-                - StripPrefix=1
-
-            - id: product-service-webjars
-              uri: lb://product-service
-              predicates:
-                - Path=/api/products/webjars/**
-              filters:
-                - RewritePath=/api/products/(?<segment>.*), /$\{segment}
-
-            - id: product-service-swagger-ui
-              uri: lb://product-service
-              predicates:
-                - Path=/api/products/swagger-ui/**
-              filters:
-                - RewritePath=/api/products/swagger-ui/(?<segment>.*), /swagger-ui/$\{segment}
-
-            - id: product-service-api-docs
-              uri: lb://product-service
-              predicates:
-                - Path=/api/products/api-docs/**
-              filters:
-                - RewritePath=/api/products/api-docs/(?<segment>.*), /api-docs/$\{segment}
-
-            - id: product-service-api-docs-root
-              uri: lb://product-service
-              predicates:
-                - Path=/api/products/api-docs
-              filters:
-                - RewritePath=/api/products/api-docs, /api-docs
-
-            - id: product-service-route
-              uri: lb://product-service
-              predicates:
-                - Path=/api/products/**
-              filters:
-                - RewritePath=/api/products/(?<segment>.*), /api/parts/$\{segment}
 
             - id: product-service-actuator-route
               uri: lb://product-service
@@ -167,7 +253,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://motori-keycloak:8080/realms/motori_realm
+          issuer-uri: http://localhost:8082/realms/motori_realm
 
 server:
   port: 8080
