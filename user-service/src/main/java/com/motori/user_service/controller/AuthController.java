@@ -2,13 +2,13 @@ package com.motori.user_service.controller;
 
 import com.motori.user_service.dto.UserDto;
 import com.motori.user_service.dto.auth.*;
-import com.motori.user_service.models.User;
 import com.motori.user_service.service.AuthService;
 import com.motori.user_service.service.KeycloakService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -85,22 +85,8 @@ public class AuthController {
     }
 
     @PostMapping("/create-user")
-    public ResponseEntity<UserDto> createUser(@RequestBody CreateUserRequest request) {
-        User user = authService.createUser(request);
-        return ResponseEntity.ok(UserDto.fromEntity(user));
-    }
-
-    @GetMapping("/verify-email")
-    public ResponseEntity<Map<String, String>> verifyEmail(@RequestParam String token, @RequestParam String email) {
-        try {
-            authService.verifyEmailAndActivate(token, email);
-            return ResponseEntity.ok(Map.of("message", "Email verified successfully.", "status", "success"));
-        } catch (IllegalStateException e) {
-            if ("ALREADY_USED".equals(e.getMessage()))
-                return ResponseEntity.ok(Map.of("message", "This link was already used.", "status", "already_used"));
-            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage(), "status", "error"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Verification failed: " + e.getMessage(), "status", "error"));
-        }
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserDto> createUser(@Valid @RequestBody CreateUserRequest request) {
+        return ResponseEntity.ok(UserDto.fromEntity(authService.createUser(request)));
     }
 }

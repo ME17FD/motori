@@ -2,7 +2,6 @@ package com.motori.user_service.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.lang.Nullable;
 
 public record CreateUserRequest(
@@ -16,29 +15,24 @@ public record CreateUserRequest(
         @Email(message = "Email should be valid")
         String email,
 
+        @Nullable
         String phone,
+
+        @Nullable
         String adress,
 
         @NotBlank(message = "Password is required")
         String password,
 
-        @NotNull(message = "Role is required")
-        String role,
-
-        @NotNull(message = "Approved status is required")
-        Boolean approved,
-
-        Boolean activated,
-
-        @Nullable
-        Long managerId
+        @NotBlank(message = "Role is required (ADMIN or USER)")
+        String role
 ) {
     public CreateUserRequest {
-        if (approved == null) {
-            approved = true;
+        if (role != null) {
+            String r = role.toUpperCase();
+            if (!"ADMIN".equals(r) && !"USER".equals(r))
+                role = "USER";
         }
-        if (activated == null) {
-            activated = false;
-        }
+        if (role == null || role.isBlank()) role = "USER";
     }
 }
