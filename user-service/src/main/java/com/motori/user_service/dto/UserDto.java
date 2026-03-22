@@ -11,12 +11,9 @@ public record UserDto(
     String email,
     String phone,
     String adress,
-    Boolean approved,
-    Boolean activated,
+    User.Role role,
     LocalDateTime createdAt,
-    String role,
-    Long managerId,
-    String profilePictureId
+    String keycloakId
 ) {
     public static UserDto fromEntity(User user) {
         return new UserDto(
@@ -26,12 +23,9 @@ public record UserDto(
             user.getEmail(),
             user.getPhone(),
             user.getAdress(),
-            user.getApproved(),
-            user.getActivated(),
+            user.getRole(),
             user.getCreatedAt(),
-            user.getRole() != null ? user.getRole().name() : null,
-            user.getManager() != null ? user.getManager().getId() : null,
-            user.getProfilePictureId()
+            user.getKeycloakId()
         );
     }
 }

@@ -9,11 +9,7 @@ public record AuthResponse(
         String email,
         String firstname,
         String lastname,
-        String role,
-        Boolean approved,
-        Boolean activated,
-        Boolean firstLogin,
-        String status
+        String role
 ) {
     public static AuthResponse fromUser(User user, String token, String refreshToken) {
         return new AuthResponse(
@@ -23,11 +19,7 @@ public record AuthResponse(
                 user.getEmail(),
                 user.getFirstname(),
                 user.getLastname(),
-                user.getRole().name(),
-                user.getApproved(),
-                user.getActivated(),
-                user.getLastLoginAt() == null,
-                user.getStatus() != null ? user.getStatus().name() : null
+                user.getRole() != null ? user.getRole().name() : "USER"
         );
     }
 
