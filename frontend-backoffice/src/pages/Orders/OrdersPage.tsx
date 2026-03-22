@@ -2,25 +2,24 @@ import { useState } from 'react';
 import { useOrders } from '../../hooks/useOrders';
 import CatalogTable from '../../components/Tables/CatalogTable';
 import type { CatalogColumn } from '../../components/Tables/CatalogTable';
+import OrderDetailModal from '../../components/Modals/OrderDetailModal';
+import Pagination from '../../components/ui/Pagination';
 import type { Order } from '../../types/order';
 import type { OrderFilters } from '../../services/orderService';
 import { formatCurrency, formatDateTime } from '../../utils/formatters';
-import Pagination from '../../components/ui/Pagination';
 import styles from '../../styles/pages/Orders/OrdersPage.module.css';
 
 const PAGE_SIZE = 15;
 
-/**
- * Orders page — lists all orders from product-service.
- */
 export default function OrdersPage() {
-  const [page, setPage]         = useState(0);
-  const [status, setStatus]     = useState('');
+  const [page, setPage]           = useState(0);
+  const [status, setStatus]       = useState('');
   const [completed, setCompleted] = useState<boolean | undefined>(undefined);
+  const [selected, setSelected]   = useState<Order | null>(null);
 
   const filters: OrderFilters = {
     page,
-    size: PAGE_SIZE,
+    size:      PAGE_SIZE,
     status:    status    || undefined,
     completed: completed,
   };
@@ -29,9 +28,9 @@ export default function OrdersPage() {
 
   const columns: CatalogColumn<Order>[] = [
     {
-      key: 'id',
+      key:    'id',
       header: 'Order ID',
-      width: '130px',
+      width:  '130px',
       render: (o) => (
         <span style={{ fontFamily: 'monospace', fontSize: 12 }}>
           #{o.id.slice(0, 8).toUpperCase()}
@@ -39,23 +38,22 @@ export default function OrdersPage() {
       ),
     },
     {
-      key: 'userId',
+      key:    'userId',
       header: 'User',
-      width: '100px',
       render: (o) => (
-        <span style={{ fontFamily: 'monospace', fontSize: 11 }}>
-          {o.userId.slice(0, 8)}
+        <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#666' }}>
+          {o.userId.toString().slice(0, 8)}
         </span>
       ),
     },
     {
-      key: 'items',
+      key:    'items',
       header: 'Items',
-      width: '60px',
-      render: (o) => o.items.length,
+      width:  '70px',
+      render: (o) => `${o.items?.length ?? 0} item${(o.items?.length ?? 0) !== 1 ? 's' : ''}`,
     },
     {
-      key: 'createdAt',
+      key:    'createdAt',
       header: 'Date',
       render: (o) => (
         <span style={{ fontSize: 12, color: '#5c5c5c' }}>
@@ -64,27 +62,38 @@ export default function OrdersPage() {
       ),
     },
     {
-      key: 'status',
+      key:    'status',
       header: 'Status',
-      render: (o) => (
-        <span style={{
-          fontSize: 11,
-          padding: '2px 8px',
-          borderRadius: 12,
-          background: o.completed
-            ? 'rgba(16,185,129,0.12)'
-            : 'rgba(245,158,11,0.12)',
-          color: o.completed ? '#065f46' : '#b45309',
-          fontWeight: 500,
-        }}>
-          {o.status ?? (o.completed ? 'Completed' : 'Pending')}
-        </span>
-      ),
+      render: (o) => {
+        const colors: Record<string, { bg: string; color: string }> = {
+          PENDING:    { bg: 'rgba(245,158,11,0.12)',  color: '#b45309' },
+          CONFIRMED:  { bg: 'rgba(59,130,246,0.12)',  color: '#1d4ed8' },
+          PROCESSING: { bg: 'rgba(139,92,246,0.12)',  color: '#6d28d9' },
+          SHIPPED:    { bg: 'rgba(20,184,166,0.12)',  color: '#0f766e' },
+          DELIVERED:  { bg: 'rgba(16,185,129,0.12)',  color: '#065f46' },
+          CANCELLED:  { bg: 'rgba(239,68,68,0.12)',   color: '#b91c1c' },
+        };
+        const s = o.status ?? (o.completed ? 'DELIVERED' : 'PENDING');
+        const c = colors[s] ?? { bg: '#f4f5f7', color: '#666' };
+        return (
+          <span style={{
+            fontSize:       11,
+            padding:        '2px 8px',
+            borderRadius:   12,
+            background:     c.bg,
+            color:          c.color,
+            fontWeight:     500,
+            whiteSpace:     'nowrap',
+          }}>
+            {s}
+          </span>
+        );
+      },
     },
     {
-      key: 'total',
+      key:    'totalPrice',
       header: 'Total',
-      width: '120px',
+      width:  '120px',
       render: (o) => <strong>{formatCurrency(o.totalPrice)}</strong>,
     },
   ];
@@ -109,8 +118,6 @@ export default function OrdersPage() {
           <option value="">All statuses</option>
           <option value="PENDING">Pending</option>
           <option value="CONFIRMED">Confirmed</option>
-          <option value="PROCESSING">Processing</option>
-          <option value="SHIPPED">Shipped</option>
           <option value="DELIVERED">Delivered</option>
           <option value="CANCELLED">Cancelled</option>
         </select>
@@ -133,6 +140,7 @@ export default function OrdersPage() {
         columns={columns}
         data={data?.content ?? []}
         loading={isLoading}
+        onEdit={(o) => setSelected(o)}
         emptyMessage="No orders found."
       />
 
@@ -145,6 +153,12 @@ export default function OrdersPage() {
           onPageChange={setPage}
         />
       )}
+
+      <OrderDetailModal
+        open={!!selected}
+        order={selected}
+        onClose={() => setSelected(null)}
+      />
     </div>
   );
 }

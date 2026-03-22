@@ -1,31 +1,24 @@
-/**
- * Order status values from product-service.
- */
+import type { Inventory } from './inventory';
+
 export type OrderStatus =
   | 'PENDING'
   | 'CONFIRMED'
-  | 'PROCESSING'
-  | 'SHIPPED'
   | 'DELIVERED'
   | 'CANCELLED';
 
 /**
- * Order item — maps to OrderItemResponse from product-service.
- * Each item references an inventory entry with its part or equipment.
+ * Maps to OrderItemResponse from product-service.
+ * inventoryId is the Inventory object (not just a UUID).
  */
 export interface OrderItem {
   id: string;
-  inventory: {
-    id: string;
-    part?: { id: string; name: string; price: number; imageUrl?: string };
-    equipement?: { id: string; name: string; price: number; imageUrl?: string };
-    paymentStatus?: string;
-  };
+  inventoryId: Inventory;
+  quantity: number;
   price: number;
 }
 
 /**
- * Order — maps to OrderResponse from product-service.
+ * Maps to OrderResponse from product-service.
  */
 export interface Order {
   id: string;
