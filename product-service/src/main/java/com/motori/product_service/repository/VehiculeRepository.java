@@ -28,7 +28,7 @@ public interface VehiculeRepository extends JpaRepository<Vehicule, UUID> {
      * @param pageable pagination parameters (page number, size, sort)
      * @return paginated list of vehicles with brand data
      */
-    @EntityGraph(attributePaths = {"vehiculeBrand"})
+    @EntityGraph(attributePaths = {"vehiculeBrandId"})
     Page<Vehicule> findAll(Pageable pageable);
 
     /**
@@ -37,6 +37,6 @@ public interface VehiculeRepository extends JpaRepository<Vehicule, UUID> {
      * @param id the unique identifier of the vehicle
      * @return optional containing the vehicle if found, empty otherwise
      */
-    @EntityGraph(attributePaths = {"vehiculeBrand"})
+    @EntityGraph(attributePaths = {"vehiculeBrandId"})
     Optional<Vehicule> findById(UUID id);
 }

@@ -1,11 +1,9 @@
 package com.motori.product_service.models;
 
 import java.math.BigDecimal;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-
 
 import com.motori.product_service.enums.OrderStatus;
 
@@ -15,8 +13,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,13 +35,12 @@ import lombok.Setter;
     })                  
 public class Order extends BaseEntity{
    
-
     @Column(name = "user_id", nullable = false)
     private UUID userId;       
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_items")
-    private List<OrderItem> items;
+    @OneToMany(mappedBy = "orderId", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
 
     @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;       
@@ -57,6 +53,4 @@ public class Order extends BaseEntity{
     @Column(name = "status", nullable = false)
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING; 
-
-    
 }

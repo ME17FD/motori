@@ -37,9 +37,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID>,
      * @return paginated list of orders matching the criteria
      */
     @EntityGraph(attributePaths = {
-        "items", "items.inventory",
-        "items.inventory.part", "items.inventory.part.partBrand",
-        "items.inventory.equipement", "items.inventory.equipement.equipementBrand"
+        "items", "items.inventoryId",
+        "items.inventoryId.part", "items.inventoryId.part.partBrand",
+        "items.inventoryId.equipement", "items.inventoryId.equipement.equipementBrandId"
     })
     Page<Order> findAll(Specification<Order> spec, Pageable pageable);
 
@@ -53,9 +53,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID>,
      * @return optional containing the order if found, empty otherwise
      */
     @EntityGraph(attributePaths = {
-        "items", "items.inventory",
-        "items.inventory.part", "items.inventory.part.partBrand",
-        "items.inventory.equipement", "items.inventory.equipement.equipementBrand"
+        "items", "items.inventoryId",
+        "items.inventoryId.part", "items.inventoryId.part.partBrand",
+        "items.inventoryId.equipement", "items.inventoryId.equipement.equipementBrandId"
     })
     Optional<Order> findById(UUID id);
 
@@ -68,5 +68,3 @@ public interface OrderRepository extends JpaRepository<Order, UUID>,
      */
     Page<Order> findByUserId(UUID userId, Pageable pageable);
 }
-    
-

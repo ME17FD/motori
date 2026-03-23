@@ -36,7 +36,7 @@ public interface EquipementRepository extends JpaRepository<Equipement, UUID>,
      * @return paginated list of equipment matching filter criteria
      */
     @EntityGraph(attributePaths = {
-        "equipementBrand", "equipementCategory", "equipementCategory.parent"
+        "equipementBrandId", "equipementCategoryId", "equipementCategoryId.parent"
     })
     Page<Equipement> findAll(Specification<Equipement> spec, Pageable pageable);
 

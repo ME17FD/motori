@@ -121,7 +121,11 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
-      MINIO_URL: ${MINIO_URL}
+      # ⚠️ CRITICAL: Use the internal Docker service name for MinIO
+      MINIO_INTERNAL_URL: http://motori-minio:9000
+      # External URL for browser access (what the frontend will use)
+      MINIO_EXTERNAL_URL: http://localhost:9000
+      MINIO_URL: http://motori-minio:9000  # For backward compatibility
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET}
