@@ -5,6 +5,7 @@ import { ROUTES } from './constants/routes';
 import LoginPage from './pages/Login/LoginPage';
 import HomePage from './pages/HomePage/HomePage';
 import SignupPage from './pages/Signup/SignUpPage';
+import ArticlesPage from './pages/ArticlesPage/ArticlesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ export default function App() {
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
           <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+          <Route path={ROUTES.ARTICLES} element={<ArticlesPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
