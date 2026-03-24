@@ -1,28 +1,34 @@
+import type { Inventory } from './inventory';
+
 export type OrderStatus =
   | 'PENDING'
   | 'CONFIRMED'
-  | 'PROCESSING'
-  | 'SHIPPED'
   | 'DELIVERED'
   | 'CANCELLED';
 
+/**
+ * Maps to OrderItemResponse from product-service.
+ * inventoryId is the Inventory object (not just a UUID).
+ */
 export interface OrderItem {
-  productId: number;
+  id: string;
+  inventoryId: Inventory;
   quantity: number;
-  unitPrice: number;
-  productName?: string;
+  price: number;
 }
 
+/**
+ * Maps to OrderResponse from product-service.
+ */
 export interface Order {
-  id: string;        // UUID — string, not number
-  userId: number;
-  status: OrderStatus;
-  totalAmount: number;
-  shippingAddress?: string;
-  trackingNumber?: string;
+  id: string;
+  userId: string;
+  totalPrice: number;
+  completed: boolean;
+  status: string;
+  items: OrderItem[];
   createdAt: string;
   updatedAt: string;
-  items: OrderItem[];
 }
 
 export interface UpdateTrackingRequest {

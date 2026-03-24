@@ -8,19 +8,18 @@ import type {
 } from '../types/stats';
 
 /**
- * GET /api/statistics/today
- * Returns KPIs for the current day.
+ * Statistics are served by backoffice-service.
+ * Gateway route: /api/statistics/** → backoffice-service.
  */
+
 export async function fetchTodaySummary(): Promise<TodaySummary> {
   const { data } = await axiosInstance.get<TodaySummary>('/api/statistics/today');
   return data;
 }
 
-/**
- * GET /api/statistics/dashboard
- * Returns full dashboard statistics for a given period.
- */
-export async function fetchDashboard(params: DashboardParams = {}): Promise<DashboardStats> {
+export async function fetchDashboard(
+  params: DashboardParams = {},
+): Promise<DashboardStats> {
   const { data } = await axiosInstance.get<DashboardStats>('/api/statistics/dashboard', {
     params: {
       arg0: params.days,
@@ -32,11 +31,9 @@ export async function fetchDashboard(params: DashboardParams = {}): Promise<Dash
   return data;
 }
 
-/**
- * GET /api/statistics/top-products
- * Returns the top N selling products over a period.
- */
-export async function fetchTopProducts(params: TopProductsParams = {}): Promise<TopProduct[]> {
+export async function fetchTopProducts(
+  params: TopProductsParams = {},
+): Promise<TopProduct[]> {
   const { data } = await axiosInstance.get<TopProduct[]>('/api/statistics/top-products', {
     params: {
       arg0: params.days ?? 30,

@@ -39,7 +39,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID>,
      */
     @EntityGraph(attributePaths = {
         "part", "part.partBrand", "part.partCategory",
-        "equipement", "equipement.equipementBrand", "equipement.equipementCategory"
+        "equipement", "equipement.equipementBrandId", "equipement.equipementCategoryId"
     })
     Page<Inventory> findAll(Specification<Inventory> spec, Pageable pageable);
 

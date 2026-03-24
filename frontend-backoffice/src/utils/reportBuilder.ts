@@ -1,3 +1,9 @@
+/**
+ * Report Builder Utilities
+ * Generates HTML and structured data for PDF and tabular reports.
+ * Converts ReportData objects into printable HTML templates.
+ */
+
 import type { ReportData } from '../types/report';
 import { formatCurrency, formatDate, formatDateTime } from './formatters';
 

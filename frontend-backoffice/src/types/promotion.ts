@@ -1,23 +1,23 @@
 /**
- * Discount type — percentage or fixed amount.
+ * Discount calculation method.
  */
 export type DiscountType = 'PERCENTAGE' | 'FIXED';
 
 /**
- * Promotion entity.
+ * Promotion entity — to be wired when promotion endpoints are available.
  */
 export interface Promotion {
   id: number;
   code: string;
   description?: string;
   discountType: DiscountType;
-  discountValue: number;       // percentage (0-100) or fixed amount
-  minOrderAmount?: number;     // minimum order to apply promo
-  maxUses?: number;            // null = unlimited
+  discountValue: number;
+  minOrderAmount?: number;
+  maxUses?: number;
   usedCount: number;
   active: boolean;
-  startDate?: string;          // ISO date
-  endDate?: string;            // ISO date
+  startDate?: string;
+  endDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -37,7 +37,8 @@ export interface CreatePromotionRequest {
 export type UpdatePromotionRequest = Partial<CreatePromotionRequest>;
 
 /**
- * Filters for promotions list.
+ * Filters for the promotions list.
+ * Index signature required for TanStack Query key compatibility.
  */
 export interface PromotionFilters {
   page?: number;

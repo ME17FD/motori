@@ -1,6 +1,5 @@
 package com.motori.product_service.config;
 
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,37 +10,15 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Security configuration for the application.
- * 
- * Configures OAuth2 resource server with JWT authentication and authorization.
- * 
- * Authorization rules:
- * - Public endpoints: All GET requests, Swagger UI, API docs, health checks
- * - Protected endpoints: POST and DELETE /orders/** require authentication
- * - Session management: Stateless - uses JWT tokens instead of sessions
- * - CSRF protection: Disabled for stateless API
- * 
- * JWT tokens are validated using Keycloak realm roles.
+ * Security configuration for the product service.
+ * Uses Spring Boot autoconfiguration for JWT decoder via issuer-uri.
+ * The issuer-uri must match the hostname Keycloak uses to sign tokens.
+ * In Docker this is http://motori-keycloak:8080/realms/motori_realm.
  */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /**
-     * Configures the security filter chain for HTTP requests.
-     * 
-     * Sets up:
-     * - CSRF protection disabled (stateless API)
-     * - Stateless session management (JWT-based)
-     * - Public access to Swagger/OpenAPI documentation
-     * - Public access to actuator health endpoints
-     * - Authentication required for POST/DELETE operations on orders
-     * - OAuth2 resource server with JWT validation
-     * 
-     * @param http the HttpSecurity configuration object
-     * @return the configured SecurityFilterChain
-     * @throws Exception if configuration fails
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -73,12 +50,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Configures JWT authentication converter with roles from Keycloak.
-     * 
-     * Extracts authorities from the 'realm_access.roles' claim in the JWT token
-     * and prefixes them with 'ROLE_' for Spring Security compatibility.
-     * 
-     * @return configured JwtAuthenticationConverter
+     * Extracts roles from realm_access.roles claim and prefixes with ROLE_.
      */
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {

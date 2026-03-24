@@ -1,3 +1,10 @@
+/**
+ * Promotions / Promo Codes Management Page
+ * Admin page for creating and managing discount campaigns.
+ * Features: create/edit promo codes with percentage or fixed discounts,
+ * set validity dates, toggle active state, and track usage.
+ */
+
 import { useState } from 'react';
 import { usePromotions, usePromotionMutations } from '../../hooks/usePromotions';
 import CatalogTable from '../../components/Tables/CatalogTable';

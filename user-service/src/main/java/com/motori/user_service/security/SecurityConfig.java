@@ -9,11 +9,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
-import org.springframework.security.oauth2.core.OAuth2TokenValidator;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -26,6 +22,7 @@ public class SecurityConfig {
 
     @Value("${keycloak.auth-server-url}")
     private String keycloakUrl;
+
     @Value("${keycloak.realm}")
     private String realm;
 
@@ -43,7 +40,9 @@ public class SecurityConfig {
                         .requestMatchers("/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .decoder(jwtDecoder())
@@ -53,13 +52,23 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Uses withJwkSetUri instead of withIssuerLocation to avoid issuer mismatch.
+     *
+     * When running in Docker, Keycloak is accessible internally via motori-keycloak:8080
+     * but signs tokens with localhost:8082 as issuer (the public hostname).
+     * withIssuerLocation fetches the OIDC config and compares issuers — this fails
+     * when the internal URL differs from the public URL.
+     * withJwkSetUri skips issuer discovery and directly fetches the public keys,
+     * allowing the service to validate token signatures without URL mismatch errors.
+     */
     @Bean
     public JwtDecoder jwtDecoder() {
-        String issuerUri = keycloakUrl + "/realms/" + realm;
-        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withIssuerLocation(issuerUri).build();
-        OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer(issuerUri);
-        jwtDecoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(withIssuer));
-        return jwtDecoder;
+        String jwkSetUri = keycloakUrl
+                + "/realms/" + realm
+                + "/protocol/openid-connect/certs";
+
+        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
     }
 
     @Bean

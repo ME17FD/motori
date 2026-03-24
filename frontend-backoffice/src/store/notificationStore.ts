@@ -1,10 +1,21 @@
+/**
+ * Notification Store (Zustand)
+ * Client-side notification management persisted in localStorage.
+ * Notifications are generated locally based on:
+ * - Inventory alerts (low stock warnings)
+ * - Payment status changes (pending, completed, failed)
+ * - Order status updates
+ * Used by AdminLayout notification poller to display alerts to admin users.
+ */
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppNotification, NotificationType } from '../types/notification';
 import { ROUTES } from '../constants/routes';
 
 /**
- * Generates a simple unique id for local notifications.
+ * Generates a unique ID for local notifications.
+ * Format: 'notif-{timestamp}-{random}'
  */
 function genId(): string {
   return `notif-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

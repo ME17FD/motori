@@ -1,24 +1,40 @@
 /**
- * Category entity — maps to the category resource from product-service.
+ * Category for parts — maps to PartCategoryResponse.
+ * Supports parent/child hierarchy via parentCategoryId.
  */
-export interface Category {
-  id: number;
+export interface PartCategory {
+  id: string;
   name: string;
-  slug?: string;
-  parentId?: number;
-  parentName?: string;
+  parentCategoryId?: string;
+  parentCategoryName?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface CreateCategoryRequest {
+/**
+ * Category for equipment — maps to EquipementCategoryResponse.
+ */
+export interface EquipementCategory {
+  id: string;
   name: string;
-  slug?: string;
-  parentId?: number;
+  parentCategoryId?: string;
+  parentCategoryName?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface UpdateCategoryRequest {
-  name?: string;
-  slug?: string;
-  parentId?: number;
+/**
+ * Request body for creating or updating a part category.
+ */
+export interface PartCategoryRequest {
+  name: string;
+  parentCategoryId?: string;
+}
+
+/**
+ * Request body for creating or updating an equipment category.
+ */
+export interface EquipementCategoryRequest {
+  name: string;
+  parentCategoryId?: string;
 }

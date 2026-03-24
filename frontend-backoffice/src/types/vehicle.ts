@@ -1,29 +1,39 @@
 /**
- * Vehicle entity — maps to the vehicle resource from product-service.
+ * Vehicle brand — maps to VehiculeBrandResponse from product-service.
  */
-export interface Vehicle {
-  id: number;
-  make: string;       // e.g. "Honda"
-  model: string;      // e.g. "CBR 600"
-  year: number;
-  engine?: string;    // e.g. "600cc"
-  type?: string;      // e.g. "Sport", "Trail"
+export interface VehiculeBrand {
+  id: string;
+  name: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface CreateVehicleRequest {
-  make: string;
+/**
+ * Vehicle — maps to VehiculeResponse from product-service.
+ * Each vehicle belongs to a VehiculeBrand.
+ */
+export interface Vehicule {
+  id: string;
   model: string;
-  year: number;
-  engine?: string;
-  type?: string;
+  name: string;
+  brand: VehiculeBrand;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface UpdateVehicleRequest {
-  make?: string;
-  model?: string;
-  year?: number;
-  engine?: string;
-  type?: string;
+/**
+ * Request body for creating or updating a vehicle.
+ * vehiculeBrandId must be a valid VehiculeBrand UUID.
+ */
+export interface VehiculeRequest {
+  model: string;
+  name: string;
+  vehiculeBrandId: string;
+}
+
+/**
+ * Request body for creating or updating a vehicle brand.
+ */
+export interface VehiculeBrandRequest {
+  name: string;
 }

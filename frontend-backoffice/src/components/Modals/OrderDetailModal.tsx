@@ -1,192 +1,134 @@
-import { useOrder, useOrderMutations } from '../../hooks/useOrders';
-import { useForm } from 'react-hook-form';
-import OrderTimeline from '../ui/OrderTimeline';
-import OrderStatusBadge from '../ui/OrderStatusBadge';
-import type { OrderStatus, UpdateTrackingRequest } from '../../types/order';
+import type { Order } from '../../types/order';
 import { formatCurrency, formatDateTime } from '../../utils/formatters';
-import styles from '../../styles/Components/modals/OrderDetailModal.module.css';
+import { toPublicMinioUrl } from '../../utils/minioUrl';
+import styles from '../../styles/Components/modals/FormModal.module.css';
 
 interface OrderDetailModalProps {
   open: boolean;
-  orderId: string | null;
+  order: Order | null;
   onClose: () => void;
 }
 
-const STATUS_OPTIONS: OrderStatus[] = [
-  'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED',
-];
+export default function OrderDetailModal({ open, order, onClose }: OrderDetailModalProps) {
+  if (!open || !order) return null;
 
-/**
- * Full order detail modal — shows timeline, items, tracking form and status changer.
- */
-export default function OrderDetailModal(props: OrderDetailModalProps) {
-  if (!props.open || !props.orderId) return null;
-  return <OrderDetailModalInner {...props} orderId={props.orderId} />;
-}
-
-function OrderDetailModalInner({
-  orderId,
-  onClose,
-}: Omit<OrderDetailModalProps, 'open'> & { orderId: string }) {
-  const { data: order, isLoading } = useOrder(orderId);
-  const { updateStatus, updateTracking } = useOrderMutations();
-
-  const { register, handleSubmit } = useForm<UpdateTrackingRequest>({
-    defaultValues: {
-      trackingNumber: order?.trackingNumber ?? '',
-    },
-  });
-
-  const handleStatusChange = (status: OrderStatus) => {
-    updateStatus.mutate({ id: orderId, status });
+  const statusColors: Record<string, { bg: string; color: string }> = {
+    PENDING:    { bg: 'rgba(245,158,11,0.12)',  color: '#b45309' },
+    CONFIRMED:  { bg: 'rgba(59,130,246,0.12)',  color: '#1d4ed8' },
+    PROCESSING: { bg: 'rgba(139,92,246,0.12)',  color: '#6d28d9' },
+    SHIPPED:    { bg: 'rgba(20,184,166,0.12)',  color: '#0f766e' },
+    DELIVERED:  { bg: 'rgba(16,185,129,0.12)',  color: '#065f46' },
+    CANCELLED:  { bg: 'rgba(239,68,68,0.12)',   color: '#b91c1c' },
   };
 
-  const handleTrackingSubmit = (data: UpdateTrackingRequest) => {
-    updateTracking.mutate({ id: orderId, payload: data });
-  };
+  const s = order.status ?? (order.completed ? 'DELIVERED' : 'PENDING');
+  const c = statusColors[s] ?? { bg: '#f4f5f7', color: '#666' };
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
-      <div className={styles.modal}>
-        {/* Header */}
+      <div className={styles.modal} style={{ maxWidth: 600 }}>
         <div className={styles.header}>
           <div>
             <h3 className={styles.title}>
-              Order #{orderId.slice(0, 8).toUpperCase()}
+              Order #{order.id.slice(0, 8).toUpperCase()}
             </h3>
-            {order && (
-              <span className={styles.date}>
-                {formatDateTime(order.createdAt)}
-              </span>
-            )}
+            <span style={{
+              fontSize:     11,
+              padding:      '2px 8px',
+              borderRadius: 12,
+              background:   c.bg,
+              color:        c.color,
+              fontWeight:   500,
+            }}>
+              {s}
+            </span>
           </div>
-          <button
-            className={styles.closeBtn}
-            onClick={onClose}
-            type="button"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+          <button className={styles.closeBtn} onClick={onClose} type="button">✕</button>
         </div>
 
-        {isLoading || !order ? (
-          <div className={styles.loading}>Loading order…</div>
-        ) : (
-          <div className={styles.body}>
-            {/* Timeline */}
-            <section className={styles.section}>
-              <OrderTimeline currentStatus={order.status} />
-            </section>
-
-            {/* Meta info */}
-            <section className={styles.section}>
-              <div className={styles.metaGrid}>
-                <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>Status</span>
-                  <OrderStatusBadge status={order.status} />
-                </div>
-                <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>User ID</span>
-                  <span className={styles.metaValue}>{order.userId}</span>
-                </div>
-                <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>Total</span>
-                  <span className={styles.metaValue}>
-                    <strong>{formatCurrency(order.totalAmount)}</strong>
-                  </span>
-                </div>
-                <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>Tracking</span>
-                  <span className={styles.metaValue}>
-                    {order.trackingNumber ?? '—'}
-                  </span>
-                </div>
-                {order.shippingAddress && (
-                  <div className={styles.metaItem} style={{ gridColumn: '1 / -1' }}>
-                    <span className={styles.metaLabel}>Shipping address</span>
-                    <span className={styles.metaValue}>{order.shippingAddress}</span>
-                  </div>
-                )}
+        <div className={styles.form} style={{ gap: 16 }}>
+          {/* Meta */}
+          <div style={{
+            display:             'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap:                 12,
+            background:          'var(--color-bg-light)',
+            borderRadius:        8,
+            padding:             12,
+          }}>
+            <div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>User ID</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
+                {order.userId?.toString().slice(0, 16)}…
               </div>
-            </section>
-
-            {/* Order items */}
-            <section className={styles.section}>
-              <h4 className={styles.sectionTitle}>Items ({order.items.length})</h4>
-              <table className={styles.itemsTable}>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Qty</th>
-                    <th>Unit price</th>
-                    <th>Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item, i) => (
-                    <tr key={i}>
-                      <td>{item.productName ?? `#${item.productId}`}</td>
-                      <td>{item.quantity}</td>
-                      <td>{formatCurrency(item.unitPrice)}</td>
-                      <td>
-                        <strong>
-                          {formatCurrency(item.unitPrice * item.quantity)}
-                        </strong>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-
-            {/* Change status */}
-            <section className={styles.section}>
-              <h4 className={styles.sectionTitle}>Change status</h4>
-              <div className={styles.statusButtons}>
-                {STATUS_OPTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={[
-                      styles.statusBtn,
-                      order.status === s ? styles.statusBtnActive : '',
-                      s === 'CANCELLED' ? styles.statusBtnDanger : '',
-                    ].join(' ')}
-                    onClick={() => handleStatusChange(s)}
-                    disabled={
-                      order.status === s || updateStatus.isPending
-                    }
-                  >
-                    {s.charAt(0) + s.slice(1).toLowerCase()}
-                  </button>
-                ))}
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Date</div>
+              <div style={{ fontSize: 12 }}>{formatDateTime(order.createdAt)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Completed</div>
+              <div style={{ fontSize: 12 }}>{order.completed ? '✅ Yes' : '⏳ No'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Total</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-red)' }}>
+                {formatCurrency(order.totalPrice)}
               </div>
-            </section>
-
-            {/* Tracking form */}
-            <section className={styles.section}>
-              <h4 className={styles.sectionTitle}>Tracking number</h4>
-              <form
-                onSubmit={handleSubmit(handleTrackingSubmit)}
-                className={styles.trackingForm}
-              >
-                <input
-                  className={styles.trackingInput}
-                  placeholder="e.g. 1Z999AA10123456784"
-                  {...register('trackingNumber')}
-                />
-                <button
-                  type="submit"
-                  className={styles.trackingBtn}
-                  disabled={updateTracking.isPending}
-                >
-                  {updateTracking.isPending ? 'Saving…' : 'Update'}
-                </button>
-              </form>
-            </section>
+            </div>
           </div>
-        )}
+
+          {/* Items */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+              Items ({order.items?.length ?? 0})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(order.items ?? []).map((item) => {
+                const inv  = item.inventoryId;
+                const prod = inv?.part ?? inv?.equipement;
+                const img  = toPublicMinioUrl(prod?.imageUrl);
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      display:      'flex',
+                      alignItems:   'center',
+                      gap:          12,
+                      padding:      10,
+                      background:   'var(--bo-card-bg)',
+                      borderRadius: 8,
+                      border:       '1px solid var(--color-border)',
+                    }}
+                  >
+                    {img
+                      ? <img src={img} alt={prod?.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />
+                      : <div style={{ width: 40, height: 40, borderRadius: 6, background: '#f4f5f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                          {inv?.part ? '🔧' : '🛡️'}
+                        </div>
+                    }
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>
+                        {prod?.name ?? '—'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#888' }}>
+                        {inv?.part ? 'Part' : 'Equipment'} · Qty: {item.quantity || 1}
+                      </div>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>
+                      {formatCurrency(item.price)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.footer}>
+          <button className={styles.cancelBtn} onClick={onClose} type="button">Close</button>
+        </div>
       </div>
     </div>
   );

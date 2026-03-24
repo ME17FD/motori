@@ -1,4 +1,10 @@
 /**
+ * Utility Formatters
+ * Provides localized formatting functions for currency, dates, and relative times.
+ * Defaults to Moroccan locale (fr-MA) and Moroccan Dirham (MAD).
+ */
+
+/**
  * Formats a number as a currency string (MAD by default).
  */
 export function formatCurrency(

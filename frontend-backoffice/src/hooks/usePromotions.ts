@@ -1,3 +1,9 @@
+/**
+ * Promotions Hook
+ * Provides TanStack Query hooks for promotion/discount management.
+ * Includes queries for paginated list and mutations for create, update, delete, and toggle.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchPromotions,
@@ -9,6 +15,11 @@ import {
 import { QUERY_KEYS } from '../constants/queryKeys';
 import type { PromotionFilters, CreatePromotionRequest, UpdatePromotionRequest } from '../types/promotion';
 
+/**
+ * Fetch promotions with pagination and filtering.
+ * @param params - Promotion filters and pagination
+ * @returns Query result with promotions array and metadata
+ */
 export function usePromotions(params: PromotionFilters = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.promotions(params),

@@ -1,40 +1,30 @@
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import type { Brand, CreateBrandRequest } from '../../types/brand';
-import styles from '../../styles/Components/modals/FormModal.module.css';
+import type { PartBrand, PartBrandRequest } from '../../types/brand';
+import styles from './FormModal.module.css';
 
 interface BrandModalProps {
   open: boolean;
-  initial?: Brand | null;
+  initial?: PartBrand | null;
   loading?: boolean;
-  onSubmit: (data: CreateBrandRequest) => void;
+  onSubmit: (data: PartBrandRequest) => void;
   onClose: () => void;
 }
 
-/**
- * Create / edit modal for brands.
- * When `initial` is provided the form pre-fills for editing.
- */
-export default function BrandModal({
-  open,
+export default function BrandModal(props: BrandModalProps) {
+  if (!props.open) return null;
+  return <BrandModalInner {...props} />;
+}
+
+function BrandModalInner({
   initial,
   loading = false,
   onSubmit,
   onClose,
-}: BrandModalProps) {
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateBrandRequest>();
-
-  /* Pre-fill when editing */
-  useEffect(() => {
-    if (open) reset(initial ?? { name: '', slug: '' });
-  }, [open, initial, reset]);
-
-  if (!open) return null;
+}: Omit<BrandModalProps, 'open'>) {
+  const { register, handleSubmit, formState: { errors } } =
+    useForm<PartBrandRequest>({
+      defaultValues: initial ? { name: initial.name } : { name: '' },
+    });
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
@@ -53,15 +43,6 @@ export default function BrandModal({
               {...register('name', { required: 'Name is required' })}
             />
             {errors.name && <span className={styles.errorMsg}>{errors.name.message}</span>}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Slug</label>
-            <input
-              className={styles.input}
-              placeholder="e.g. honda"
-              {...register('slug')}
-            />
           </div>
 
           <div className={styles.footer}>

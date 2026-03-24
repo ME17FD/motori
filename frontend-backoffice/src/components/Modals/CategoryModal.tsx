@@ -1,42 +1,38 @@
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import type { Category, CreateCategoryRequest } from '../../types/category';
-import { useAllCategories } from '../../hooks/useCategories';
-import styles from '../../styles/Components/modals/FormModal.module.css';
+import type { PartCategory, PartCategoryRequest } from '../../types/category';
+import { usePartCategories } from '../../hooks/usePartCategories';
+import styles from './FormModal.module.css';
 
 interface CategoryModalProps {
   open: boolean;
-  initial?: Category | null;
+  initial?: PartCategory | null;
   loading?: boolean;
-  onSubmit: (data: CreateCategoryRequest) => void;
+  onSubmit: (data: PartCategoryRequest) => void;
   onClose: () => void;
 }
 
-/**
- * Create / edit modal for categories.
- * Includes an optional parent category select (for subcategories).
- */
-export default function CategoryModal({
-  open,
+export default function CategoryModal(props: CategoryModalProps) {
+  if (!props.open) return null;
+  return <CategoryModalInner {...props} />;
+}
+
+function CategoryModalInner({
   initial,
   loading = false,
   onSubmit,
   onClose,
-}: CategoryModalProps) {
-  const { data: allCategories = [] } = useAllCategories();
+}: Omit<CategoryModalProps, 'open'>) {
+  const { data: allCategories } = usePartCategories({ page: 0, size: 100 });
 
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors },
-  } = useForm<CreateCategoryRequest>();
-
-  useEffect(() => {
-    if (open) reset(initial ?? { name: '', slug: '', parentId: undefined });
-  }, [open, initial, reset]);
-
-  if (!open) return null;
+  } = useForm<PartCategoryRequest>({
+    defaultValues: initial
+      ? { name: initial.name, parentCategoryId: initial.parentCategoryId }
+      : { name: '' },
+  });
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
@@ -58,19 +54,10 @@ export default function CategoryModal({
           </div>
 
           <div className={styles.field}>
-            <label className={styles.label}>Slug</label>
-            <input
-              className={styles.input}
-              placeholder="e.g. brakes"
-              {...register('slug')}
-            />
-          </div>
-
-          <div className={styles.field}>
             <label className={styles.label}>Parent category</label>
-            <select className={styles.input} {...register('parentId', { valueAsNumber: true })}>
+            <select className={styles.input} {...register('parentCategoryId')}>
               <option value="">— None (root category) —</option>
-              {allCategories
+              {allCategories?.content
                 .filter((c) => c.id !== initial?.id)
                 .map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>

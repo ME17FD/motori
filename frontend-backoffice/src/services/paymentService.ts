@@ -1,3 +1,9 @@
+/**
+ * Payment Service
+ * API client for payment queries, validation, and rejection.
+ * Handles cash payment validation workflow and payment audit trails.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type {
   Payment,
