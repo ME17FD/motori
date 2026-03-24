@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @Table(name = "order_items")
@@ -22,8 +23,11 @@ public class OrderItem {
     @ToString.Exclude
     private Order order;
 
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
+    /**
+     * Référence la ligne de stock ({@code inventory.id}) dans product-service.
+     */
+    @Column(name = "inventory_id", nullable = false, columnDefinition = "uuid")
+    private UUID inventoryId;
 
     @Column(name = "quantity", nullable = false)
     private Integer quantity;

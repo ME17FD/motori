@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,7 +27,7 @@ public class OrderController {
 
     @GetMapping
     @Operation(summary = "Liste paginée de toutes les commandes")
-    public Page<OrderDto> findAll(@PageableDefault(size = 20) Pageable pageable) {
+    public Page<OrderDto> findAll(@PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return orderService.findAll(pageable);
     }
 
@@ -38,19 +39,19 @@ public class OrderController {
 
     @GetMapping("/user/{userId}")
     @Operation(summary = "Commandes d'un utilisateur (paginated)")
-    public Page<OrderDto> findByUserId(@PathVariable Long userId, @PageableDefault(size = 20) Pageable pageable) {
+    public Page<OrderDto> findByUserId(@PathVariable String userId, @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return orderService.findByUserId(userId, pageable);
     }
 
     @GetMapping("/user/{userId}/all")
     @Operation(summary = "Toutes les commandes d'un utilisateur (suivi)")
-    public List<OrderDto> findAllByUserId(@PathVariable Long userId) {
+    public List<OrderDto> findAllByUserId(@PathVariable String userId) {
         return orderService.findByUserId(userId);
     }
 
     @GetMapping("/status/{status}")
     @Operation(summary = "Commandes par statut")
-    public Page<OrderDto> findByStatus(@PathVariable OrderStatus status, @PageableDefault(size = 20) Pageable pageable) {
+    public Page<OrderDto> findByStatus(@PathVariable OrderStatus status, @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return orderService.findByStatus(status, pageable);
     }
 
@@ -59,10 +60,10 @@ public class OrderController {
     public Page<OrderDto> search(
             @RequestParam(required = false) String trackingNumber,
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String userId,
             @RequestParam(required = false) java.time.LocalDate fromDate,
             @RequestParam(required = false) java.time.LocalDate toDate,
-            @PageableDefault(size = 20) Pageable pageable) {
+            @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return orderService.search(trackingNumber, status, userId, fromDate, toDate, pageable);
     }
 

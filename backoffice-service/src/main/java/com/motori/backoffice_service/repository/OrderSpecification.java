@@ -18,7 +18,7 @@ public final class OrderSpecification {
     public static Specification<Order> withFilters(
             String trackingNumber,
             OrderStatus status,
-            Long userId,
+            String userId,
             LocalDate fromDate,
             LocalDate toDate) {
         return (root, query, cb) -> {
@@ -29,7 +29,7 @@ public final class OrderSpecification {
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
             }
-            if (userId != null) {
+            if (userId != null && !userId.isBlank()) {
                 predicates.add(cb.equal(root.get("userId"), userId));
             }
             if (fromDate != null) {

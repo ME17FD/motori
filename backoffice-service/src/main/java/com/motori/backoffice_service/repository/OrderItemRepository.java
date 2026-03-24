@@ -15,13 +15,13 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     List<OrderItem> findByOrderId(UUID orderId);
 
-    @Query("SELECT oi.productId, oi.productName, SUM(oi.quantity), SUM(oi.quantity * oi.unitPrice) " +
+    @Query("SELECT oi.inventoryId, oi.productName, SUM(oi.quantity), SUM(oi.quantity * oi.unitPrice) " +
            "FROM OrderItem oi JOIN oi.order o WHERE o.createdAt >= :since " +
-           "GROUP BY oi.productId, oi.productName ORDER BY SUM(oi.quantity) DESC")
+           "GROUP BY oi.inventoryId, oi.productName ORDER BY SUM(oi.quantity) DESC")
     List<Object[]> findTopProductsSince(@Param("since") LocalDateTime since, org.springframework.data.domain.Pageable pageable);
 
-    @Query("SELECT oi.productId, oi.productName, SUM(oi.quantity), SUM(oi.quantity * oi.unitPrice) " +
+    @Query("SELECT oi.inventoryId, oi.productName, SUM(oi.quantity), SUM(oi.quantity * oi.unitPrice) " +
            "FROM OrderItem oi JOIN oi.order o WHERE o.createdAt >= :from AND o.createdAt < :to " +
-           "GROUP BY oi.productId, oi.productName ORDER BY SUM(oi.quantity) DESC")
+           "GROUP BY oi.inventoryId, oi.productName ORDER BY SUM(oi.quantity) DESC")
     List<Object[]> findTopProductsBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to, org.springframework.data.domain.Pageable pageable);
 }

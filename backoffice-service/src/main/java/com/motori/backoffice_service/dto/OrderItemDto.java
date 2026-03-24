@@ -9,14 +9,15 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @Builder
 @Schema(description = "Ligne de commande")
 public class OrderItemDto {
 
-    @Schema(description = "ID du produit")
-    private Long productId;
+    @Schema(description = "ID de la ligne de stock (inventory)")
+    private UUID inventoryId;
 
     @NotNull
     @Positive
@@ -33,7 +34,7 @@ public class OrderItemDto {
 
     public static OrderItemDto fromEntity(OrderItem item) {
         return OrderItemDto.builder()
-                .productId(item.getProductId())
+                .inventoryId(item.getInventoryId())
                 .quantity(item.getQuantity())
                 .unitPrice(item.getUnitPrice())
                 .productName(item.getProductName())

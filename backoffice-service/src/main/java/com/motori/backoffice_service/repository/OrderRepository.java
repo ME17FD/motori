@@ -19,9 +19,9 @@ import java.util.UUID;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecificationExecutor<Order> {
 
-    Page<Order> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
+    Page<Order> findByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Order> findByUserIdOrderByCreatedAtDesc(String userId);
 
     Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
 
@@ -29,7 +29,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
 
     long countByStatus(OrderStatus status);
 
-    long countByUserId(Long userId);
+    long countByUserId(String userId);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt >= :since")
     long countSince(@Param("since") LocalDateTime since);
@@ -48,6 +48,23 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt >= :from AND o.createdAt < :to")
     long countBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT o.status, COUNT(o) FROM Order o WHERE o.createdAt >= :from AND o.createdAt < :to GROUP BY o.status")
+    List<Object[]> countByStatusBetweenGroupBy(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = "SELECT DATE(o.created_at) AS day, COUNT(*) AS orders_count " +
+            "FROM orders o " +
+            "WHERE o.created_at >= :from AND o.created_at < :to " +
+            "GROUP BY DATE(o.created_at) " +
+            "ORDER BY day", nativeQuery = true)
+    List<Object[]> countOrdersByDay(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = "SELECT DATE(o.created_at) AS day, COALESCE(SUM(o.total_amount), 0) AS revenue " +
+            "FROM orders o " +
+            "WHERE o.created_at >= :from AND o.created_at < :to " +
+            "GROUP BY DATE(o.created_at) " +
+            "ORDER BY day", nativeQuery = true)
+    List<Object[]> sumRevenueByDay(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     List<Order> findByTrackingNumberContainingIgnoreCase(String trackingNumber);
 }

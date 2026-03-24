@@ -44,13 +44,13 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public Page<OrderDto> findByUserId(Long userId, Pageable pageable) {
+    public Page<OrderDto> findByUserId(String userId, Pageable pageable) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(OrderDto::fromEntity);
     }
 
     @Transactional(readOnly = true)
-    public List<OrderDto> findByUserId(Long userId) {
+    public List<OrderDto> findByUserId(String userId) {
         return orderRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(OrderDto::fromEntity)
                 .toList();
@@ -64,7 +64,7 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Page<OrderDto> search(
-            String trackingNumber, OrderStatus status, Long userId,
+            String trackingNumber, OrderStatus status, String userId,
             LocalDate fromDate, LocalDate toDate, Pageable pageable) {
         Specification<Order> spec = OrderSpecification.withFilters(trackingNumber, status, userId, fromDate, toDate);
         return orderRepository.findAll(spec, pageable).map(OrderDto::fromEntity);

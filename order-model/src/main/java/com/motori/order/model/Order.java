@@ -21,8 +21,9 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    /** Identifiant utilisateur côté auth (ex. sujet Keycloak JWT) ou id applicatif sérialisé. */
+    @Column(name = "user_id", nullable = false, length = 64)
+    private String userId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

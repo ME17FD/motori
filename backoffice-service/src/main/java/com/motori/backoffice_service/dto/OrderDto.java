@@ -25,8 +25,8 @@ public class OrderDto {
     private UUID id;
 
     @NotNull
-    @Schema(description = "ID de l'utilisateur")
-    private Long userId;
+    @Schema(description = "Identifiant utilisateur (ex. sujet Keycloak)")
+    private String userId;
 
     @Schema(description = "Statut de la commande")
     private OrderStatus status;
@@ -56,7 +56,7 @@ public class OrderDto {
     @Schema(description = "Requête de création de commande")
     public static class CreateRequest {
         @NotNull
-        private Long userId;
+        private String userId;
         @NotEmpty
         @Valid
         private List<OrderItemDto> items;
