@@ -1,20 +1,4 @@
-@import "../../variables.css";
-
-.card {
-  background: var(--bo-card-bg);
-  border-radius: var(--bo-card-radius);
-  box-shadow: var(--bo-card-shadow);
-  padding: var(--space-5) var(--space-6);
-}
-
-.title {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-black);
-  margin: 0 0 var(--space-5);
-}
-
-.tableWrapper {
+.wrapper {
   overflow-x: auto;
 }
 
@@ -24,30 +8,31 @@
   font-size: var(--font-size-sm);
 }
 
-.table th {
+.th {
   text-align: left;
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   color: var(--color-gray);
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.05em;
   border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
 }
 
-.table td {
-  padding: var(--space-3) var(--space-3);
-  border-bottom: 1px solid var(--color-bg-light);
+.row {
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.row:hover {
+  background-color: var(--color-bg-light);
+}
+
+.td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
   color: var(--color-black);
-  vertical-align: middle;
-}
-
-.table tr:last-child td {
-  border-bottom: none;
-}
-
-.table tr:hover td {
-  background: var(--color-bg-light);
 }
 
 .orderId {
@@ -56,21 +41,28 @@
   color: var(--color-gray);
 }
 
-.muted {
+.amount {
+  font-weight: var(--font-weight-medium);
+}
+
+.empty {
+  text-align: center;
+  padding: var(--space-6);
   color: var(--color-gray);
 }
 
-.amount {
-  font-weight: var(--font-weight-bold);
+/* Skeleton */
+.skeletonRow td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
 }
 
-.skeletonRow {
-  height: 44px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+.skeletonCell {
+  height: 16px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
-  margin-bottom: var(--space-2);
 }
 
 @keyframes shimmer {

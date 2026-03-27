@@ -1,40 +1,93 @@
+/**
+ * LoginPage — Keycloak-backed authentication page.
+ *
+ * Form fields: username (email or Keycloak username), password
+ * Validation: React Hook Form + Zod
+ * On submit: delegates to useAuth().login()
+ *
+ * Post-login redirect:
+ *   If the user navigated to a protected page before logging in,
+ *   React Router stores the intended path in location.state.from.
+ *   The useAuth hook redirects to /dashboard by default; to support
+ *   the "from" redirect, the hook reads it from the store (future step).
+ */
+
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '../../hooks/useAuth';
-import type { LoginRequest } from '../../hooks/useAuth';
 import styles from '../../styles/pages/Login.module.css';
 
-/**
- * Admin login page.
- * Authenticates directly against Keycloak using Resource Owner Password flow.
- * No gateway involved — Keycloak URL is set via VITE_KEYCLOAK_URL env variable.
- */
-export default function LoginPage() {
-  const { loginMutation } = useAuth();
+// ─── Validation schema ─────────────────────────────────────────────────────
+
+const loginSchema = z.object({
+  username: z
+    .string()
+    .min(1, 'Username is required'),
+  password: z
+    .string()
+    .min(1, 'Password is required'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+// ─── Component ─────────────────────────────────────────────────────────────
+
+export function LoginPage() {
+  const navigate  = useNavigate();
+  const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
+
+  // Redirect already-authenticated users away from the login page
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const {
-    register,     
+    register,
     handleSubmit,
-    formState: { errors },    
-  } = useForm<LoginRequest>({
-    defaultValues: {
-      username: '',
-      password: '',
-    },
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { username: '', password: '' },
   });
 
-  const onSubmit = (data: LoginRequest) => {
-    loginMutation.mutate(data);
+  const onSubmit = async (data: LoginFormData) => {
+    await login({ username: data.username, password: data.password });
   };
 
   return (
     <div className={styles.page}>
       <div className={styles.card}>
-        <div className={styles.header}>
-          <span className={styles.logo}>Motori</span>
-          <p className={styles.subtitle}>Backoffice administration</p>
+        {/* ── Brand ──────────────────────────────────────────────── */}
+        <div className={styles.brand}>
+          <span className={styles.brandAccent}>M</span>otori
         </div>
+        <p className={styles.subtitle}>Backoffice — Admin Access</p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
+        {/* ── Server error banner ────────────────────────────────── */}
+        {error && (
+          <div className={styles.errorBanner} role="alert">
+            <span>{error}</span>
+            <button
+              className={styles.errorDismiss}
+              onClick={clearError}
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {/* ── Form ───────────────────────────────────────────────── */}
+        <form
+          className={styles.form}
+          onSubmit={handleSubmit(onSubmit)}
+          noValidate
+        >
           {/* Username */}
           <div className={styles.field}>
             <label htmlFor="username" className={styles.label}>
@@ -44,15 +97,19 @@ export default function LoginPage() {
               id="username"
               type="text"
               autoComplete="username"
-              className={[
-                styles.input,
-                errors.username ? styles.inputError : '',
-              ].join(' ')}
-              placeholder="backoffice-admin"
-              {...register('username', { required: 'Username is required' })}
+              autoFocus
+              className={`${styles.input} ${errors.username ? styles.inputError : ''}`}
+              placeholder="admin@motori.com"
+              {...register('username')}
+              onChange={(e) => {
+                clearError();
+                register('username').onChange(e);
+              }}
             />
             {errors.username && (
-              <span className={styles.errorMsg}>{errors.username.message}</span>
+              <span className={styles.fieldError} role="alert">
+                {errors.username.message}
+              </span>
             )}
           </div>
 
@@ -65,49 +122,37 @@ export default function LoginPage() {
               id="password"
               type="password"
               autoComplete="current-password"
-              className={[
-                styles.input,
-                errors.password ? styles.inputError : '',
-              ].join(' ')}
+              className={`${styles.input} ${errors.password ? styles.inputError : ''}`}
               placeholder="••••••••"
-              {...register('password', { required: 'Password is required' })}
+              {...register('password')}
+              onChange={(e) => {
+                clearError();
+                register('password').onChange(e);
+              }}
             />
             {errors.password && (
-              <span className={styles.errorMsg}>{errors.password.message}</span>
+              <span className={styles.fieldError} role="alert">
+                {errors.password.message}
+              </span>
             )}
           </div>
 
-          {/* API error */}
-          {loginMutation.isError && (
-            <div className={styles.apiError} role="alert">
-              {loginMutation.error?.message ?? 'Login failed. Check your credentials.'}
-            </div>
-          )}
-          
-          {/* Debug info in development 
-          {import.meta.env.DEV && (
-            <div style={{
-              fontSize: 11,
-              color: '#888',
-              padding: '8px',
-              background: '#f4f5f7',
-              borderRadius: 6,
-              fontFamily: 'monospace',
-            }}>
-              Keycloak: {import.meta.env.VITE_KEYCLOAK_URL}/realms/{import.meta.env.VITE_KEYCLOAK_REALM}
-              <br />
-              Client: {import.meta.env.VITE_KEYCLOAK_CLIENT_ID}
-            </div>
-          )}
-          */}
+          {/* Submit */}
           <button
             type="submit"
             className={styles.submitBtn}
-            disabled={loginMutation.isPending}
+            disabled={isLoading}
           >
-            {loginMutation.isPending ? 'Signing in…' : 'Sign in'}
+            {isLoading ? (
+              <span className={styles.spinner} aria-hidden="true" />
+            ) : null}
+            {isLoading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+
+        <p className={styles.hint}>
+          Motori Backoffice · Admin credentials required
+        </p>
       </div>
     </div>
   );

@@ -1,96 +1,110 @@
-import type { PartBrand, EquipementBrand } from './brand';
-import type { PartCategory, EquipementCategory } from './category';
-
 /**
- * Dynamic properties stored as JSONB in PostgreSQL.
- * Keys and value types are arbitrary — defined per product category.
+ * Product types — mirrors product-service schemas for parts and equipment.
+ *
+ * Both Part and Equipement share a common base (Article) with
+ * type-specific fields added on top.
  */
-export type DynamicProperties = Record<string, unknown>;
 
-/**
- * Available sizes for equipment items.
- */
+// ─── Shared ────────────────────────────────────────────────────────────────
+
+export type ProductStatus = 'AVAILABLE' | 'OUT_OF_STOCK' | 'DISCONTINUED';
+
+/** Dynamic JSON properties stored as JSONB in PostgreSQL */
+export type DynamicProperties = Record<string, string | number | boolean>;
+
+/** Base fields shared by both Part and Equipement */
+export interface ArticleBase {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  imageUrl?: string;
+  status: ProductStatus;
+  stock: number;
+  createdAt: string;
+  properties?: DynamicProperties;
+}
+
+// ─── Part ──────────────────────────────────────────────────────────────────
+
+export interface PartDto extends ArticleBase {
+  reference: string;
+  brandId: number;
+  brandName?: string;
+  categoryId: number;
+  categoryName?: string;
+  /** IDs of compatible vehicles */
+  compatibleVehicleIds?: number[];
+}
+
+export interface CreatePartRequest {
+  name: string;
+  description?: string;
+  price: number;
+  reference: string;
+  brandId: number;
+  categoryId: number;
+  status?: ProductStatus;
+  stock?: number;
+  properties?: DynamicProperties;
+  compatibleVehicleIds?: number[];
+  imageUrl?: string;
+}
+
+export interface UpdatePartRequest extends Partial<CreatePartRequest> {}
+
+// ─── Equipement ────────────────────────────────────────────────────────────
+
 export type EquipementSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
 
-/**
- * Moto part — maps to PartResponse from product-service.
- * Soft-deletable — deleted items are hidden but not removed from DB.
- */
-export interface Part {
-  id: string;
-  name: string;
-  ref: string;           // unique part reference code
-  description?: string;
-  price: number;
-  brand: PartBrand;
-  category: PartCategory;
-  imageUrl?: string;     // Minio URL
-  properties?: DynamicProperties;
-  createdAt?: string;
-  updatedAt?: string;
+export interface EquipementDto extends ArticleBase {
+  brandId: number;
+  brandName?: string;
+  categoryId: number;
+  categoryName?: string;
+  size?: EquipementSize;
+  color?: string;
 }
 
-/**
- * Moto equipment — maps to EquipementResponse from product-service.
- * Soft-deletable — deleted items are hidden but not removed from DB.
- */
-export interface Equipement {
-  id: string;
+export interface CreateEquipementRequest {
   name: string;
-  size: EquipementSize;
-  color: string;
   description?: string;
   price: number;
-  brand: EquipementBrand;
-  category: EquipementCategory;
-  imageUrl?: string;     // Minio URL
+  brandId: number;
+  categoryId: number;
+  status?: ProductStatus;
+  stock?: number;
+  size?: EquipementSize;
+  color?: string;
   properties?: DynamicProperties;
-  createdAt?: string;
-  updatedAt?: string;
+  imageUrl?: string;
 }
 
-/**
- * Request body for creating a part.
- * ref must be unique across all parts.
- */
-export interface PartRequest {
-  name: string;
-  ref: string;
-  description?: string;
-  price: number;
-  partBrandId: string;
-  partCategoryId: string;
-  properties?: DynamicProperties;
+export interface UpdateEquipementRequest extends Partial<CreateEquipementRequest> {}
+
+// ─── Pagination ────────────────────────────────────────────────────────────
+
+export interface PageResult<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
 }
 
-/**
- * Request body for updating a part — all fields optional.
- */
-export type PartUpdateRequest = Partial<PartRequest>;
+// ─── Filters ───────────────────────────────────────────────────────────────
 
-/**
- * Request body for creating an equipment item.
- */
-export interface EquipementRequest {
-  name: string;
-  size: EquipementSize;
-  color: string;
-  description?: string;
-  price: number;
-  equipementBrandId: string;
-  equipementCategoryId: string;
-  properties?: DynamicProperties;
-}
-
-/**
- * Request body for updating an equipment item — all fields optional.
- */
-export type EquipementUpdateRequest = Partial<EquipementRequest>;
-
-/**
- * A single dynamic property field used by the form builder UI.
- */
-export interface PropertyField {
-  key: string;
-  value: string;
+export interface ProductFilters {
+  name?: string;
+  brandId?: number;
+  categoryId?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  status?: ProductStatus;
+  page?: number;
+  size?: number;
+  sort?: string[];
 }

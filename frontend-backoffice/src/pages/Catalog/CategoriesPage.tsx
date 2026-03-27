@@ -1,271 +1,192 @@
+/**
+ * CategoriesPage — manage Part and Equipment categories.
+ * Tabs: Part Categories | Equipment Categories
+ */
+
 import { useState } from 'react';
-import { usePartCategories, usePartCategoryMutations } from '../../hooks/usePartCategories';
-import { useEquipementCategories, useEquipementCategoryMutations } from '../../hooks/useEquipementCategories';
-import CatalogTable from '../../components/Tables/CatalogTable';
-import type { CatalogColumn } from '../../components/Tables/CatalogTable';
-import ConfirmDialog from '../../components/Modals/ConfirmDialog';
-import Pagination from '../../components/ui/Pagination';
-import type { PartCategory, PartCategoryRequest } from '../../types/category';
-import type { EquipementCategory, EquipementCategoryRequest } from '../../types/category';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { useCategories, useDeleteCategory } from '../../hooks/useCategories';
+import { CategoryModal } from '../../components/Modals/CategoryModal';
+import { ConfirmDialog } from '../../components/Modals/ConfirmDialog';
+import type { CategoryDto, CategoryType } from '../../types/category';
 import styles from '../../styles/pages/Catalog/CatalogPage.module.css';
 
-const PAGE_SIZE = 10;
+const TABS: { label: string; type: CategoryType }[] = [
+  { label: 'Part Categories',      type: 'PartCategory' },
+  { label: 'Equipment Categories', type: 'EquipementCategory' },
+];
 
-/**
- * Categories management page.
- * Split into two tabs: Part categories and Equipment categories.
- */
-export default function CategoriesPage() {
-  const [activeTab, setActiveTab] = useState<'parts' | 'equipment'>('parts');
+interface CategoryListProps {
+  categoryType: CategoryType;
+}
 
-  const [partPage, setPartPage]                   = useState(0);
-  const [partModalOpen, setPartModalOpen]         = useState(false);
-  const [partEditTarget, setPartEditTarget]       = useState<PartCategory | null>(null);
-  const [partDeleteTarget, setPartDeleteTarget]   = useState<PartCategory | null>(null);
-  const [partName, setPartName]                   = useState('');
-  const [partParentId, setPartParentId]           = useState('');
+function CategoryList({ categoryType }: CategoryListProps) {
+  const [search, setSearch]             = useState('');
+  const [showCreate, setShowCreate]     = useState(false);
+  const [editTarget, setEditTarget]     = useState<CategoryDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CategoryDto | null>(null);
 
-  const [equipPage, setEquipPage]                   = useState(0);
-  const [equipModalOpen, setEquipModalOpen]         = useState(false);
-  const [equipEditTarget, setEquipEditTarget]       = useState<EquipementCategory | null>(null);
-  const [equipDeleteTarget, setEquipDeleteTarget]   = useState<EquipementCategory | null>(null);
-  const [equipName, setEquipName]                   = useState('');
-  const [equipParentId, setEquipParentId]           = useState('');
+  const { data: categories = [], isLoading } = useCategories(categoryType);
+  const deleteCategory = useDeleteCategory(categoryType);
 
-  const { data: partData,  isLoading: partLoading  } = usePartCategories({ page: partPage,  size: PAGE_SIZE });
-  const { data: equipData, isLoading: equipLoading } = useEquipementCategories({ page: equipPage, size: PAGE_SIZE });
+  // Build a name lookup for displaying parent names
+  const nameById = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
-  const { create: createPart,  update: updatePart,  remove: removePart  } = usePartCategoryMutations();
-  const { create: createEquip, update: updateEquip, remove: removeEquip } = useEquipementCategoryMutations();
+  const filtered = categories.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const handlePartSubmit = () => {
-    if (!partName.trim()) return;
-    const payload: PartCategoryRequest = {
-      name: partName.trim(),
-      parentCategoryId: partParentId || undefined,
-    };
-    if (partEditTarget) {
-      updatePart.mutate(
-        { id: partEditTarget.id, payload },
-        { onSuccess: () => { setPartModalOpen(false); setPartName(''); setPartParentId(''); } },
-      );
-    } else {
-      createPart.mutate(payload, {
-        onSuccess: () => { setPartModalOpen(false); setPartName(''); setPartParentId(''); },
-      });
-    }
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteCategory.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
-  const handleEquipSubmit = () => {
-    if (!equipName.trim()) return;
-    const payload: EquipementCategoryRequest = {
-      name: equipName.trim(),
-      parentCategoryId: equipParentId || undefined,
-    };
-    if (equipEditTarget) {
-      updateEquip.mutate(
-        { id: equipEditTarget.id, payload },
-        { onSuccess: () => { setEquipModalOpen(false); setEquipName(''); setEquipParentId(''); } },
-      );
-    } else {
-      createEquip.mutate(payload, {
-        onSuccess: () => { setEquipModalOpen(false); setEquipName(''); setEquipParentId(''); },
-      });
-    }
-  };
+  return (
+    <div className={styles.listSection}>
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper}>
+          <Search size={14} className={styles.searchIcon} />
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Search categories…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <button className={styles.addBtn} onClick={() => setShowCreate(true)}>
+          <Plus size={15} />
+          Add Category
+        </button>
+      </div>
 
-  const partColumns: CatalogColumn<PartCategory>[] = [
-    { key: 'name',             header: 'Name',   render: (c) => <strong>{c.name}</strong> },
-    { key: 'parentCategoryName', header: 'Parent', render: (c) => c.parentCategoryName ?? <span style={{ color: '#888' }}>Root</span> },
-  ];
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.th}>ID</th>
+              <th className={styles.th}>Name</th>
+              <th className={styles.th}>Parent</th>
+              <th className={styles.th}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  {Array.from({ length: 4 }).map((__, j) => (
+                    <td key={j} className={styles.td}>
+                      <div className={styles.skeleton} />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={4} className={styles.emptyState}>
+                  {search ? 'No categories match your search.' : 'No categories yet.'}
+                </td>
+              </tr>
+            ) : (
+              filtered.map((cat) => (
+                <tr key={cat.id} className={styles.row}>
+                  <td className={styles.td}>
+                    <span className={styles.idChip}>#{cat.id}</span>
+                  </td>
+                  <td className={styles.td}>{cat.name}</td>
+                  <td className={styles.td}>
+                    {cat.parentId
+                      ? <span className={styles.parentChip}>
+                          {nameById[cat.parentId] ?? `#${cat.parentId}`}
+                        </span>
+                      : <span className={styles.rootChip}>Root</span>}
+                  </td>
+                  <td className={styles.td}>
+                    <div className={styles.rowActions}>
+                      <button
+                        className={styles.iconBtn}
+                        onClick={() => setEditTarget(cat)}
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                        onClick={() => setDeleteTarget(cat)}
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-  const equipColumns: CatalogColumn<EquipementCategory>[] = [
-    { key: 'name',             header: 'Name',   render: (c) => <strong>{c.name}</strong> },
-    { key: 'parentCategoryName', header: 'Parent', render: (c) => c.parentCategoryName ?? <span style={{ color: '#888' }}>Root</span> },
-  ];
+      {!isLoading && (
+        <p className={styles.count}>
+          {filtered.length} categor{filtered.length !== 1 ? 'ies' : 'y'}
+        </p>
+      )}
+
+      {showCreate && (
+        <CategoryModal
+          categoryType={categoryType}
+          onClose={() => setShowCreate(false)}
+        />
+      )}
+      {editTarget && (
+        <CategoryModal
+          categoryType={categoryType}
+          editCategory={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete Category"
+          message={`Delete "${deleteTarget.name}"? This may affect products assigned to it.`}
+          confirmLabel="Delete"
+          isLoading={deleteCategory.isPending}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+export function CategoriesPage() {
+  const [activeTab, setActiveTab] = useState(0);
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Categories</h2>
-          <p className={styles.subtitle}>Manage part and equipment categories</p>
-        </div>
-        <div className={styles.tabs}>
-          <button
-            className={[styles.tab, activeTab === 'parts' ? styles.tabActive : ''].join(' ')}
-            onClick={() => setActiveTab('parts')}
-            type="button"
-          >
-            Part categories ({partData?.page.totalElements ?? 0})
-          </button>
-          <button
-            className={[styles.tab, activeTab === 'equipment' ? styles.tabActive : ''].join(' ')}
-            onClick={() => setActiveTab('equipment')}
-            type="button"
-          >
-            Equipment categories ({equipData?.page.totalElements ?? 0})
-          </button>
-        </div>
+      <div className={styles.pageHeader}>
+        <h2 className={styles.pageTitle}>Categories</h2>
+        <p className={styles.pageSubtitle}>
+          Manage part and equipment categories
+        </p>
       </div>
 
-      {/* ── Part categories tab ── */}
-      {activeTab === 'parts' && (
-        <>
-          <div className={styles.tableHeader}>
-            <span className={styles.count}>{partData?.page.totalElements ?? 0} categories</span>
-            <button
-              className={styles.addBtn}
-              onClick={() => { setPartEditTarget(null); setPartName(''); setPartParentId(''); setPartModalOpen(true); }}
-              type="button"
-            >
-              + New category
-            </button>
-          </div>
+      <div className={styles.tabs}>
+        {TABS.map((tab, i) => (
+          <button
+            key={tab.type}
+            className={`${styles.tab} ${activeTab === i ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab(i)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-          <CatalogTable
-            columns={partColumns}
-            data={partData?.content ?? []}
-            loading={partLoading}
-            onEdit={(c) => { setPartEditTarget(c); setPartName(c.name); setPartParentId(c.parentCategoryId ?? ''); setPartModalOpen(true); }}
-            onDelete={(c) => setPartDeleteTarget(c)}
-          />
-
-          {partData && (
-            <Pagination
-              page={partPage}
-              totalPages={partData.page.totalPages}
-              totalElements={partData.page.totalElements}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPartPage}
-            />
-          )}
-
-          {partModalOpen && (
-            <div className={styles.overlay}>
-              <div className={styles.inlineModal}>
-                <h3>{partEditTarget ? 'Edit category' : 'New part category'}</h3>
-                <input
-                  className={styles.inlineInput}
-                  placeholder="Category name"
-                  value={partName}
-                  onChange={(e) => setPartName(e.target.value)}
-                  autoFocus
-                />
-                <input
-                  className={styles.inlineInput}
-                  placeholder="Parent category ID (optional)"
-                  value={partParentId}
-                  onChange={(e) => setPartParentId(e.target.value)}
-                />
-                <div className={styles.inlineActions}>
-                  <button className={styles.cancelBtn} onClick={() => setPartModalOpen(false)} type="button">Cancel</button>
-                  <button
-                    className={styles.addBtn}
-                    onClick={handlePartSubmit}
-                    disabled={createPart.isPending || updatePart.isPending}
-                    type="button"
-                  >
-                    {createPart.isPending || updatePart.isPending ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <ConfirmDialog
-            open={!!partDeleteTarget}
-            title="Delete category"
-            message={`Delete "${partDeleteTarget?.name}"?`}
-            confirmLabel="Delete"
-            danger
-            loading={removePart.isPending}
-            onConfirm={() => {
-              if (partDeleteTarget) removePart.mutate(partDeleteTarget.id, { onSuccess: () => setPartDeleteTarget(null) });
-            }}
-            onCancel={() => setPartDeleteTarget(null)}
-          />
-        </>
-      )}
-
-      {/* ── Equipment categories tab ── */}
-      {activeTab === 'equipment' && (
-        <>
-          <div className={styles.tableHeader}>
-            <span className={styles.count}>{equipData?.page.totalElements ?? 0} categories</span>
-            <button
-              className={styles.addBtn}
-              onClick={() => { setEquipEditTarget(null); setEquipName(''); setEquipParentId(''); setEquipModalOpen(true); }}
-              type="button"
-            >
-              + New category
-            </button>
-          </div>
-
-          <CatalogTable
-            columns={equipColumns}
-            data={equipData?.content ?? []}
-            loading={equipLoading}
-            onEdit={(c) => { setEquipEditTarget(c); setEquipName(c.name); setEquipParentId(c.parentCategoryId ?? ''); setEquipModalOpen(true); }}
-            onDelete={(c) => setEquipDeleteTarget(c)}
-          />
-
-          {equipData && (
-            <Pagination
-              page={equipPage}
-              totalPages={equipData.page.totalPages}
-              totalElements={equipData.page.totalElements}
-              pageSize={PAGE_SIZE}
-              onPageChange={setEquipPage}
-            />
-          )}
-
-          {equipModalOpen && (
-            <div className={styles.overlay}>
-              <div className={styles.inlineModal}>
-                <h3>{equipEditTarget ? 'Edit category' : 'New equipment category'}</h3>
-                <input
-                  className={styles.inlineInput}
-                  placeholder="Category name"
-                  value={equipName}
-                  onChange={(e) => setEquipName(e.target.value)}
-                  autoFocus
-                />
-                <input
-                  className={styles.inlineInput}
-                  placeholder="Parent category ID (optional)"
-                  value={equipParentId}
-                  onChange={(e) => setEquipParentId(e.target.value)}
-                />
-                <div className={styles.inlineActions}>
-                  <button className={styles.cancelBtn} onClick={() => setEquipModalOpen(false)} type="button">Cancel</button>
-                  <button
-                    className={styles.addBtn}
-                    onClick={handleEquipSubmit}
-                    disabled={createEquip.isPending || updateEquip.isPending}
-                    type="button"
-                  >
-                    {createEquip.isPending || updateEquip.isPending ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <ConfirmDialog
-            open={!!equipDeleteTarget}
-            title="Delete category"
-            message={`Delete "${equipDeleteTarget?.name}"?`}
-            confirmLabel="Delete"
-            danger
-            loading={removeEquip.isPending}
-            onConfirm={() => {
-              if (equipDeleteTarget) removeEquip.mutate(equipDeleteTarget.id, { onSuccess: () => setEquipDeleteTarget(null) });
-            }}
-            onCancel={() => setEquipDeleteTarget(null)}
-          />
-        </>
-      )}
+      <div className={styles.card}>
+        <CategoryList categoryType={TABS[activeTab].type} />
+      </div>
     </div>
   );
 }

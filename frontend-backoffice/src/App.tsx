@@ -1,77 +1,171 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ROUTES } from './constants/routes';
-
-import RequireAdmin   from './components/Layout/RequireAdmin';
-import AdminLayout    from './components/Layout/AdminLayout';
-
-import LoginPage      from './pages/Auth/Login';
-import DashboardPage  from './pages/Dashboard/index';
-import BrandsPage     from './pages/Catalog/BrandsPage';
-import CategoriesPage from './pages/Catalog/CategoriesPage';
-import VehiclesPage   from './pages/Catalog/VehiclesPage';
-import PartsPage      from './pages/Products/PartsPage';
-import EquipmentPage  from './pages/Products/EquipmentPage';
-import InventoryPage  from './pages/Inventory/InventoryPage';
-import OrdersPage     from './pages/Orders/OrdersPage';
-import PaymentsPage   from './pages/Payments/PaymentsPage';
-import UsersPage      from './pages/Users/UsersPage';
-import PromotionsPage from './pages/Promotions/PromotionsPage';
-import ReportsPage    from './pages/Reports/ReportsPage';
-
 /**
- * TanStack Query client — shared across the entire app.
+ * App — root route configuration.
+ *
+ * Route structure:
+ *   /login                  → Login page (public)
+ *   /unauthorized           → 403 page (public)
+ *   /                       → Redirect to /dashboard
+ *   /* (admin routes)       → Protected by RequireAdmin
+ *       /dashboard
+ *       /products/parts
+ *       /products/equipment
+ *       /inventory
+ *       /orders
+ *       /payments
+ *       /catalog/brands
+ *       /catalog/categories
+ *       /catalog/vehicles
+ *       /users
+ *       /promotions
+ *       /reports
+ *   *                       → 404 fallback
+ *
+ * All admin routes are lazy-loaded to keep the initial bundle small.
  */
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime:            30_000,
-      retry:                1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+
+import { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { RequireAdmin } from './components/Layout/RequireAdmin';
+import { AdminLayout } from './components/Layout/AdminLayout';
+import { PageLoader } from './components/ui/PageLoader';
+
+// ─── Public pages (eager — small, needed immediately) ─────────────────────
+
+import { LoginPage } from './pages/Auth/Login';
+import { UnauthorizedPage } from './pages/Auth/Unauthorized';
+import { NotFoundPage } from './pages/NotFound';
+
+// ─── Admin pages (lazy — only loaded after authentication) ────────────────
+
+const Dashboard       = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.DashboardPage })));
+const PartsPage       = lazy(() => import('./pages/Products/PartsPage').then(m => ({ default: m.PartsPage })));
+const EquipmentPage   = lazy(() => import('./pages/Products/EquipmentPage').then(m => ({ default: m.EquipmentPage })));
+const InventoryPage   = lazy(() => import('./pages/Inventory/InventoryPage').then(m => ({ default: m.InventoryPage })));
+const OrdersPage      = lazy(() => import('./pages/Orders/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const PaymentsPage    = lazy(() => import('./pages/Payments/PaymentsPage').then(m => ({ default: m.PaymentsPage })));
+const BrandsPage      = lazy(() => import('./pages/Catalog/BrandsPage').then(m => ({ default: m.BrandsPage })));
+const CategoriesPage  = lazy(() => import('./pages/Catalog/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
+const VehiclesPage    = lazy(() => import('./pages/Catalog/VehiclesPage').then(m => ({ default: m.VehiclesPage })));
+const UsersPage       = lazy(() => import('./pages/Users/UsersPage').then(m => ({ default: m.UsersPage })));
+const PromotionsPage  = lazy(() => import('./pages/Promotions/PromotionsPage').then(m => ({ default: m.PromotionsPage })));
+const ReportsPage     = lazy(() => import('./pages/Reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
+
+// ─── App ───────────────────────────────────────────────────────────────────
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          {/* Public */}
-          <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+    <Routes>
+      {/* ── Public routes ──────────────────────────────────────────── */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-          {/* Protected — ADMIN only */}
-          <Route element={<RequireAdmin />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+      {/* ── Root redirect ──────────────────────────────────────────── */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-              <Route path={ROUTES.DASHBOARD}   element={<DashboardPage />} />
+      {/* ── Protected admin routes ─────────────────────────────────── */}
+      <Route element={<RequireAdmin />}>
+        <Route element={<AdminLayout />}>
+          <Route
+            path="/dashboard"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <Dashboard />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/products/parts"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PartsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/products/equipment"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <EquipmentPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <InventoryPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <OrdersPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PaymentsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/catalog/brands"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <BrandsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/catalog/categories"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <CategoriesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/catalog/vehicles"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <VehiclesPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <UsersPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/promotions"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <PromotionsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ReportsPage />
+              </Suspense>
+            }
+          />
+        </Route>
+      </Route>
 
-              {/* Catalog */}
-              <Route path={ROUTES.BRANDS}      element={<BrandsPage />} />
-              <Route path={ROUTES.CATEGORIES}  element={<CategoriesPage />} />
-              <Route path={ROUTES.VEHICLES}    element={<VehiclesPage />} />
-
-              {/* Products */}
-              <Route path={ROUTES.PARTS}       element={<PartsPage />} />
-              <Route path={ROUTES.EQUIPMENT}   element={<EquipmentPage />} />
-
-              {/* Operations */}
-              <Route path={ROUTES.INVENTORY}   element={<InventoryPage />} />
-              <Route path={ROUTES.ORDERS}      element={<OrdersPage />} />
-              <Route path={ROUTES.PAYMENTS}    element={<PaymentsPage />} />
-
-              {/* Admin */}
-              <Route path={ROUTES.USERS}       element={<UsersPage />} />
-              <Route path={ROUTES.PROMOTIONS}  element={<PromotionsPage />} />
-              <Route path={ROUTES.REPORTS}     element={<ReportsPage />} />
-            </Route>
-          </Route>
-
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
-        </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
+      {/* ── 404 fallback ───────────────────────────────────────────── */}
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
   );
 }

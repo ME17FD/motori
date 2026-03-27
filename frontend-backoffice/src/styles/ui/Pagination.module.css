@@ -1,54 +1,47 @@
-@import '../variables.css';
-
-.wrapper {
+.pagination {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  background: var(--bo-card-bg);
-  border-top: 1px solid var(--color-border);
-  border-radius: 0 0 var(--bo-card-radius) var(--bo-card-radius);
+  gap: var(--space-1);
 }
 
-.info {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray);
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.btn {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: none;
-  color: var(--color-black);
-  font-size: var(--font-size-md);
-  cursor: pointer;
+.pageBtn,
+.navBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  min-width: 34px;
+  height: 34px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--bo-card-bg);
+  color: var(--color-black);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
-.btn:hover:not(:disabled) {
-  background: var(--color-bg-light);
+.pageBtn:hover:not(:disabled),
+.navBtn:hover:not(:disabled) {
+  background-color: var(--color-bg-light);
   border-color: var(--color-black);
 }
 
-.btn:disabled {
+.pageBtnActive {
+  background-color: var(--color-black);
+  color: #ffffff;
+  border-color: var(--color-black);
+}
+
+.navBtn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
-.current {
-  font-size: var(--font-size-sm);
+.ellipsis {
   color: var(--color-gray);
-  min-width: 60px;
-  text-align: center;
+  font-size: var(--font-size-sm);
+  padding: 0 var(--space-1);
+  user-select: none;
 }

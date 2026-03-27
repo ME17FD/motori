@@ -1,26 +1,23 @@
-import type { OrderStatus } from '../../types/order';
+/**
+ * StatusBadge — colored badge for ProductStatus values.
+ */
+
+import type { ProductStatus } from '../../types/product';
 import styles from '../../styles/ui/StatusBadge.module.css';
 
-interface StatusBadgeProps {
-  status: OrderStatus;
-}
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING:    'Pending',
-  CONFIRMED:  'Confirmed',
-  PROCESSING: 'Processing',
-  SHIPPED:    'Shipped',
-  DELIVERED:  'Delivered',
-  CANCELLED:  'Cancelled',
+const STATUS_LABELS: Record<ProductStatus, string> = {
+  AVAILABLE:    'Available',
+  OUT_OF_STOCK: 'Out of Stock',
+  DISCONTINUED: 'Discontinued',
 };
 
-/**
- * Colored pill badge for order statuses.
- * Color mapping uses CSS custom properties defined in variables.css.
- */
-export default function StatusBadge({ status }: StatusBadgeProps) {
+interface Props {
+  status: ProductStatus;
+}
+
+export function StatusBadge({ status }: Props) {
   return (
-    <span className={`${styles.badge} ${styles[status.toLowerCase()]}`}>
+    <span className={`${styles.badge} ${styles[status]}`}>
       {STATUS_LABELS[status]}
     </span>
   );

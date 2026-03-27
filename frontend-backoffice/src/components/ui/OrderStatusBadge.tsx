@@ -1,15 +1,9 @@
 /**
- * Order Status Badge Component
- * Displays order status with semantic colors (pending, confirmed, shipped, etc.).
- * Used throughout orders and payment tables for visual status indication.
+ * OrderStatusBadge — colored pill badge for order status values.
  */
 
 import type { OrderStatus } from '../../types/order';
 import styles from '../../styles/ui/OrderStatusBadge.module.css';
-
-interface OrderStatusBadgeProps {
-  status: OrderStatus;
-}
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   PENDING:    'Pending',
@@ -20,10 +14,14 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   CANCELLED:  'Cancelled',
 };
 
-export default function OrderStatusBadge({ status }: OrderStatusBadgeProps) {
+interface Props {
+  status: OrderStatus;
+}
+
+export function OrderStatusBadge({ status }: Props) {
   return (
     <span className={`${styles.badge} ${styles[status.toLowerCase()]}`}>
-      {STATUS_LABELS[status]}
+      {STATUS_LABELS[status] ?? status}
     </span>
   );
 }

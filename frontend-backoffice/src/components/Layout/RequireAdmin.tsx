@@ -1,32 +1,34 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import { ROUTES } from '../../constants/routes';
-
-/** Set to true during development to bypass authentication. */
-const DEV_BYPASS = false;
-
 /**
- * Route guard — ensures the user is authenticated and has ADMIN or SUPERADMIN role.
- * In development mode (DEV_BYPASS = true), the guard is skipped entirely.
- * Roles come from Keycloak realm_access.roles as "ADMIN" or "SUPERADMIN".
+ * RequireAdmin — route guard for ADMIN-only pages.
+ *
+ * Renders children only when the user is authenticated AND holds
+ * the ADMIN or SUPERADMIN realm role.
+ *
+ * Redirects:
+ *   - Unauthenticated users → /login  (with `from` state for post-login redirect)
+ *   - Authenticated non-admins → /unauthorized
+ *
+ * Usage:
+ *   <Route element={<RequireAdmin />}>
+ *     <Route path="/dashboard" element={<Dashboard />} />
+ *   </Route>
  */
-export default function RequireAdmin() {
-  const { isAuthenticated, isAdmin } = useAuthStore();
-  const location = useLocation();
 
-  if (DEV_BYPASS) return <Outlet />;
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { useAuthStore, selectIsAdmin } from '../../store/authStore';
+
+export function RequireAdmin() {
+  const location = useLocation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isAdmin = useAuthStore(selectIsAdmin);
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+    // Preserve intended destination for post-login redirect
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (!isAdmin) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>Access denied</h2>
-        <p>You need ADMIN or SUPERADMIN privileges to access this area.</p>
-      </div>
-    );
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <Outlet />;

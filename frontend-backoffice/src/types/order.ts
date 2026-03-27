@@ -1,37 +1,41 @@
-import type { Inventory } from './inventory';
+/**
+ * Order types — mirrors the backoffice-service OpenAPI schemas.
+ */
 
 export type OrderStatus =
   | 'PENDING'
   | 'CONFIRMED'
+  | 'PROCESSING'
+  | 'SHIPPED'
   | 'DELIVERED'
   | 'CANCELLED';
 
-/**
- * Maps to OrderItemResponse from product-service.
- * inventoryId is the Inventory object (not just a UUID).
- */
-export interface OrderItem {
-  id: string;
-  inventoryId: Inventory;
+export interface OrderItemDto {
+  productId: number;
   quantity: number;
-  price: number;
+  unitPrice: number;
+  productName?: string;
 }
 
-/**
- * Maps to OrderResponse from product-service.
- */
-export interface Order {
+export interface OrderDto {
   id: string;
-  userId: string;
-  totalPrice: number;
-  completed: boolean;
-  status: string;
-  items: OrderItem[];
+  userId: number;
+  status: OrderStatus;
+  totalAmount: number;
+  shippingAddress?: string;
+  trackingNumber?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  items: OrderItemDto[];
 }
 
-export interface UpdateTrackingRequest {
-  trackingNumber?: string;
-  status?: OrderStatus;
+export interface PageOrderDto {
+  content: OrderDto[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
 }

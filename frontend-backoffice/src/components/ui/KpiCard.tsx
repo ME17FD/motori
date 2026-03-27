@@ -1,38 +1,57 @@
+/**
+ * KpiCard — metric display card for the dashboard KPI row.
+ *
+ * Props:
+ *   title    — metric label
+ *   value    — numeric value
+ *   format   — 'number' (default) | 'currency'
+ *   accent   — left border color
+ *   isLoading / isError — loading and error states
+ */
+
 import styles from '../../styles/ui/KpiCard.module.css';
 
+type Accent = 'blue' | 'green' | 'yellow' | 'purple' | 'red' | 'gray';
+
 interface KpiCardProps {
-  label: string;
-  value: string | number;
-  /** Optional colored left border accent — CSS color string */
-  accent?: string;
-  /** Optional sublabel shown below the value */
-  sublabel?: string;
-  loading?: boolean;
+  title: string;
+  value: number;
+  format?: 'number' | 'currency';
+  accent?: Accent;
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
-/**
- * Single KPI metric card used in the dashboard header row.
- */
-export default function KpiCard({
-  label,
+/** Formats a number as MAD currency or plain integer */
+function formatValue(value: number, format: 'number' | 'currency'): string {
+  if (format === 'currency') {
+    return new Intl.NumberFormat('fr-MA', {
+      style: 'currency',
+      currency: 'MAD',
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+  return new Intl.NumberFormat('fr-MA').format(value);
+}
+
+export function KpiCard({
+  title,
   value,
-  accent,
-  sublabel,
-  loading = false,
+  format = 'number',
+  accent = 'blue',
+  isLoading = false,
+  isError = false,
 }: KpiCardProps) {
   return (
-    <div
-      className={styles.card}
-      style={accent ? { borderLeftColor: accent } : undefined}
-    >
-      <span className={styles.label}>{label}</span>
-      {loading ? (
-        <span className={styles.skeleton} aria-busy="true" />
+    <div className={`${styles.card} ${styles[`accent_${accent}`]}`}>
+      <span className={styles.title}>{title}</span>
+
+      {isLoading ? (
+        <div className={styles.skeleton} aria-label="Loading..." />
+      ) : isError ? (
+        <span className={styles.error}>—</span>
       ) : (
-        <span className={styles.value}>{value}</span>
-      )}
-      {sublabel && !loading && (
-        <span className={styles.sublabel}>{sublabel}</span>
+        <span className={styles.value}>{formatValue(value, format)}</span>
       )}
     </div>
   );

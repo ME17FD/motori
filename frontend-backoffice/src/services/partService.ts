@@ -1,97 +1,79 @@
-import axiosInstance from '../api/axiosInstance';
+/**
+ * Part service — CRUD + search for spare parts.
+ * Base path: /api/parts (through API Gateway)
+ */
+
+import apiClient from '../api/axiosInstance';
 import type {
-  Part,
-  PartRequest,
-  PartUpdateRequest,
-  DynamicProperties,
+  PartDto,
+  CreatePartRequest,
+  UpdatePartRequest,
+  PageResult,
+  ProductFilters,
 } from '../types/product';
-import type { PagedModel } from '../types/api';
 
-/**
- * Base URL for parts — gateway rewrites /api/products/** → /api/parts/**.
- */
-const BASE = '/api/products/parts';
-
-export interface PartFilters {
-  name?: string;
-  brandId?: string;
-  categoryId?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  vehiculeId?: string;
-  propertyKey?: string;
-  propertyValue?: string;
-  page?: number;
-  size?: number;
-  [key: string]: unknown;
-}
-
-/**
- * GET /api/products/parts — paginated + filtered list.
- */
+/** Fetch paginated + filtered parts */
 export async function fetchParts(
-  params: PartFilters = {},
-): Promise<PagedModel<Part>> {
-  const { data } = await axiosInstance.get<PagedModel<Part>>(BASE, { params });
+  filters: ProductFilters = {}
+): Promise<PageResult<PartDto>> {
+  const { data } = await apiClient.get<PageResult<PartDto>>('/api/parts', {
+    params: {
+      name:       filters.name,
+      brandId:    filters.brandId,
+      categoryId: filters.categoryId,
+      minPrice:   filters.minPrice,
+      maxPrice:   filters.maxPrice,
+      status:     filters.status,
+      page:       filters.page ?? 0,
+      size:       filters.size ?? 20,
+      sort:       filters.sort,
+    },
+  });
   return data;
 }
 
-export async function fetchPart(id: string): Promise<Part> {
-  const { data } = await axiosInstance.get<Part>(`${BASE}/${id}`);
+/** Fetch a single part by ID */
+export async function fetchPartById(id: number): Promise<PartDto> {
+  const { data } = await apiClient.get<PartDto>(`/api/parts/${id}`);
   return data;
 }
 
-export async function createPart(payload: PartRequest): Promise<Part> {
-  const { data } = await axiosInstance.post<Part>(BASE, payload);
+/** Create a new part */
+export async function createPart(
+  payload: CreatePartRequest
+): Promise<PartDto> {
+  const { data } = await apiClient.post<PartDto>('/api/parts', payload);
   return data;
 }
 
+/** Update an existing part */
 export async function updatePart(
-  id: string,
-  payload: PartUpdateRequest,
-): Promise<Part> {
-  const { data } = await axiosInstance.put<Part>(`${BASE}/${id}`, payload);
+  id: number,
+  payload: UpdatePartRequest
+): Promise<PartDto> {
+  const { data } = await apiClient.put<PartDto>(`/api/parts/${id}`, payload);
   return data;
 }
 
-export async function deletePart(id: string): Promise<void> {
-  await axiosInstance.delete(`${BASE}/${id}`);
+/** Delete a part */
+export async function deletePart(id: number): Promise<void> {
+  await apiClient.delete(`/api/parts/${id}`);
 }
 
 /**
- * POST /api/products/parts/{id}/image
- * Uploads a single image file to Minio via the gateway.
+ * Upload a part image to MinIO via the product-service.
+ * Returns the public image URL stored in MinIO.
  */
-export async function uploadPartImage(id: string, file: File): Promise<Part> {
-  const form = new FormData();
-  form.append('file', file);
-  const { data } = await axiosInstance.post<Part>(
-    `${BASE}/${id}/image`,
-    form,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+export async function uploadPartImage(
+  id: number,
+  file: File
+): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await apiClient.post<{ url: string }>(
+    `/api/parts/${id}/image`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
   );
-  return data;
-}
-
-/**
- * DELETE /api/products/parts/{id}/image
- */
-export async function deletePartImage(id: string): Promise<Part> {
-  const { data } = await axiosInstance.delete<Part>(`${BASE}/${id}/image`);
-  return data;
-}
-
-/**
- * PATCH /api/products/parts/{id}/properties
- * Updates JSONB dynamic properties for a part.
- */
-export async function updatePartProperties(
-  id: string,
-  properties: DynamicProperties,
-): Promise<Part> {
-  const { data } = await axiosInstance.patch<Part>(
-    `${BASE}/${id}/properties`,
-    properties,
-  );
-  return data;
+  return data.url;
 }

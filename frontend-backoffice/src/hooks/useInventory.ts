@@ -1,44 +1,96 @@
+/**
+ * useInventory — TanStack Query hooks for inventory endpoints.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   fetchInventory,
-  fetchInventoryItem,
-  createInventoryItem,
+  addStock,
+  markAsSold,
+  updatePaymentStatus,
   deleteInventoryItem,
 } from '../services/inventoryService';
-import { QUERY_KEYS } from '../constants/queryKeys';
-import type { InventoryFilters, InventoryRequest } from '../types/inventory';
+import type {
+  InventoryFilters,
+  CreateInventoryRequest,
+  UpdatePaymentStatusRequest,
+} from '../types/inventory';
 
-export function useInventory(params: InventoryFilters = {}) {
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const inventoryKeys = {
+  all:   ['inventory'] as const,
+  lists: () => [...inventoryKeys.all, 'list'] as const,
+  list:  (f: InventoryFilters) => [...inventoryKeys.lists(), f] as const,
+};
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────
+
+/** Paginated inventory list with filters */
+export function useInventory(filters: InventoryFilters = {}) {
   return useQuery({
-    queryKey: QUERY_KEYS.inventory(params),
-    queryFn: () => fetchInventory(params),
+    queryKey: inventoryKeys.list(filters),
+    queryFn:  () => fetchInventory(filters),
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }
 
-export function useInventoryItem(id: string) {
-  return useQuery({
-    queryKey: QUERY_KEYS.inventoryItem(id),
-    queryFn: () => fetchInventoryItem(id),
-    enabled: !!id,
+/** Add stock units */
+export function useAddStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateInventoryRequest) => addStock(payload),
+    onSuccess: (items) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
+      toast.success(`${items.length} stock unit(s) added.`);
+    },
+    onError: () => toast.error('Failed to add stock.'),
   });
 }
 
-export function useInventoryMutations() {
-  const qc = useQueryClient();
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['inventory'] });
-  };
-
-  const create = useMutation({
-    mutationFn: (payload: InventoryRequest) => createInventoryItem(payload),
-    onSuccess: invalidate,
+/** Mark item as sold */
+export function useMarkAsSold() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => markAsSold(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
+      toast.success('Item marked as sold.');
+    },
+    onError: () => toast.error('Failed to mark as sold.'),
   });
+}
 
-  const remove = useMutation({
-    mutationFn: (id: string) => deleteInventoryItem(id),
-    onSuccess: invalidate,
+/** Update payment status */
+export function useUpdatePaymentStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: UpdatePaymentStatusRequest;
+    }) => updatePaymentStatus(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
+      toast.success('Payment status updated.');
+    },
+    onError: () => toast.error('Failed to update payment status.'),
   });
+}
 
-  return { create, remove };
+/** Delete inventory item */
+export function useDeleteInventoryItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteInventoryItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
+      toast.success('Inventory item removed.');
+    },
+    onError: () => toast.error('Failed to remove item.'),
+  });
 }

@@ -1,106 +1,90 @@
 /**
- * Generic Catalog Table Component
- * Reusable data table for displaying and managing catalog entities.
- * Supports templated columns with custom rendering, loading states,
- * and edit/delete action handlers.
+ * RecentOrdersTable — compact orders table for the dashboard.
+ * Shows the 10 most recent orders with status badge and amount.
  */
 
-import styles from '../../styles/Components/tables/CatalogTable.module.css';
+import { useNavigate } from 'react-router-dom';
+import type { OrderDto } from '../../types/order';
+import { OrderStatusBadge } from '../ui/OrderStatusBadge';
+import styles from '../../styles/Components/tables/RecentOrdersTable.module.css';
 
-/**
- * Column definition for CatalogTable.
- * @template T - Row data type (must have id field for React key)
- */
-export interface CatalogColumn<T> {
-  key: string;
-  header: string;
-  render: (row: T) => React.ReactNode;
-  width?: string;
+interface Props {
+  orders: OrderDto[];
+  isLoading?: boolean;
 }
 
-interface CatalogTableProps<T> {
-  columns: CatalogColumn<T>[];
-  data: T[];
-  loading?: boolean;
-  onEdit?: (row: T) => void;
-  onDelete?: (row: T) => void;
-  emptyMessage?: string;
+/** Formats ISO date string to readable short date */
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+  });
 }
 
-/**
- * Generic reusable table for catalog and order entities.
- * T is constrained to have either a numeric or string id field
- * to safely use as React key.
- */
-export default function CatalogTable<T extends { id: number | string }>({
-  columns,
-  data,
-  loading = false,
-  onEdit,
-  onDelete,
-  emptyMessage = 'No records found.',
-}: CatalogTableProps<T>) {
-  if (loading) {
-    return (
-      <div className={styles.wrapper}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className={styles.skeletonRow} />
-        ))}
-      </div>
-    );
-  }
+/** Skeleton row for loading state */
+function SkeletonRow() {
+  return (
+    <tr className={styles.skeletonRow}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <td key={i}><div className={styles.skeletonCell} /></td>
+      ))}
+    </tr>
+  );
+}
 
-  if (data.length === 0) {
-    return <div className={styles.empty}>{emptyMessage}</div>;
-  }
+export function RecentOrdersTable({ orders, isLoading }: Props) {
+  const navigate = useNavigate();
 
   return (
     <div className={styles.wrapper}>
       <table className={styles.table}>
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={col.width ? { width: col.width } : undefined}>
-                {col.header}
-              </th>
-            ))}
-            {(onEdit || onDelete) && <th style={{ width: '100px' }}>Actions</th>}
+            <th className={styles.th}>Order ID</th>
+            <th className={styles.th}>User</th>
+            <th className={styles.th}>Date</th>
+            <th className={styles.th}>Status</th>
+            <th className={styles.th}>Total</th>
           </tr>
         </thead>
         <tbody>
-          {data.map((row) => (
-            <tr key={row.id}>
-              {columns.map((col) => (
-                <td key={col.key}>{col.render(row)}</td>
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => <SkeletonRow key={i} />)
+            : orders.map((order) => (
+                <tr
+                  key={order.id}
+                  className={styles.row}
+                  onClick={() => navigate(`/orders?highlight=${order.id}`)}
+                  title="View order"
+                >
+                  <td className={styles.td}>
+                    <span className={styles.orderId}>
+                      #{order.id.slice(0, 8).toUpperCase()}
+                    </span>
+                  </td>
+                  <td className={styles.td}>User #{order.userId}</td>
+                  <td className={styles.td}>{formatDate(order.createdAt)}</td>
+                  <td className={styles.td}>
+                    <OrderStatusBadge status={order.status} />
+                  </td>
+                  <td className={styles.td}>
+                    <span className={styles.amount}>
+                      {new Intl.NumberFormat('fr-MA', {
+                        style: 'currency',
+                        currency: 'MAD',
+                        maximumFractionDigits: 0,
+                      }).format(order.totalAmount)}
+                    </span>
+                  </td>
+                </tr>
               ))}
-              {(onEdit || onDelete) && (
-                <td>
-                  <div className={styles.actions}>
-                    {onEdit && (
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => onEdit(row)}
-                        type="button"
-                        aria-label="Edit"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => onDelete(row)}
-                        type="button"
-                        aria-label="Delete"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </td>
-              )}
+
+          {!isLoading && !orders.length && (
+            <tr>
+              <td colSpan={5} className={styles.empty}>
+                No recent orders.
+              </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
     </div>

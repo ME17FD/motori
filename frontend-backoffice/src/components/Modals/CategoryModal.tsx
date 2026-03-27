@@ -1,74 +1,158 @@
-import { useForm } from 'react-hook-form';
-import type { PartCategory, PartCategoryRequest } from '../../types/category';
-import { usePartCategories } from '../../hooks/usePartCategories';
-import styles from './FormModal.module.css';
+/**
+ * CategoryModal — create / edit category with optional parent selection.
+ */
 
-interface CategoryModalProps {
-  open: boolean;
-  initial?: PartCategory | null;
-  loading?: boolean;
-  onSubmit: (data: PartCategoryRequest) => void;
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { X } from 'lucide-react';
+import { useCreateCategory, useUpdateCategory, useCategories } from '../../hooks/useCategories';
+import type { CategoryDto, CategoryType } from '../../types/category';
+import styles from '../../styles/Components/modals/FormModal.module.css';
+
+// ─── Validation ────────────────────────────────────────────────────────────
+
+const categorySchema = z.object({
+  name:     z.string().min(1, 'Name is required').max(100),
+  parentId: z.string().optional(),
+});
+
+type CategoryFormData = z.infer<typeof categorySchema>;
+
+// ─── Component ─────────────────────────────────────────────────────────────
+
+interface Props {
+  categoryType: CategoryType;
+  editCategory?: CategoryDto | null;
   onClose: () => void;
 }
 
-export default function CategoryModal(props: CategoryModalProps) {
-  if (!props.open) return null;
-  return <CategoryModalInner {...props} />;
-}
+export function CategoryModal({ categoryType, editCategory, onClose }: Props) {
+  const isEdit = !!editCategory;
 
-function CategoryModalInner({
-  initial,
-  loading = false,
-  onSubmit,
-  onClose,
-}: Omit<CategoryModalProps, 'open'>) {
-  const { data: allCategories } = usePartCategories({ page: 0, size: 100 });
+  const { data: allCategories = [] } = useCategories(categoryType);
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<PartCategoryRequest>({
-    defaultValues: initial
-      ? { name: initial.name, parentCategoryId: initial.parentCategoryId }
-      : { name: '' },
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<CategoryFormData>({
+    resolver: zodResolver(categorySchema),
+    defaultValues: {
+      name:     editCategory?.name ?? '',
+      parentId: editCategory?.parentId?.toString() ?? '',
+    },
   });
 
+  useEffect(() => {
+    reset({
+      name:     editCategory?.name ?? '',
+      parentId: editCategory?.parentId?.toString() ?? '',
+    });
+  }, [editCategory, reset]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  const onSubmit = async (data: CategoryFormData) => {
+    const parentId = data.parentId ? parseInt(data.parentId, 10) : null;
+
+    if (isEdit && editCategory) {
+      await updateCategory.mutateAsync({
+        id: editCategory.id,
+        payload: { name: data.name, parentId },
+      });
+    } else {
+      await createCategory.mutateAsync({
+        name: data.name,
+        type: categoryType,
+        parentId,
+      });
+    }
+    onClose();
+  };
+
+  // Exclude self from parent options when editing
+  const parentOptions = allCategories.filter(
+    (c) => !editCategory || c.id !== editCategory.id
+  );
+
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true">
+    <div
+      className={styles.overlay}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+    >
       <div className={styles.modal}>
         <div className={styles.header}>
-          <h3 className={styles.title}>{initial ? 'Edit category' : 'New category'}</h3>
-          <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Close">✕</button>
+          <h2 className={styles.title}>
+            {isEdit ? 'Edit' : 'New'}{' '}
+            {categoryType === 'PartCategory' ? 'Part' : 'Equipment'} Category
+          </h2>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
+          {/* Name */}
           <div className={styles.field}>
-            <label className={styles.label}>Name *</label>
+            <label className={styles.label}>Category name *</label>
             <input
-              className={[styles.input, errors.name ? styles.inputError : ''].join(' ')}
-              placeholder="e.g. Brakes"
-              {...register('name', { required: 'Name is required' })}
+              type="text"
+              className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
+              placeholder="e.g. Engine Parts"
+              autoFocus
+              {...register('name')}
             />
-            {errors.name && <span className={styles.errorMsg}>{errors.name.message}</span>}
+            {errors.name && (
+              <span className={styles.fieldError}>{errors.name.message}</span>
+            )}
           </div>
 
+          {/* Parent category */}
           <div className={styles.field}>
-            <label className={styles.label}>Parent category</label>
-            <select className={styles.input} {...register('parentCategoryId')}>
-              <option value="">— None (root category) —</option>
-              {allCategories?.content
-                .filter((c) => c.id !== initial?.id)
-                .map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
+            <label className={styles.label}>Parent category (optional)</label>
+            <select className={styles.select} {...register('parentId')}>
+              <option value="">— Root category —</option>
+              {parentOptions.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div className={styles.footer}>
-            <button className={styles.cancelBtn} onClick={onClose} type="button">Cancel</button>
-            <button className={styles.submitBtn} type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Save'}
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.cancelBtn}
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? isEdit ? 'Saving…' : 'Creating…'
+                : isEdit ? 'Save Changes' : 'Create Category'}
             </button>
           </div>
         </form>

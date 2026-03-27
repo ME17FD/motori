@@ -1,69 +1,81 @@
-import { useState } from 'react';
+/**
+ * Topbar — fixed top bar displayed on all admin pages.
+ *
+ * Contains:
+ * - Hamburger menu button (mobile + desktop collapse toggle)
+ * - Current page title (derived from the route)
+ * - User avatar with username
+ * - Notification bell (placeholder for future WebSocket integration)
+ */
+
+import { Bell } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
-import { useNotificationStore } from '../../store/notificationStore';
+import { useAuthStore, selectUser } from '../../store/authStore';
 import styles from '../../styles/layouts/Topbar.module.css';
-import NotificationPanel from '../ui/NotificationPanel';
+
+// ─── Route → page title map ────────────────────────────────────────────────
 
 const PAGE_TITLES: Record<string, string> = {
-  '/dashboard':  'Dashboard',
-  '/catalog':    'Catalog',
-  '/products':   'Products',
-  '/inventory':  'Inventory',
-  '/orders':     'Orders',
-  '/payments':   'Payments',
-  '/users':      'Users',
-  '/promotions': 'Promotions',
-  '/reports':    'Reports',
+  '/dashboard':          'Dashboard',
+  '/catalog/brands':     'Brands',
+  '/catalog/categories': 'Categories',
+  '/catalog/vehicles':   'Vehicles',
+  '/products/parts':     'Parts',
+  '/products/equipment': 'Equipment',
+  '/inventory':          'Inventory',
+  '/orders':             'Orders',
+  '/payments':           'Payments',
+  '/users':              'Users',
+  '/promotions':         'Promotions',
+  '/reports':            'Reports',
 };
 
-function resolveTitle(pathname: string): string {
-  const match = Object.keys(PAGE_TITLES).find((prefix) =>
-    pathname.startsWith(prefix),
-  );
-  return match ? PAGE_TITLES[match] : 'Backoffice';
+// ─── Component ─────────────────────────────────────────────────────────────
+
+interface TopbarProps {
+  collapsed: boolean;
+  onMenuClick: () => void;
 }
 
-/**
- * Fixed top navigation bar with notification bell.
- */
-export default function Topbar() {
-  const { pathname }   = useLocation();
-  const { user }       = useAuthStore();
-  const unreadCount    = useNotificationStore((s) => s.unreadCount);
-  const [panelOpen, setPanelOpen] = useState(false);
+export function Topbar({ onMenuClick }: TopbarProps) {
+  const location = useLocation();
+  const user = useAuthStore(selectUser);
+
+  const pageTitle = PAGE_TITLES[location.pathname] ?? 'Backoffice';
+
+  // Derive initials for the avatar (e.g. "John Doe" → "JD")
+  const initials = user
+    ? `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase() ||
+      user.username[0].toUpperCase()
+    : '?';
 
   return (
     <header className={styles.topbar}>
-      <h1 className={styles.pageTitle}>{resolveTitle(pathname)}</h1>
+      {/* ── Left: menu toggle + page title ───────────────────────── */}
+      <div className={styles.left}>
+        <button
+          className={styles.menuBtn}
+          onClick={onMenuClick}
+          aria-label="Toggle sidebar"
+        >
+          <span className={styles.menuIcon} />
+          <span className={styles.menuIcon} />
+          <span className={styles.menuIcon} />
+        </button>
 
-      <div className={styles.actions}>
-        {/* Notification bell */}
-        <div style={{ position: 'relative' }}>
-          <button
-            className={styles.bellBtn}
-            type="button"
-            onClick={() => setPanelOpen((v) => !v)}
-            aria-label="Notifications"
-          >
-            🔔
-            {unreadCount > 0 && (
-              <span className={styles.bellBadge}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
-          <NotificationPanel
-            open={panelOpen}
-            onClose={() => setPanelOpen(false)}
-          />
-        </div>
+        <h1 className={styles.pageTitle}>{pageTitle}</h1>
+      </div>
 
-        <div className={styles.userChip}>
-          <span className={styles.userAvatar} aria-hidden="true">
-            {(user?.email?.[0] ?? 'A').toUpperCase()}
-          </span>
-          <span className={styles.userLabel}>{user?.email}</span>
+      {/* ── Right: notifications + user ──────────────────────────── */}
+      <div className={styles.right}>
+        {/* Notification bell — wired up in a later step with polling */}
+        <button className={styles.iconBtn} aria-label="Notifications">
+          <Bell size={18} />
+        </button>
+
+        {/* User avatar */}
+        <div className={styles.avatar} title={user?.fullName}>
+          {initials}
         </div>
       </div>
     </header>

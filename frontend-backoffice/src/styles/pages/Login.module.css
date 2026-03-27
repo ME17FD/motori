@@ -1,52 +1,84 @@
-@import '../variables.css';
+/* LoginPage — centered card layout */
 
 .page {
   min-height: 100vh;
-  background: var(--bo-color-content-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-5);
+  background-color: var(--bo-color-content-bg);
+  padding: var(--space-4);
 }
 
 .card {
-  background: var(--bo-card-bg);
+  width: 100%;
+  max-width: 400px;
+  background-color: var(--bo-card-bg);
   border-radius: var(--bo-card-radius);
   box-shadow: var(--bo-card-shadow);
   padding: var(--space-8) var(--space-7);
-  width: 100%;
-  max-width: 400px;
 }
 
-.header {
-  text-align: center;
-  margin-bottom: var(--space-7);
-}
+/* ── Brand ────────────────────────────────────────────────────── */
 
-.logo {
-  font-size: var(--font-size-xl);
+.brand {
+  font-size: 32px;
   font-weight: var(--font-weight-bold);
-  color: var(--color-red);
-  display: block;
+  color: var(--color-black);
+  text-align: center;
   letter-spacing: -1px;
+  margin-bottom: var(--space-1);
+}
+
+.brandAccent {
+  color: var(--color-red);
 }
 
 .subtitle {
-  margin: var(--space-2) 0 0;
-  font-size: var(--font-size-sm);
+  text-align: center;
   color: var(--color-gray);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-6);
 }
+
+/* ── Error banner ─────────────────────────────────────────────── */
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: #b91c1c;
+}
+
+.errorDismiss {
+  background: none;
+  border: none;
+  color: #b91c1c;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* ── Form ─────────────────────────────────────────────────────── */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .label {
@@ -56,63 +88,88 @@
 }
 
 .input {
-  height: 44px;
-  padding: 0 var(--space-4);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-family: var(--font-primary);
   color: var(--color-black);
-  background: var(--color-white);
+  background-color: var(--color-white);
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   outline: none;
+  box-sizing: border-box;
 }
 
 .input:focus {
   border-color: var(--color-red);
-  box-shadow: 0 0 0 3px rgba(193,18,31,0.1);
+  box-shadow: 0 0 0 3px rgba(193, 18, 31, 0.1);
 }
 
 .inputError {
   border-color: var(--bo-status-cancelled);
 }
 
-.errorMsg {
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.fieldError {
   font-size: var(--font-size-xs);
   color: var(--bo-status-cancelled);
 }
 
-.apiError {
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.25);
-  color: var(--bo-status-cancelled);
-  border-radius: 8px;
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--font-size-sm);
-}
+/* ── Submit button ────────────────────────────────────────────── */
 
 .submitBtn {
-  height: 48px;
-  background: var(--color-red);
-  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-red);
+  color: #ffffff;
   border: none;
   border-radius: 8px;
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
-  cursor: pointer;
-  transition: background var(--transition-fast), transform var(--transition-fast);
   font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), opacity var(--transition-fast);
+  margin-top: var(--space-2);
 }
 
 .submitBtn:hover:not(:disabled) {
-  background: #a30f1a;
-}
-
-.submitBtn:active:not(:disabled) {
-  transform: scale(0.98);
+  background-color: #a50f1a;
 }
 
 .submitBtn:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
+}
+
+/* ── Spinner ──────────────────────────────────────────────────── */
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Hint ─────────────────────────────────────────────────────── */
+
+.hint {
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray);
+  margin: var(--space-5) 0 0;
 }

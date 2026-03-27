@@ -1,162 +1,403 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/**
+ * InventoryPage — stock management with filters and actions.
+ *
+ * Features:
+ *   - Paginated inventory table
+ *   - Filters: type, paymentStatus, available/sold, product name
+ *   - Actions: mark as sold, update payment status, delete
+ *   - Add stock modal
+ */
+
 import { useState } from 'react';
-import { useInventory, useInventoryMutations } from '../../hooks/useInventory';
-import CatalogTable from '../../components/Tables/CatalogTable';
-import type { CatalogColumn } from '../../components/Tables/CatalogTable';
-import ConfirmDialog from '../../components/Modals/ConfirmDialog';
-import Pagination from '../../components/ui/Pagination';
-import type { Inventory, InventoryFilters } from '../../types/inventory';
-import { formatDate } from '../../utils/formatters';
+import { Plus, Search, X, CheckCircle, Trash2 } from 'lucide-react';
+import {
+  useInventory,
+  useMarkAsSold,
+  useUpdatePaymentStatus,
+  useDeleteInventoryItem,
+  useAddStock,
+} from '../../hooks/useInventory';
+import { ConfirmDialog } from '../../components/Modals/ConfirmDialog';
+import { InventoryModal } from '../../components/Modals/InventoryModal';
+import { Pagination } from '../../components/ui/Pagination';
+import { formatDate, formatCurrency } from '../../utils/formatters';
+import type {
+  InventoryItemDto,
+  InventoryFilters,
+  InventoryItemType,
+  PaymentStatus,
+} from '../../types/inventory';
 import styles from '../../styles/pages/Inventory/InventoryPage.module.css';
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 20;
 
-/**
- * Inventory management page.
- * Each inventory item represents ONE physical unit (a part OR an equipment).
- * Wired to /api/products/inventories via the gateway.
- */
-export default function InventoryPage() {
-  const [page, setPage]             = useState(0);
-  const [available, setAvailable]   = useState<boolean | undefined>(undefined);
-  const [type, setType]             = useState('');
-  const [deleteTarget, setDeleteTarget] = useState<Inventory | null>(null);
+// ─── Payment status badge ──────────────────────────────────────────────────
 
+function PaymentBadge({ status }: { status: PaymentStatus }) {
+  const map: Record<PaymentStatus, { label: string; cls: string }> = {
+    PENDING:   { label: 'Pending',   cls: styles.payPending },
+    PAID:      { label: 'Paid',      cls: styles.payPaid },
+    CANCELLED: { label: 'Cancelled', cls: styles.payCancelled },
+  };
+  const { label, cls } = map[status];
+  return <span className={`${styles.payBadge} ${cls}`}>{label}</span>;
+}
+
+// ─── Skeleton row ──────────────────────────────────────────────────────────
+
+function SkeletonRow() {
+  return (
+    <tr>
+      {Array.from({ length: 7 }).map((_, i) => (
+        <td key={i} className={styles.td}>
+          <div className={styles.skeletonCell} />
+        </td>
+      ))}
+    </tr>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────
+
+export function InventoryPage() {
+  // ── Filters ────────────────────────────────────────────────────────────
+  const [productName, setProductName]     = useState('');
+  const [type, setType]                   = useState<InventoryItemType | ''>('');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | ''>('');
+  const [available, setAvailable]         = useState<boolean | undefined>();
+  const [page, setPage]                   = useState(0);
+
+  // ── Modal state ────────────────────────────────────────────────────────
+  const [showAddStock, setShowAddStock]       = useState(false);
+  const [sellTarget, setSellTarget]           = useState<InventoryItemDto | null>(null);
+  const [deleteTarget, setDeleteTarget]       = useState<InventoryItemDto | null>(null);
+  const [paymentTarget, setPaymentTarget]     = useState<InventoryItemDto | null>(null);
+  const [newPaymentStatus, setNewPaymentStatus] = useState<PaymentStatus>('PAID');
+
+  // ── Data ───────────────────────────────────────────────────────────────
   const filters: InventoryFilters = {
+    productName: productName || undefined,
+    type:          type          || undefined,
+    paymentStatus: paymentStatus || undefined,
+    available,
     page,
-    size:      PAGE_SIZE,
-    available: available,
-    type:      type || undefined,
+    size: PAGE_SIZE,
   };
 
-  const { data, isLoading } = useInventory(filters);
-  const { remove }          = useInventoryMutations();
+  const { data, isLoading, isError } = useInventory(filters);
+  const markAsSold         = useMarkAsSold();
+  const updatePayment      = useUpdatePaymentStatus();
+  const deleteItem         = useDeleteInventoryItem();
 
-  const columns: CatalogColumn<Inventory>[] = [
-    {
-      key: 'product',
-      header: 'Product',
-      render: (item) => {
-        const name = item.part?.name ?? item.equipement?.name ?? '—';
-        const ref  = item.part?.ref;
-        return (
-          <div>
-            <div style={{ fontWeight: 600 }}>{name}</div>
-            {ref && <div style={{ fontSize: 11, color: '#888', fontFamily: 'monospace' }}>{ref}</div>}
-          </div>
-        );
-      },
-    },
-    {
-      key: 'type',
-      header: 'Type',
-      width: '100px',
-      render: (item) => (
-        <span style={{
-          fontSize: 11,
-          padding: '2px 8px',
-          borderRadius: 12,
-          background: item.part ? 'rgba(59,130,246,0.1)' : 'rgba(139,92,246,0.1)',
-          color: item.part ? '#1d4ed8' : '#6d28d9',
-          fontWeight: 500,
-        }}>
-          {item.part ? 'Part' : 'Equipment'}
-        </span>
-      ),
-    },
-    {
-      key: 'paymentStatus',
-      header: 'Payment status',
-      render: (item) => (
-        <span style={{ fontSize: 12, color: '#5c5c5c' }}>
-          {item.paymentStatus ?? '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'expiredAt',
-      header: 'Expires',
-      render: (item) => item.expiredAt
-        ? <span style={{ fontSize: 12, color: '#5c5c5c' }}>{formatDate(item.expiredAt)}</span>
-        : <span style={{ color: '#888' }}>—</span>,
-    },
-    {
-      key: 'soldAt',
-      header: 'Sold at',
-      render: (item) => item.soldAt
-        ? <span style={{ fontSize: 12, color: '#065f46', fontWeight: 500 }}>{formatDate(item.soldAt)}</span>
-        : <span style={{ color: '#888' }}>Available</span>,
-    },
-  ];
+  const clearFilters = () => {
+    setProductName('');
+    setType('');
+    setPaymentStatus('');
+    setAvailable(undefined);
+    setPage(0);
+  };
+
+  const hasFilters = productName || type || paymentStatus || available !== undefined;
 
   return (
     <div className={styles.page}>
+
+      {/* ── Header ────────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>Inventory</h2>
-          <p className={styles.subtitle}>
-            {data?.page.totalElements ?? 0} inventory items
-          </p>
+          {data && (
+            <p className={styles.subtitle}>
+              {data.totalElements.toLocaleString()} items
+            </p>
+          )}
         </div>
+        <button
+          className={styles.addBtn}
+          onClick={() => setShowAddStock(true)}
+        >
+          <Plus size={15} />
+          Add Stock
+        </button>
       </div>
 
-      {/* Filters */}
-      <div className={styles.filters}>
+      {/* ── Filter bar ────────────────────────────────────────────── */}
+      <div className={styles.filterBar}>
+        {/* Product name search */}
+        <div className={styles.searchWrapper}>
+          <Search size={14} className={styles.searchIcon} />
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Search by product name…"
+            value={productName}
+            onChange={(e) => { setProductName(e.target.value); setPage(0); }}
+          />
+        </div>
+
+        {/* Type */}
+        <select
+          className={styles.select}
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value as InventoryItemType | '');
+            setPage(0);
+          }}
+        >
+          <option value="">All types</option>
+          <option value="PART">Part</option>
+          <option value="EQUIPEMENT">Equipment</option>
+        </select>
+
+        {/* Payment status */}
+        <select
+          className={styles.select}
+          value={paymentStatus}
+          onChange={(e) => {
+            setPaymentStatus(e.target.value as PaymentStatus | '');
+            setPage(0);
+          }}
+        >
+          <option value="">All payment statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="PAID">Paid</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+
+        {/* Availability */}
         <select
           className={styles.select}
           value={available === undefined ? '' : String(available)}
           onChange={(e) => {
-            setAvailable(e.target.value === '' ? undefined : e.target.value === 'true');
+            const v = e.target.value;
+            setAvailable(v === '' ? undefined : v === 'true');
             setPage(0);
           }}
         >
-          <option value="">All items</option>
+          <option value="">Available + Sold</option>
           <option value="true">Available only</option>
           <option value="false">Sold only</option>
         </select>
 
-        <select
-          className={styles.select}
-          value={type}
-          onChange={(e) => { setType(e.target.value); setPage(0); }}
-        >
-          <option value="">All types</option>
-          <option value="PART">Parts</option>
-          <option value="EQUIPMENT">Equipment</option>
-        </select>
+        {hasFilters && (
+          <button className={styles.clearBtn} onClick={clearFilters}>
+            <X size={13} />
+            Clear
+          </button>
+        )}
       </div>
 
-      <CatalogTable
-        columns={columns}
-        data={data?.content ?? []}
-        loading={isLoading}
-        onDelete={(item) => setDeleteTarget(item)}
-        emptyMessage="No inventory items found."
-      />
+      {/* ── Table ─────────────────────────────────────────────────── */}
+      <div className={styles.tableCard}>
+        {isError ? (
+          <div className={styles.errorState}>
+            Failed to load inventory. Please refresh.
+          </div>
+        ) : (
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={styles.th}>ID</th>
+                  <th className={styles.th}>Product</th>
+                  <th className={styles.th}>Type</th>
+                  <th className={styles.th}>Payment</th>
+                  <th className={styles.th}>Status</th>
+                  <th className={styles.th}>Created</th>
+                  <th className={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading
+                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                      <SkeletonRow key={i} />
+                    ))
+                  : data?.content.map((item) => (
+                      <tr key={item.id} className={styles.row}>
+                        <td className={styles.td}>
+                          <span className={styles.idChip}>#{item.id}</span>
+                        </td>
+                        <td className={styles.td}>
+                          <span className={styles.productName}>
+                            {item.productName ?? `Product #${item.productId}`}
+                          </span>
+                        </td>
+                        <td className={styles.td}>
+                          <span className={
+                            item.type === 'PART'
+                              ? styles.typePart
+                              : styles.typeEquip
+                          }>
+                            {item.type === 'PART' ? 'Part' : 'Equipment'}
+                          </span>
+                        </td>
+                        <td className={styles.td}>
+                          <PaymentBadge status={item.paymentStatus} />
+                        </td>
+                        <td className={styles.td}>
+                          {item.soldAt ? (
+                            <span className={styles.statusSold}>
+                              Sold {formatDate(item.soldAt)}
+                            </span>
+                          ) : (
+                            <span className={styles.statusAvail}>Available</span>
+                          )}
+                        </td>
+                        <td className={styles.td}>
+                          {formatDate(item.createdAt)}
+                        </td>
+                        <td className={styles.td}>
+                          <div className={styles.rowActions}>
+                            {/* Mark as sold */}
+                            {!item.soldAt && (
+                              <button
+                                className={styles.iconBtn}
+                                onClick={() => setSellTarget(item)}
+                                title="Mark as sold"
+                              >
+                                <CheckCircle size={14} />
+                              </button>
+                            )}
+                            {/* Update payment */}
+                            <button
+                              className={styles.iconBtn}
+                              onClick={() => {
+                                setPaymentTarget(item);
+                                setNewPaymentStatus(item.paymentStatus);
+                              }}
+                              title="Update payment status"
+                            >
+                              <span className={styles.payIcon}>$</span>
+                            </button>
+                            {/* Delete */}
+                            <button
+                              className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                              onClick={() => setDeleteTarget(item)}
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
 
-      {data && (
-        <Pagination
-          page={page}
-          totalPages={data.page.totalPages}
-          totalElements={data.page.totalElements}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
+                {!isLoading && data?.content.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className={styles.emptyState}>
+                      No inventory items match the current filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {data && data.totalPages > 1 && (
+          <div className={styles.paginationWrapper}>
+            <Pagination
+              currentPage={page}
+              totalPages={data.totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── Modals ────────────────────────────────────────────────── */}
+
+      {/* Add stock */}
+      {showAddStock && (
+        <InventoryModal onClose={() => setShowAddStock(false)} />
+      )}
+
+      {/* Confirm sell */}
+      {sellTarget && (
+        <ConfirmDialog
+          title="Mark as Sold"
+          message={`Mark item #${sellTarget.id} (${sellTarget.productName ?? 'Product #' + sellTarget.productId}) as sold?`}
+          confirmLabel="Mark as Sold"
+          isDangerous={false}
+          isLoading={markAsSold.isPending}
+          onConfirm={async () => {
+            await markAsSold.mutateAsync(sellTarget.id);
+            setSellTarget(null);
+          }}
+          onCancel={() => setSellTarget(null)}
         />
       )}
 
-      <ConfirmDialog
-        open={!!deleteTarget}
-        title="Delete inventory item"
-        message={`Delete this inventory item? This cannot be undone.`}
-        confirmLabel="Delete"
-        danger
-        loading={remove.isPending}
-        onConfirm={() => {
-          if (deleteTarget) {
-            remove.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) });
-          }
-        }}
-        onCancel={() => setDeleteTarget(null)}
-      />
+      {/* Update payment status */}
+      {paymentTarget && (
+        <div
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: 'var(--bo-z-modal)' as never,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPaymentTarget(null); }}
+        >
+          <div className={styles.paymentDialog}>
+            <h3 className={styles.paymentDialogTitle}>
+              Update Payment Status
+            </h3>
+            <p className={styles.paymentDialogSub}>
+              Item #{paymentTarget.id} —{' '}
+              {paymentTarget.productName ?? `Product #${paymentTarget.productId}`}
+            </p>
+            <select
+              className={styles.select}
+              value={newPaymentStatus}
+              onChange={(e) =>
+                setNewPaymentStatus(e.target.value as PaymentStatus)
+              }
+            >
+              <option value="PENDING">Pending</option>
+              <option value="PAID">Paid</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            <div className={styles.paymentDialogActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setPaymentTarget(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.confirmBtn}
+                disabled={updatePayment.isPending}
+                onClick={async () => {
+                  await updatePayment.mutateAsync({
+                    id: paymentTarget.id,
+                    payload: { paymentStatus: newPaymentStatus },
+                  });
+                  setPaymentTarget(null);
+                }}
+              >
+                {updatePayment.isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm */}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Remove Inventory Item"
+          message={`Remove item #${deleteTarget.id} from inventory? This cannot be undone.`}
+          confirmLabel="Remove"
+          isLoading={deleteItem.isPending}
+          onConfirm={async () => {
+            await deleteItem.mutateAsync(deleteTarget.id);
+            setDeleteTarget(null);
+          }}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

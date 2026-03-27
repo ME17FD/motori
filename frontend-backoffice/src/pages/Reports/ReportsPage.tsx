@@ -1,281 +1,212 @@
 /**
- * Reports / Analytics Page
- * Comprehensive reporting dashboard with period selection.
- * Features: multiple export formats (CSV, Excel, JSON, PDF),
- * charts (sales, top products, orders by status),
- * and date range customization for analysis.
+ * ReportsPage — analytics with period selector, charts, and export.
+ *
+ * Uses the same stats hooks from Étape 3.
+ * Adds a custom date range picker and richer chart layout.
  */
 
-import { useState, useId } from 'react';
-import { useReport } from '../../hooks/useReport';
-import KpiCard from '../../components/ui/KpiCard';
-import TopProductsBarChart from '../../components/Charts/TopProductsBarChart';
-import OrdersByStatusPieChart from '../../components/Charts/OrdersByStatusPieChart';
-import RevenueAreaChart from '../../components/Charts/RevenueAreaChart';
-import { formatCurrency } from '../../utils/formatters';
+import { useState } from 'react';
+import { Download } from 'lucide-react';
 import {
-  exportToCsv,
-  exportToJson,
-  exportToExcel,
-  exportToPdf,
-} from '../../utils/export';
-import { buildReportHtml, flattenReportForExport } from '../../utils/reportBuilder';
-import type { ReportPeriod, ReportParams } from '../../types/report';
+  useDashboardStats,
+  useTopProducts,
+} from '../../hooks/useStats';
+import { KpiCard } from '../../components/ui/KpiCard';
+import { RevenueAreaChart } from '../../components/Charts/RevenueAreaChart';
+import { OrdersByStatusPieChart } from '../../components/Charts/OrdersByStatusPieChart';
+import { TopProductsBarChart } from '../../components/Charts/TopProductsBarChart';
+import { exportOrders } from '../../services/orderService';
+import { downloadBlob, buildExportFilename } from '../../utils/export';
+import type { PeriodOption } from '../../types/stats';
 import styles from '../../styles/pages/Reports/ReportsPage.module.css';
 
-const PERIOD_OPTIONS: Array<{ label: string; value: ReportPeriod }> = [
-  { label: 'Today',    value: 'today' },
-  { label: '7 days',   value: '7d' },
-  { label: '30 days',  value: '30d' },
-  { label: '90 days',  value: '90d' },
-  { label: 'Custom',   value: 'custom' },
+// ─── Period config ─────────────────────────────────────────────────────────
+
+const PERIODS: { label: string; value: PeriodOption }[] = [
+  { label: 'Last 7 days',  value: '7' },
+  { label: 'Last 30 days', value: '30' },
+  { label: 'Last 90 days', value: '90' },
+  { label: 'Custom',       value: 'custom' },
 ];
 
-/**
- * Reports page — assembles statistics from multiple endpoints,
- * renders charts and provides CSV / Excel / JSON / PDF export.
- */
-export default function ReportsPage() {
-  const startDateId = useId();
-  const endDateId   = useId();
+// ─── Component ─────────────────────────────────────────────────────────────
 
-  const [period, setPeriod]       = useState<ReportPeriod>('30d');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate]     = useState('');
-  const [topLimit] = useState(10);
+export function ReportsPage() {
+  const [period, setPeriod]   = useState<PeriodOption>('30');
+  const [from, setFrom]       = useState('');
+  const [to, setTo]           = useState('');
+  const [isExporting, setIsExporting] = useState(false);
 
-  const params: ReportParams = {
-    period,
-    startDate: period === 'custom' ? startDate : undefined,
-    endDate:   period === 'custom' ? endDate   : undefined,
-    topLimit,
+  const isCustom = period === 'custom';
+  const days     = isCustom ? undefined : parseInt(period, 10);
+
+  const params = isCustom
+    ? { from: from || undefined, to: to || undefined }
+    : { days };
+
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(params);
+  const { data: topProducts, isLoading: topLoading } = useTopProducts({
+    days,
+    limit: 10,
+  });
+
+  const revenueData = stats
+    ? [{ name: `Period`, revenue: stats.revenueInPeriod, orders: stats.ordersInPeriod }]
+    : [];
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await exportOrders({
+        format: 'csv',
+        from:   from || undefined,
+        to:     to   || undefined,
+      });
+      downloadBlob(blob, buildExportFilename('report', 'csv'));
+    } catch {
+      // handled by interceptor
+    } finally {
+      setIsExporting(false);
+    }
   };
-
-  const { data: report, isLoading, isFetching, refetch } = useReport(params);
-
-  /* ── Export handlers ── */
-  const handleCsv = () => {
-    if (!report) return;
-    exportToCsv(
-      flattenReportForExport(report),
-      `motori-report-${new Date().toISOString().slice(0, 10)}.csv`,
-    );
-  };
-
-  const handleExcel = () => {
-    if (!report) return;
-    exportToExcel(
-      flattenReportForExport(report),
-      `motori-report-${new Date().toISOString().slice(0, 10)}.xls`,
-    );
-  };
-
-  const handleJson = () => {
-    if (!report) return;
-    exportToJson(
-      report,
-      `motori-report-${new Date().toISOString().slice(0, 10)}.json`,
-    );
-  };
-
-  const handlePdf = () => {
-    if (!report) return;
-    exportToPdf(
-      buildReportHtml(report),
-      `Motori Report — ${new Date().toLocaleDateString()}`,
-    );
-  };
-
-  const periodLabel = PERIOD_OPTIONS.find((p) => p.value === period)?.label ?? '';
 
   return (
     <div className={styles.page}>
 
-      {/* Toolbar */}
-      <div className={styles.toolbar}>
-        <div className={styles.left}>
-          <h2 className={styles.title}>Sales Reports</h2>
+      {/* ── Header ────────────────────────────────────────────────── */}
+      <div className={styles.header}>
+        <div>
+          <h2 className={styles.title}>Reports & Analytics</h2>
           <p className={styles.subtitle}>
-            {report
-              ? `Last generated: ${new Date(report.generatedAt).toLocaleTimeString()}`
-              : 'Select a period to generate a report'}
+            Sales performance and business insights
           </p>
         </div>
+        <button
+          className={styles.exportBtn}
+          onClick={handleExport}
+          disabled={isExporting}
+        >
+          <Download size={15} />
+          {isExporting ? 'Exporting…' : 'Export CSV'}
+        </button>
+      </div>
 
-        <div className={styles.right}>
-          {/* Period tabs */}
-          <div className={styles.periodTabs}>
-            {PERIOD_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                className={[
-                  styles.periodBtn,
-                  period === opt.value ? styles.periodBtnActive : '',
-                ].join(' ')}
-                type="button"
-                onClick={() => setPeriod(opt.value)}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+      {/* ── Period selector ───────────────────────────────────────── */}
+      <div className={styles.controls}>
+        <div className={styles.periodSelector}>
+          {PERIODS.map((p) => (
+            <button
+              key={p.value}
+              className={`${styles.periodBtn} ${
+                period === p.value ? styles.periodBtnActive : ''
+              }`}
+              onClick={() => setPeriod(p.value)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Export buttons */}
-          <div className={styles.exportGroup}>
-            <button
-              className={styles.exportBtn}
-              onClick={handleCsv}
-              disabled={!report || isFetching}
-              type="button"
-            >
-              CSV
-            </button>
-            <button
-              className={styles.exportBtn}
-              onClick={handleExcel}
-              disabled={!report || isFetching}
-              type="button"
-            >
-              Excel
-            </button>
-            <button
-              className={styles.exportBtn}
-              onClick={handleJson}
-              disabled={!report || isFetching}
-              type="button"
-            >
-              JSON
-            </button>
-            <button
-              className={`${styles.exportBtn} ${styles.exportBtnPdf}`}
-              onClick={handlePdf}
-              disabled={!report || isFetching}
-              type="button"
-            >
-              PDF
-            </button>
-            <button
-              className={styles.refreshBtn}
-              onClick={() => refetch()}
-              disabled={isFetching}
-              type="button"
-              aria-label="Refresh report"
-            >
-              {isFetching ? '↻ Refreshing…' : '↻ Refresh'}
-            </button>
+        {/* Custom date range */}
+        {isCustom && (
+          <div className={styles.dateRange}>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              placeholder="From"
+            />
+            <span className={styles.dateSep}>→</span>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              placeholder="To"
+            />
           </div>
+        )}
+      </div>
+
+      {/* ── KPI row ───────────────────────────────────────────────── */}
+      <div className={styles.kpiGrid}>
+        <KpiCard
+          title="Orders in Period"
+          value={stats?.ordersInPeriod ?? 0}
+          isLoading={statsLoading}
+          accent="blue"
+        />
+        <KpiCard
+          title="Revenue in Period"
+          value={stats?.revenueInPeriod ?? 0}
+          format="currency"
+          isLoading={statsLoading}
+          accent="green"
+        />
+        <KpiCard
+          title="Total Orders (all time)"
+          value={stats?.totalOrders ?? 0}
+          isLoading={statsLoading}
+          accent="gray"
+        />
+        <KpiCard
+          title="Total Revenue (all time)"
+          value={stats?.totalRevenue ?? 0}
+          format="currency"
+          isLoading={statsLoading}
+          accent="gray"
+        />
+      </div>
+
+      {/* ── Charts ────────────────────────────────────────────────── */}
+      <div className={styles.chartsRow}>
+        <div className={styles.chartCard}>
+          <h3 className={styles.cardTitle}>Revenue Overview</h3>
+          <RevenueAreaChart data={revenueData} isLoading={statsLoading} />
+        </div>
+        <div className={styles.chartCard}>
+          <h3 className={styles.cardTitle}>Orders by Status</h3>
+          <OrdersByStatusPieChart
+            data={stats?.ordersByStatus ?? {}}
+            isLoading={statsLoading}
+          />
         </div>
       </div>
 
-      {/* Custom date range */}
-      {period === 'custom' && (
-        <div className={styles.dateRange}>
-          <div className={styles.dateField}>
-            <label htmlFor={startDateId} className={styles.dateLabel}>From</label>
-            <input
-              id={startDateId}
-              type="date"
-              className={styles.dateInput}
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className={styles.dateField}>
-            <label htmlFor={endDateId} className={styles.dateLabel}>To</label>
-            <input
-              id={endDateId}
-              type="date"
-              className={styles.dateInput}
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+      {/* ── Top products ──────────────────────────────────────────── */}
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>Top 10 Products</h3>
+        <TopProductsBarChart
+          data={topProducts ?? []}
+          isLoading={topLoading}
+        />
+      </div>
+
+      {/* ── Orders by status breakdown ─────────────────────────────── */}
+      {stats?.ordersByStatus && (
+        <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Order Status Breakdown</h3>
+          <div className={styles.statusBreakdown}>
+            {Object.entries(stats.ordersByStatus).map(([status, count]) => (
+              <div key={status} className={styles.statusRow}>
+                <span className={styles.statusLabel}>{status}</span>
+                <div className={styles.statusBarWrapper}>
+                  <div
+                    className={styles.statusBar}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (count / (stats.totalOrders || 1)) * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <span className={styles.statusCount}>{count}</span>
+              </div>
+            ))}
           </div>
         </div>
-      )}
-
-      {isLoading ? (
-        <div className={styles.loadingGrid}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className={styles.skeleton} />
-          ))}
-        </div>
-      ) : !report ? (
-        <div className={styles.empty}>
-          No report data available for the selected period.
-        </div>
-      ) : (
-        <>
-          {/* KPI row */}
-          <div className={styles.kpiGrid}>
-            <KpiCard
-              label="Orders today"
-              value={report.todaySummary.ordersToday}
-              accent="var(--bo-status-confirmed)"
-            />
-            <KpiCard
-              label="Revenue today"
-              value={formatCurrency(report.todaySummary.revenueToday)}
-              accent="var(--bo-status-delivered)"
-            />
-            <KpiCard
-              label={`Orders (${periodLabel})`}
-              value={report.stats.ordersInPeriod}
-              accent="var(--bo-status-processing)"
-            />
-            <KpiCard
-              label={`Revenue (${periodLabel})`}
-              value={formatCurrency(report.stats.revenueInPeriod)}
-              accent="var(--color-red)"
-            />
-          </div>
-
-          {/* Charts row 1 */}
-          <div className={styles.chartsGrid}>
-            <RevenueAreaChart stats={report.stats as never} period={periodLabel} />
-            <OrdersByStatusPieChart data={report.stats.ordersByStatus} />
-          </div>
-
-          {/* Top products */}
-          <TopProductsBarChart data={report.topProducts} />
-
-          {/* Summary table */}
-          <div className={styles.summaryCard}>
-            <h3 className={styles.summaryTitle}>Orders by status — summary</h3>
-            <table className={styles.summaryTable}>
-              <thead>
-                <tr>
-                  <th>Status</th>
-                  <th>Count</th>
-                  <th>Share</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(report.stats.ordersByStatus).map(([status, count]) => {
-                  const share = report.stats.totalOrders > 0
-                    ? ((count / report.stats.totalOrders) * 100).toFixed(1)
-                    : '0.0';
-                  return (
-                    <tr key={status}>
-                      <td style={{ fontWeight: 500 }}>
-                        {status.charAt(0) + status.slice(1).toLowerCase()}
-                      </td>
-                      <td>{count}</td>
-                      <td>
-                        <div className={styles.shareBar}>
-                          <div
-                            className={styles.shareBarFill}
-                            style={{ width: `${share}%` }}
-                          />
-                          <span>{share}%</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
       )}
     </div>
   );

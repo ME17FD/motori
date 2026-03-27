@@ -1,44 +1,90 @@
-import axiosInstance from '../api/axiosInstance';
-import type {
-  TodaySummary,
-  DashboardStats,
-  DashboardParams,
-  TopProduct,
-  TopProductsParams,
-} from '../types/stats';
-
 /**
- * Statistics are served by backoffice-service.
- * Gateway route: /api/statistics/** → backoffice-service.
+ * Stats service — wraps the backoffice-service statistics endpoints.
+ *
+ * All requests go through the API Gateway (axiosInstance).
+ * Endpoints (from api-docs.json):
+ *   GET /api/statistics/today
+ *   GET /api/statistics/dashboard
+ *   GET /api/statistics/top-products
  */
 
-export async function fetchTodaySummary(): Promise<TodaySummary> {
-  const { data } = await axiosInstance.get<TodaySummary>('/api/statistics/today');
+import apiClient from '../api/axiosInstance';
+import type {
+  TodaySummaryDto,
+  StatisticsDto,
+  TopProductDto,
+} from '../types/stats';
+
+// ─── Today summary ─────────────────────────────────────────────────────────
+
+/**
+ * Fetches the daily KPI summary:
+ * ordersToday, revenueToday, pendingOrders, toShipOrders
+ */
+export async function fetchTodaySummary(): Promise<TodaySummaryDto> {
+  const { data } = await apiClient.get<TodaySummaryDto>(
+    '/api/statistics/today'
+  );
   return data;
 }
 
-export async function fetchDashboard(
-  params: DashboardParams = {},
-): Promise<DashboardStats> {
-  const { data } = await axiosInstance.get<DashboardStats>('/api/statistics/dashboard', {
-    params: {
-      arg0: params.days,
-      arg1: params.startDate,
-      arg2: params.endDate,
-      arg3: params.topLimit ?? 10,
-    },
-  });
+// ─── Dashboard statistics ──────────────────────────────────────────────────
+
+export interface DashboardParams {
+  /** Number of days to look back (mutually exclusive with from/to) */
+  days?: number;
+  /** Start date ISO string yyyy-MM-dd */
+  from?: string;
+  /** End date ISO string yyyy-MM-dd */
+  to?: string;
+  /** Number of top products to return (default 10) */
+  topProductsLimit?: number;
+}
+
+/**
+ * Fetches global dashboard statistics for a given period.
+ * Supports either a rolling `days` window or a custom `from`/`to` range.
+ */
+export async function fetchDashboardStats(
+  params: DashboardParams = {}
+): Promise<StatisticsDto> {
+  const { data } = await apiClient.get<StatisticsDto>(
+    '/api/statistics/dashboard',
+    {
+      params: {
+        arg0: params.days,
+        arg1: params.from,
+        arg2: params.to,
+        arg3: params.topProductsLimit ?? 10,
+      },
+    }
+  );
   return data;
 }
 
+// ─── Top products ──────────────────────────────────────────────────────────
+
+export interface TopProductsParams {
+  /** Rolling period in days (default 30) */
+  days?: number;
+  /** Maximum number of results (default 10) */
+  limit?: number;
+}
+
+/**
+ * Fetches the top-selling products for a given period.
+ */
 export async function fetchTopProducts(
-  params: TopProductsParams = {},
-): Promise<TopProduct[]> {
-  const { data } = await axiosInstance.get<TopProduct[]>('/api/statistics/top-products', {
-    params: {
-      arg0: params.days ?? 30,
-      arg1: params.limit ?? 10,
-    },
-  });
+  params: TopProductsParams = {}
+): Promise<TopProductDto[]> {
+  const { data } = await apiClient.get<TopProductDto[]>(
+    '/api/statistics/top-products',
+    {
+      params: {
+        arg0: params.days ?? 30,
+        arg1: params.limit ?? 10,
+      },
+    }
+  );
   return data;
 }
