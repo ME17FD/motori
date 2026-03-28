@@ -64,6 +64,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
       KEYCLOAK_SECRET_KEY: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
     networks:
       - motori-network

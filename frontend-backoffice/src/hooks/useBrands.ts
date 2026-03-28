@@ -61,10 +61,12 @@ export function useUpdateBrand() {
 }
 
 /** Soft-delete a brand */
+/** Soft-delete a brand — le type est nécessaire pour le path */
 export function useDeleteBrand(type: BrandType) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteBrand(id),
+    // ✅ Passe le type au service
+    mutationFn: (id: number) => deleteBrand(id, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.byType(type) });
       toast.success('Brand deleted.');

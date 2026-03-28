@@ -77,12 +77,13 @@ export function useUpdateCategory() {
     onError: () => toast.error('Failed to update category.'),
   });
 }
-
+  
 /** Delete a category */
 export function useDeleteCategory(type: CategoryType) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteCategory(id),
+    // ✅ Passe le type au service
+    mutationFn: (id: number) => deleteCategory(id, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.byType(type) });
       queryClient.invalidateQueries({ queryKey: categoryKeys.tree(type) });
