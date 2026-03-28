@@ -32,136 +32,120 @@ import type {
 
 // ─── Brands ────────────────────────────────────────────────────────────────
 
-/** Fetch all brands of a given type */
+// VehiculeBrand → /api/products/vehicule-brands
+// PartBrand     → /api/products/part-brands
+// EquipementBrand → /api/products/equipement-brands
+
 export async function fetchBrandsByType(type: BrandType): Promise<BrandDto[]> {
-  const { data } = await apiClient.get<BrandDto[]>('/api/brands', {
-    params: { type },
-  });
+  const pathMap: Record<BrandType, string> = {
+    VehiculeBrand:   '/api/products/vehicule-brands',
+    PartBrand:       '/api/products/part-brands',
+    EquipementBrand: '/api/products/equipement-brands',
+  };
+  const { data } = await apiClient.get<BrandDto[]>(pathMap[type]);
   return data;
 }
 
-/** Fetch a single brand by ID */
-export async function fetchBrandById(id: number): Promise<BrandDto> {
-  const { data } = await apiClient.get<BrandDto>(`/api/brands/${id}`);
+export async function createBrand(payload: CreateBrandRequest): Promise<BrandDto> {
+  const pathMap: Record<BrandType, string> = {
+    VehiculeBrand:   '/api/products/vehicule-brands',
+    PartBrand:       '/api/products/part-brands',
+    EquipementBrand: '/api/products/equipement-brands',
+  };
+  const { data } = await apiClient.post<BrandDto>(pathMap[payload.type], payload);
   return data;
 }
 
-/** Create a new brand */
-export async function createBrand(
-  payload: CreateBrandRequest
-): Promise<BrandDto> {
-  const { data } = await apiClient.post<BrandDto>('/api/brands', payload);
+export async function updateBrand(id: number, payload: UpdateBrandRequest & { type: BrandType }): Promise<BrandDto> {
+  const pathMap: Record<BrandType, string> = {
+    VehiculeBrand:   '/api/products/vehicule-brands',
+    PartBrand:       '/api/products/part-brands',
+    EquipementBrand: '/api/products/equipement-brands',
+  };
+  const { data } = await apiClient.put<BrandDto>(`${pathMap[payload.type]}/${id}`, payload);
   return data;
 }
 
-/** Update an existing brand */
-export async function updateBrand(
-  id: number,
-  payload: UpdateBrandRequest
-): Promise<BrandDto> {
-  const { data } = await apiClient.put<BrandDto>(`/api/brands/${id}`, payload);
-  return data;
-}
-
-/** Soft-delete a brand */
-export async function deleteBrand(id: number): Promise<void> {
-  await apiClient.delete(`/api/brands/${id}`);
+export async function deleteBrand(id: number, type: BrandType): Promise<void> {
+  const pathMap: Record<BrandType, string> = {
+    VehiculeBrand:   '/api/products/vehicule-brands',
+    PartBrand:       '/api/products/part-brands',
+    EquipementBrand: '/api/products/equipement-brands',
+  };
+  await apiClient.delete(`${pathMap[type]}/${id}`);
 }
 
 // ─── Categories ────────────────────────────────────────────────────────────
 
-/** Fetch all categories of a given type */
-export async function fetchCategoriesByType(
-  type: CategoryType
-): Promise<CategoryDto[]> {
-  const { data } = await apiClient.get<CategoryDto[]>('/api/categories', {
-    params: { type },
-  });
+export async function fetchCategoriesByType(type: CategoryType): Promise<CategoryDto[]> {
+  const pathMap: Record<CategoryType, string> = {
+    PartCategory:       '/api/products/part-categories',
+    EquipementCategory: '/api/products/equipement-categories',
+  };
+  const { data } = await apiClient.get<CategoryDto[]>(pathMap[type]);
   return data;
 }
 
-/** Fetch full category tree (nested children) */
-export async function fetchCategoryTree(
-  type: CategoryType
-): Promise<CategoryDto[]> {
-  const { data } = await apiClient.get<CategoryDto[]>(
-    '/api/categories/tree',
-    { params: { type } }
-  );
+export async function fetchCategoryTree(type: CategoryType): Promise<CategoryDto[]> {
+  const pathMap: Record<CategoryType, string> = {
+    PartCategory:       '/api/products/part-categories',
+    EquipementCategory: '/api/products/equipement-categories',
+  };
+  const { data } = await apiClient.get<CategoryDto[]>(`${pathMap[type]}/tree`);
   return data;
 }
 
-/** Fetch a single category by ID */
-export async function fetchCategoryById(id: number): Promise<CategoryDto> {
-  const { data } = await apiClient.get<CategoryDto>(`/api/categories/${id}`);
+export async function createCategory(payload: CreateCategoryRequest): Promise<CategoryDto> {
+  const pathMap: Record<CategoryType, string> = {
+    PartCategory:       '/api/products/part-categories',
+    EquipementCategory: '/api/products/equipement-categories',
+  };
+  const { data } = await apiClient.post<CategoryDto>(pathMap[payload.type], payload);
   return data;
 }
 
-/** Create a new category */
-export async function createCategory(
-  payload: CreateCategoryRequest
-): Promise<CategoryDto> {
-  const { data } = await apiClient.post<CategoryDto>(
-    '/api/categories',
-    payload
-  );
-  return data;
-}
-
-/** Update an existing category */
 export async function updateCategory(
   id: number,
-  payload: UpdateCategoryRequest
+  payload: UpdateCategoryRequest & { type: CategoryType }
 ): Promise<CategoryDto> {
+  const pathMap: Record<CategoryType, string> = {
+    PartCategory:       '/api/products/part-categories',
+    EquipementCategory: '/api/products/equipement-categories',
+  };
   const { data } = await apiClient.put<CategoryDto>(
-    `/api/categories/${id}`,
+    `${pathMap[payload.type]}/${id}`,
     payload
   );
   return data;
 }
 
-/** Delete a category */
-export async function deleteCategory(id: number): Promise<void> {
-  await apiClient.delete(`/api/categories/${id}`);
+export async function deleteCategory(id: number, type: CategoryType): Promise<void> {
+  const pathMap: Record<CategoryType, string> = {
+    PartCategory:       '/api/products/part-categories',
+    EquipementCategory: '/api/products/equipement-categories',
+  };
+  await apiClient.delete(`${pathMap[type]}/${id}`);
 }
 
 // ─── Vehicles ──────────────────────────────────────────────────────────────
 
-/** Fetch all vehicles, optionally filtered by brand */
 export async function fetchVehicles(brandId?: number): Promise<VehicleDto[]> {
-  const { data } = await apiClient.get<VehicleDto[]>('/api/vehicles', {
+  const { data } = await apiClient.get<VehicleDto[]>('/api/products/vehicules', {
     params: brandId ? { brandId } : undefined,
   });
   return data;
 }
 
-/** Fetch a single vehicle by ID */
-export async function fetchVehicleById(id: number): Promise<VehicleDto> {
-  const { data } = await apiClient.get<VehicleDto>(`/api/vehicles/${id}`);
+export async function createVehicle(payload: CreateVehicleRequest): Promise<VehicleDto> {
+  const { data } = await apiClient.post<VehicleDto>('/api/products/vehicules', payload);
   return data;
 }
 
-/** Create a new vehicle */
-export async function createVehicle(
-  payload: CreateVehicleRequest
-): Promise<VehicleDto> {
-  const { data } = await apiClient.post<VehicleDto>('/api/vehicles', payload);
+export async function updateVehicle(id: number, payload: UpdateVehicleRequest): Promise<VehicleDto> {
+  const { data } = await apiClient.put<VehicleDto>(`/api/products/vehicules/${id}`, payload);
   return data;
 }
 
-/** Update an existing vehicle */
-export async function updateVehicle(
-  id: number,
-  payload: UpdateVehicleRequest
-): Promise<VehicleDto> {
-  const { data } = await apiClient.put<VehicleDto>(
-    `/api/vehicles/${id}`,
-    payload
-  );
-  return data;
-}
-
-/** Delete a vehicle */
 export async function deleteVehicle(id: number): Promise<void> {
-  await apiClient.delete(`/api/vehicles/${id}`);
+  await apiClient.delete(`/api/products/vehicules/${id}`);
 }

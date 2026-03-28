@@ -14,11 +14,11 @@ import type {
 import type { PageResult as PR } from '../types/product';
 
 /** Fetch paginated inventory items with optional filters */
-export async function fetchInventory(
-  filters: InventoryFilters = {}
-): Promise<PR<InventoryItemDto>> {
+// Remplacer /api/inventory par /api/products/inventories
+
+export async function fetchInventory(filters: InventoryFilters = {}): Promise<PR<InventoryItemDto>> {
   const { data } = await apiClient.get<PR<InventoryItemDto>>(
-    '/api/inventory',
+    '/api/products/inventories',
     {
       params: {
         type:          filters.type,
@@ -33,38 +33,32 @@ export async function fetchInventory(
   return data;
 }
 
-/** Add stock units for a product */
-export async function addStock(
-  payload: CreateInventoryRequest
-): Promise<InventoryItemDto[]> {
+export async function addStock(payload: CreateInventoryRequest): Promise<InventoryItemDto[]> {
   const { data } = await apiClient.post<InventoryItemDto[]>(
-    '/api/inventory',
+    '/api/products/inventories',
     payload
   );
   return data;
 }
 
-/** Mark an inventory item as sold */
 export async function markAsSold(id: number): Promise<InventoryItemDto> {
   const { data } = await apiClient.patch<InventoryItemDto>(
-    `/api/inventory/${id}/sell`
+    `/api/products/inventories/${id}/sell`
   );
   return data;
 }
 
-/** Update payment status of an inventory item */
 export async function updatePaymentStatus(
   id: number,
   payload: UpdatePaymentStatusRequest
 ): Promise<InventoryItemDto> {
   const { data } = await apiClient.patch<InventoryItemDto>(
-    `/api/inventory/${id}/payment`,
+    `/api/products/inventories/${id}/payment`,
     payload
   );
   return data;
 }
 
-/** Delete an inventory item */
 export async function deleteInventoryItem(id: number): Promise<void> {
-  await apiClient.delete(`/api/inventory/${id}`);
+  await apiClient.delete(`/api/products/inventories/${id}`);
 }

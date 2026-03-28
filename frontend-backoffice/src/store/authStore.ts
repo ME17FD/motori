@@ -1,212 +1,206 @@
 /**
- * Auth store — Zustand-based authentication state manager.
+ * Auth store — Zustand store with MANUAL localStorage persistence.
  *
- * Responsibilities:
- * - Persist access/refresh tokens to localStorage
- * - Derive and store the normalized AuthUser from JWT payload
- * - Expose selectors for role checks (isAdmin, isSuperAdmin)
- * - Handle token clearing on logout or 401
+ * Why not Zustand persist middleware:
+ *   The persist middleware wraps state under {"state": {...}} in localStorage,
+ *   making it impossible to read the raw token directly via localStorage.getItem().
+ *   The Axios interceptor needs synchronous, direct localStorage access to attach
+ *   the Bearer token before Zustand's async rehydration completes.
  *
- * Storage keys:
- *   motori_access_token   — Keycloak access token (JWT)
- *   motori_refresh_token  — Keycloak refresh token
+ *   Solution: manage localStorage manually in each action, using flat keys.
+ *   This guarantees the interceptor can always read the token synchronously.
+ *
+ * Storage keys (flat, directly readable):
+ *   motori_access_token  — raw JWT access token string
+ *   motori_refresh_token — raw JWT refresh token string
+ *   motori_expires_at    — expiry timestamp in ms (string)
  */
 
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import type { AuthState, AuthUser, KeycloakTokenPayload } from '../types/auth';
 
-// ─── Storage key constants ─────────────────────────────────────────────────
+// ─── Storage keys — exported for use in axiosInstance ─────────────────────
 
-const ACCESS_TOKEN_KEY = 'motori_access_token';
-const REFRESH_TOKEN_KEY = 'motori_refresh_token';
+export const ACCESS_TOKEN_KEY  = 'motori_access_token';
+export const REFRESH_TOKEN_KEY = 'motori_refresh_token';
+export const EXPIRES_AT_KEY    = 'motori_expires_at';
 
 // ─── JWT utilities ─────────────────────────────────────────────────────────
 
-/**
- * Decodes a JWT without verifying its signature.
- * Signature verification is handled server-side by Spring Security.
- */
 function decodeJwt(token: string): KeycloakTokenPayload | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-
-    // Base64url → Base64 → decode
     const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const json = atob(payload);
-    return JSON.parse(json) as KeycloakTokenPayload;
-  } catch {
+    // Pad base64 if needed
+    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
+    return JSON.parse(atob(padded)) as KeycloakTokenPayload;
+  } catch (e) {
+    console.error('[authStore] JWT decode failed:', e);
     return null;
   }
 }
 
-/**
- * Maps a raw Keycloak token payload to a normalized AuthUser.
- * Falls back gracefully when optional claims are missing.
- */
 function payloadToUser(payload: KeycloakTokenPayload): AuthUser {
   return {
-    id: payload.sub,
-    username: payload.preferred_username,
-    email: payload.email ?? '',
-    firstName: payload.given_name ?? '',
-    lastName: payload.family_name ?? '',
-    fullName: payload.name ?? payload.preferred_username,
-    roles: payload.realm_access?.roles ?? [],
+    id:            payload.sub,
+    username:      payload.preferred_username,
+    email:         payload.email         ?? '',
+    firstName:     payload.given_name    ?? '',
+    lastName:      payload.family_name   ?? '',
+    fullName:      payload.name          ?? payload.preferred_username,
+    roles:         payload.realm_access?.roles ?? [],
     emailVerified: payload.email_verified ?? false,
   };
 }
 
-// ─── Store definition ───────────────────────────────────────────────────────
+// ─── Store interface ───────────────────────────────────────────────────────
 
 interface AuthStore extends AuthState {
-  /** Initialize store from existing localStorage tokens (called on app mount) */
-  initialize: () => void;
-  /** Persist tokens and derive user from the access token JWT */
-  setTokens: (accessToken: string, refreshToken: string, expiresIn: number) => void;
-  /** Replace only the access token (used during silent refresh) */
+  /**
+   * Synchronously hydrate the store from localStorage.
+   * Call once at app startup before the first render.
+   */
+  initialize:     () => void;
+  /**
+   * Persist both tokens and derive user from the access token JWT.
+   * Writes directly to localStorage for immediate interceptor access.
+   */
+  setTokens:      (accessToken: string, refreshToken: string, expiresIn: number) => void;
+  /**
+   * Replace only the access token (called on silent refresh).
+   */
   setAccessToken: (accessToken: string, expiresIn: number) => void;
-  /** Clear all auth state and remove tokens from localStorage */
-  clearAuth: () => void;
-  /** Convenience: check if the current user holds a given realm role */
-  hasRole: (role: string) => boolean;
-  /** True if the access token is expired (or missing) */
+  /**
+   * Clear all auth state and remove tokens from localStorage.
+   */
+  clearAuth:      () => void;
+  hasRole:        (role: string) => boolean;
   isTokenExpired: () => boolean;
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set, get) => ({
-      // ── Initial state ──────────────────────────────────────────────────
-      accessToken: null,
-      refreshToken: null,
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      expiresAt: null,
+// ─── Store ─────────────────────────────────────────────────────────────────
 
-      // ── Actions ────────────────────────────────────────────────────────
+export const useAuthStore = create<AuthStore>()((set, get) => ({
+  // ── Initial state ────────────────────────────────────────────────────
+  accessToken:     null,
+  refreshToken:    null,
+  user:            null,
+  isAuthenticated: false,
+  isLoading:       false,
+  expiresAt:       null,
 
-      initialize() {
-        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+  // ── Actions ──────────────────────────────────────────────────────────
 
-        if (!accessToken || !refreshToken) {
-          set({ isAuthenticated: false, user: null, isLoading: false });
-          return;
-        }
+  initialize() {
+    const accessToken  = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+    const expiresAtStr = localStorage.getItem(EXPIRES_AT_KEY);
 
-        const payload = decodeJwt(accessToken);
-        if (!payload) {
-          // Malformed token — clear storage
-          localStorage.removeItem(ACCESS_TOKEN_KEY);
-          localStorage.removeItem(REFRESH_TOKEN_KEY);
-          set({ isAuthenticated: false, user: null, isLoading: false });
-          return;
-        }
-
-        const expiresAt = payload.exp * 1000; // Convert to ms
-        const now = Date.now();
-
-        if (now >= expiresAt) {
-          // Access token expired — we still keep refresh token for silent refresh
-          // The Axios interceptor will handle the refresh on the next API call
-          set({
-            accessToken,
-            refreshToken,
-            user: payloadToUser(payload),
-            isAuthenticated: true, // Will be invalidated by interceptor if refresh fails
-            expiresAt,
-            isLoading: false,
-          });
-          return;
-        }
-
-        set({
-          accessToken,
-          refreshToken,
-          user: payloadToUser(payload),
-          isAuthenticated: true,
-          expiresAt,
-          isLoading: false,
-        });
-      },
-
-      setTokens(accessToken, refreshToken, expiresIn) {
-        const payload = decodeJwt(accessToken);
-        if (!payload) {
-          console.error('[AuthStore] setTokens: invalid JWT received');
-          return;
-        }
-
-        const expiresAt = Date.now() + expiresIn * 1000;
-        const user = payloadToUser(payload);
-
-        // Persist to localStorage for hydration on next page load
-        localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-        localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-
-        set({ accessToken, refreshToken, user, isAuthenticated: true, expiresAt, isLoading: false });
-      },
-
-      setAccessToken(accessToken, expiresIn) {
-        const payload = decodeJwt(accessToken);
-        if (!payload) {
-          console.error('[AuthStore] setAccessToken: invalid JWT received');
-          return;
-        }
-
-        const expiresAt = Date.now() + expiresIn * 1000;
-        const user = payloadToUser(payload);
-
-        localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-
-        set((state) => ({ ...state, accessToken, user, expiresAt, isAuthenticated: true }));
-      },
-
-      clearAuth() {
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
-        set({
-          accessToken: null,
-          refreshToken: null,
-          user: null,
-          isAuthenticated: false,
-          expiresAt: null,
-          isLoading: false,
-        });
-      },
-
-      hasRole(role) {
-        return get().user?.roles.includes(role) ?? false;
-      },
-
-      isTokenExpired() {
-        const { expiresAt } = get();
-        if (!expiresAt) return true;
-        // Add 10s buffer to refresh slightly before actual expiry
-        return Date.now() >= expiresAt - 10_000;
-      },
-    }),
-    {
-      name: 'motori-auth',
-      storage: createJSONStorage(() => localStorage),
-      // Only persist the tokens themselves — the rest is derived
-      partialize: (state) => ({
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
-        expiresAt: state.expiresAt,
-      }),
+    if (!accessToken || !refreshToken) {
+      set({ isAuthenticated: false, user: null, isLoading: false });
+      return;
     }
-  )
-);
 
-// ─── Convenience selectors ─────────────────────────────────────────────────
+    const payload = decodeJwt(accessToken);
+    if (!payload) {
+      // Malformed token — wipe storage
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(EXPIRES_AT_KEY);
+      set({ isAuthenticated: false, user: null, isLoading: false });
+      return;
+    }
 
-/** Returns true only when the user holds the ADMIN or SUPERADMIN realm role */
+    const expiresAt = expiresAtStr
+      ? parseInt(expiresAtStr, 10)
+      : payload.exp * 1000;
+
+    set({
+      accessToken,
+      refreshToken,
+      user:            payloadToUser(payload),
+      isAuthenticated: true,
+      expiresAt,
+      isLoading:       false,
+    });
+  },
+
+  setTokens(accessToken, refreshToken, expiresIn) {
+    const payload = decodeJwt(accessToken);
+    if (!payload) {
+      console.error('[authStore] setTokens: invalid JWT');
+      return;
+    }
+
+    const expiresAt = Date.now() + expiresIn * 1000;
+
+    // Write directly — the Axios interceptor reads these synchronously
+    localStorage.setItem(ACCESS_TOKEN_KEY,  accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    localStorage.setItem(EXPIRES_AT_KEY,    String(expiresAt));
+
+    set({
+      accessToken,
+      refreshToken,
+      user:            payloadToUser(payload),
+      isAuthenticated: true,
+      expiresAt,
+      isLoading:       false,
+    });
+  },
+
+  setAccessToken(accessToken, expiresIn) {
+    const payload = decodeJwt(accessToken);
+    if (!payload) {
+      console.error('[authStore] setAccessToken: invalid JWT');
+      return;
+    }
+
+    const expiresAt = Date.now() + expiresIn * 1000;
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    localStorage.setItem(EXPIRES_AT_KEY,   String(expiresAt));
+
+    set((state) => ({
+      ...state,
+      accessToken,
+      user:            payloadToUser(payload),
+      expiresAt,
+      isAuthenticated: true,
+    }));
+  },
+
+  clearAuth() {
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(EXPIRES_AT_KEY);
+
+    set({
+      accessToken:     null,
+      refreshToken:    null,
+      user:            null,
+      isAuthenticated: false,
+      expiresAt:       null,
+      isLoading:       false,
+    });
+  },
+
+  hasRole(role) {
+    return get().user?.roles.includes(role) ?? false;
+  },
+
+  isTokenExpired() {
+    const { expiresAt } = get();
+    if (!expiresAt) return true;
+    return Date.now() >= expiresAt - 10_000;
+  },
+}));
+
+// ─── Selectors ─────────────────────────────────────────────────────────────
+
 export const selectIsAdmin = (state: AuthStore): boolean =>
   state.user?.roles.some((r) => r === 'ADMIN' || r === 'SUPERADMIN') ?? false;
 
-export const selectUser = (state: AuthStore): AuthUser | null => state.user;
-export const selectAccessToken = (state: AuthStore): string | null => state.accessToken;
+export const selectUser        = (state: AuthStore) => state.user;
+export const selectAccessToken = (state: AuthStore) => state.accessToken;

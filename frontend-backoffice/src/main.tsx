@@ -1,14 +1,3 @@
-/**
- * Application entry point.
- *
- * Responsibilities:
- * - Mount React app with StrictMode
- * - Wrap with BrowserRouter for React Router v6
- * - Initialize TanStack Query client
- * - Initialize auth store from persisted localStorage tokens
- * - Mount Sonner toast provider
- */
-
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -18,39 +7,48 @@ import { useAuthStore } from './store/authStore';
 import App from './App';
 import './styles/global.css';
 
-// ─── TanStack Query client ─────────────────────────────────────────────────
+// ─── TanStack Query ────────────────────────────────────────────────────────
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,       // 5 min — avoid redundant refetches
-      gcTime: 10 * 60 * 1000,          // 10 min — keep unused data in cache
-      retry: 1,                         // One retry on failure
-      refetchOnWindowFocus: false,      // Avoid surprise refetches on tab switch
+      staleTime:            5 * 60 * 1000,
+      gcTime:               10 * 60 * 1000,
+      retry:                1,
+      refetchOnWindowFocus: false,
     },
     mutations: {
-      retry: 0,                         // Never retry mutations automatically
+      retry: 0,
     },
   },
 });
 
 // ─── Auth initialization ───────────────────────────────────────────────────
 
-// Hydrate auth store from localStorage before first render.
-// This runs synchronously so the app never flashes an unauthenticated state.
+/**
+ * CRITICAL: Call initialize() synchronously before createRoot().
+ *
+ * This reads tokens directly from localStorage (flat keys, no JSON wrapping)
+ * and populates the Zustand store BEFORE any component renders.
+ *
+ * Because we no longer use Zustand's persist middleware, there is no async
+ * rehydration — initialize() is purely synchronous and always completes
+ * before the first render cycle begins.
+ */
 useAuthStore.getState().initialize();
 
-// ─── Root mount ────────────────────────────────────────────────────────────
+// ─── Root ──────────────────────────────────────────────────────────────────
 
 const container = document.getElementById('root');
-if (!container) throw new Error('[main] Root element #root not found in index.html');
+if (!container) {
+  throw new Error('[main] Root element #root not found in index.html');
+}
 
 createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <App />
-        {/* Toaster outside router so it persists across navigations */}
         <Toaster
           position="top-right"
           richColors
