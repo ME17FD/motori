@@ -28,7 +28,11 @@ public final class GatewayConstants {
             "/api/auth",
             "/api/public",
             "/api/gateway",
-            "/logs"
+            "/logs",
+            "/api/products/swagger-ui",   
+            "/api/products/api-docs",
+            "/api/products/webjars",
+            "/api/products" 
     );
 
     public static final Set<String> PUBLIC_PATHS = Set.of(

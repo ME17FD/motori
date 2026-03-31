@@ -18,10 +18,10 @@ public class CentralizedLogService {
     @Autowired(required = false)
     private GatewayLoggingClient gatewayLoggingClient;
 
-    @Value("${logging.centralized.min-level:ERROR}")
+    @Value("${logging.centralized.min-level:WARN}")
     private String configuredMinLevel;
 
-    @Value("${logging.centralized.enabled:true}")
+    @Value("${logging.centralized.enabled:false}")
     private boolean loggingEnabled;
 
     private static final String SERVICE_NAME = "user-service";
@@ -82,6 +82,18 @@ public class CentralizedLogService {
                     .build();
             gatewayLoggingClient.saveLog(logRequest);
         } catch (Exception e) {
+            LogRequest logRequest = LogRequest.builder()
+                    .level(level.name())
+                    .message(message)
+                    .loggerName(loggerName)
+                    .userEmail(userEmail)
+                    .ipAddress(ipAddress)
+                    .requestUrl(requestUrl)
+                    .methodName(methodName)
+                    .exception(exception)
+                    .timestamp(timestamp != null ? timestamp : LocalDateTime.now())
+                    .build();
+            System.out.println("Log sent: " + logRequest);
             log.error("Failed to send log to gateway: {}", e.getMessage());
         }
     }

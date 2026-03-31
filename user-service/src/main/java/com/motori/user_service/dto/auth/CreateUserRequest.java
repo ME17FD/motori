@@ -20,25 +20,9 @@ public record CreateUserRequest(
         String adress,
 
         @NotBlank(message = "Password is required")
-        String password,
+        String password
 
-        @NotNull(message = "Role is required")
-        String role,
 
-        @NotNull(message = "Approved status is required")
-        Boolean approved,
-
-        Boolean activated,
-
-        @Nullable
-        Long managerId
 ) {
-    public CreateUserRequest {
-        if (approved == null) {
-            approved = true;
-        }
-        if (activated == null) {
-            activated = false;
-        }
-    }
+
 }
