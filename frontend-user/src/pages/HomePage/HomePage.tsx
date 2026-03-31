@@ -12,9 +12,9 @@ import ProductSlider  from "../../components/ProductSlider/ProductSlider";
 import Button         from "../../components/Button/Button";
 import Footer         from "../../components/Footer/Footer";
 
-import { HERO_IMAGES, ABOUT_DESCRIPTION, AUTOPLAY_DELAY_MS } from "../../constants/index";
+import { HERO_IMAGES, ABOUT_DESCRIPTION, FOOTER_LINKS, AUTOPLAY_DELAY_MS } from "../../constants/index";
 import { MOCK_PRODUCTS, MOCK_BRANDS, MOCK_CATEGORIES }                       from "../../mocks/index";
-import { addToCart }                                                          from "../../services/index";
+import addToCart                                                           from "../../hooks/useCart";
 
 // ─── HeroImageSlider ──────────────────────────────────────────────────────────
 // Kept in this file as it is tightly coupled to the hero section layout.
@@ -182,7 +182,7 @@ HeroImageSlider.displayName = "HeroImageSlider";
 
 const HomePage: React.FC = () => {
   const handleAddToCart = useCallback(async (id: string) => {
-    await addToCart(id);
+    await addToCart(id, 1);
   }, []);
 
   const handleSeeMore = useCallback(() => {
@@ -237,7 +237,7 @@ const HomePage: React.FC = () => {
       <section className="home-page__section">
         <h2 className="home-page__section-title">Marques de motos disponibles</h2>
         <div className="home-page__brands-grid">
-          {MOCK_BRANDS.map((brand) => (
+          {MOCK_BRANDS.map((brand: { name: React.Key | null | undefined; src: string | undefined; }) => (
             <div key={brand.name} className="home-page__brand-card">
               <img
                 src={brand.src}

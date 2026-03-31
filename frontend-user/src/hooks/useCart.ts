@@ -1,120 +1,72 @@
-import { useState, useCallback } from "react";
-import type { Article, CartItem, CartState } from "../types/article";
+import { useState, useCallback, useMemo } from "react";
+import { loadCart, saveCart, clearCartStorage } from "../utils/cartStorage";
+import type { CartItem, UseCartReturn } from "../types/cart.types";
+import type { UUID } from "../types/common.types";
 
-// ─────────────────────────────────────────────
-// Return type
-// ─────────────────────────────────────────────
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
-interface UseCartReturn {
-  /** Full cart state */
-  cart: CartState;
-  /** Add one unit of an article, or increment if already in cart */
-  addToCart: (article: Article) => void;
-  /** Remove one unit of an article, remove entry if quantity reaches 0 */
-  removeFromCart: (articleId: string) => void;
-  /** Remove an article entirely regardless of quantity */
-  removeAllOfItem: (articleId: string) => void;
-  /** Empty the cart */
-  clearCart: () => void;
-  /** Whether a given article is already in the cart */
-  isInCart: (articleId: string) => boolean;
-  /** Quantity of a specific article currently in the cart */
-  getQuantity: (articleId: string) => number;
-}
+const useCart = (): UseCartReturn => {
+  const [items, setItems] = useState<CartItem[]>(loadCart);
 
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
+  // Derive a Set of IDs in sync with items —
+  // O(1) lookup for isInCart and deduplication vs O(n) .some()
+  const itemIdSet = useMemo(
+    () => new Set(items.map((item) => item.inventoryId)),
+    [items]
+  );
 
-/** Recomputes totalCount and totalPrice from the items array */
-const computeTotals = (
-  items: CartItem[]
-): Pick<CartState, "totalCount" | "totalPrice"> => ({
-  totalCount: items.reduce((sum, item) => sum + item.quantity, 0),
-  totalPrice: items.reduce((sum, item) => sum + item.article.price * item.quantity, 0),
-});
+  // ── Internal updater ───────────────────────────────────────────────────────
 
-const EMPTY_CART: CartState = {
-  items:      [],
-  totalCount: 0,
-  totalPrice: 0,
-};
-
-// ─────────────────────────────────────────────
-// Hook
-// ─────────────────────────────────────────────
-
-export const useCart = (): UseCartReturn => {
-  const [cart, setCart] = useState<CartState>(EMPTY_CART);
-
-  // ── Handlers ──────────────────────────────
-
-  /** Add one unit of an article to the cart */
-  const addToCart = useCallback((article: Article) => {
-    setCart((prev) => {
-      const existing = prev.items.find((i) => i.article.id === article.id);
-
-      const updatedItems: CartItem[] = existing
-        ? prev.items.map((i) =>
-            i.article.id === article.id
-              ? { ...i, quantity: i.quantity + 1 }
-              : i
-          )
-        : [...prev.items, { article, quantity: 1 }];
-
-      return { items: updatedItems, ...computeTotals(updatedItems) };
+  const updateCart = useCallback((updater: (prev: CartItem[]) => CartItem[]) => {
+    setItems((prev) => {
+      const next = updater(prev);
+      saveCart(next);
+      return next;
     });
   }, []);
 
-  /** Decrement quantity by 1 — removes entry if quantity reaches 0 */
-  const removeFromCart = useCallback((articleId: string) => {
-    setCart((prev) => {
-      const updatedItems: CartItem[] = prev.items
-        .map((i) =>
-          i.article.id === articleId
-            ? { ...i, quantity: i.quantity - 1 }
-            : i
-        )
-        .filter((i) => i.quantity > 0);
+  // ── Actions ────────────────────────────────────────────────────────────────
 
-      return { items: updatedItems, ...computeTotals(updatedItems) };
+  const addToCart = useCallback((inventoryId: UUID, quantity: number, price: number) => {
+    updateCart((prev) => {
+      const existing = prev.find(item => item.inventoryId === inventoryId);
+      if (existing) {
+        return prev.map(item =>
+          item.inventoryId === inventoryId
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      } else {
+        return [...prev, { inventoryId, quantity, price: Number(price) }];
+      }
     });
-  }, []);
+  }, [updateCart]);
 
-  /** Remove an article entirely from the cart */
-  const removeAllOfItem = useCallback((articleId: string) => {
-    setCart((prev) => {
-      const updatedItems = prev.items.filter((i) => i.article.id !== articleId);
-      return { items: updatedItems, ...computeTotals(updatedItems) };
-    });
-  }, []);
+  const removeFromCart = useCallback((inventoryId: UUID) => {
+    updateCart((prev) => prev.filter((item) => item.inventoryId !== inventoryId));
+  }, [updateCart]);
 
-  /** Clear all items from the cart */
   const clearCart = useCallback(() => {
-    setCart(EMPTY_CART);
+    clearCartStorage();
+    setItems([]);
   }, []);
 
-  /** Returns true if the article is already in the cart */
+  // ── Derived state ──────────────────────────────────────────────────────────
+
+  const totalItems = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+
+  const totalPrice = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
+
+  // O(1) lookup — reads from the memoized Set
   const isInCart = useCallback(
-    (articleId: string): boolean =>
-      cart.items.some((i) => i.article.id === articleId),
-    [cart.items]
+    (inventoryId: UUID): boolean => itemIdSet.has(inventoryId),
+    [itemIdSet]
   );
 
-  /** Returns the current quantity of an article in the cart (0 if absent) */
-  const getQuantity = useCallback(
-    (articleId: string): number =>
-      cart.items.find((i) => i.article.id === articleId)?.quantity ?? 0,
-    [cart.items]
+  return useMemo(
+    () => ({ items, totalItems, totalPrice, addToCart, removeFromCart, clearCart, isInCart }),
+    [items, totalItems, totalPrice, addToCart, removeFromCart, clearCart, isInCart]
   );
-
-  return {
-    cart,
-    addToCart,
-    removeFromCart,
-    removeAllOfItem,
-    clearCart,
-    isInCart,
-    getQuantity,
-  };
 };
+
+export default useCart;

@@ -1,11 +1,30 @@
 /**
- * Route definitions for the user-facing application.
+ * Central route definitions for the backoffice application.
+ * All navigation and <Link> components must reference these constants.
  */
 export const ROUTES = {
-  HOME: '/',
   LOGIN: '/login',
   SIGNUP: '/signup',
-  ARTICLES: '/articles',
+
+  HOME:      '/',
+  // Catalog
+  BRANDS:     '/catalog/brands',
+  CATEGORIES: '/catalog/categories',
+  VEHICLES:   '/catalog/vehicles',
+
+  // Products
+  PARTS:      '/products/parts',
+  PARTDETAILS: '/products/parts/:id',
+  EQUIPMENT:  '/products/equipment',
+
+  //Cart
+  CART:       '/cart',
+
+  // Orders
+  ORDERS:          '/orders',
+  ORDER_DETAIL:    '/orders/:id',
+
+
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];

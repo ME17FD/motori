@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { userService } from "../../services/userService";
+import authService from "../../services/authService";
+import { useNavigate } from "react-router-dom"; 
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
 import Footer         from "../../components/Footer/Footer";
+import { ROUTES } from "../../constants/routes"; 
 
 import type { NavCategory } from "../../types";
 import "./SignUpPage.css";
@@ -34,7 +36,9 @@ const SignupPage: React.FC = () => {
     password:  "",
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(false);
   const [success, setSuccess]   = useState(false);
+  const navigate = useNavigate();
 
   const set = (field: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -42,11 +46,13 @@ const SignupPage: React.FC = () => {
 
   const handleSignup = async () => {
     setErrorMsg(null);
+    setLoading(true);
     try {
-      const newUser = await userService.createUser({
-        firstname: form.firstname,
-        lastname:  form.lastname,
+      const newUser = await authService.signup({
+        firstName: form.firstname,
+        lastName:  form.lastname,
         email:     form.email,
+        password:  form.password,
         phone:     "",
         adress:    "",
         approved:  false,
@@ -54,13 +60,15 @@ const SignupPage: React.FC = () => {
       });
       console.log("User created:", newUser);
       setSuccess(true);
-      // TODO: redirect to login e.g. navigate("/login")
+      navigate(ROUTES.LOGIN, { replace: true });
     } catch (err) {
       if (err instanceof Error) {
         setErrorMsg(err.message);
       } else {
         setErrorMsg("Une erreur est survenue.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 

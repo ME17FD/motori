@@ -1,4 +1,4 @@
-export type ButtonVariant = "primary" | "outline";
+export type ButtonVariant = "primary" | "outline" | "secondary";
 export type ButtonSize    = "default" | "full";
 
 export interface ButtonProps {

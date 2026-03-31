@@ -1,39 +1,38 @@
-/**
- * Credentials sent to the login endpoint via the API Gateway.
- */
+// types/auth.ts
+import type { User, UserPayload } from './user';
+
+export interface AuthTokens {
+  accessToken: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
-/**
- * Successful authentication response from the gateway.
- * The token is a signed JWT containing the user's roles.
- */
+export interface RegisterRequest extends UserPayload {}
+
 export interface AuthResponse {
-  token: string;
-  refreshToken?: string;
-  expiresIn?: number;   // seconds
+  user: User;
+  accessToken: string;
 }
 
-/**
- * Decoded JWT payload (relevant fields only).
- * Roles are stored as Spring Security GrantedAuthority strings.
- */
-export interface JwtPayload {
-  sub: string;          // email or username
-  roles: string[];      // e.g. ["ROLE_ADMIN", "ROLE_USER"]
-  iat: number;
-  exp: number;
+export interface RefreshResponse {
+  accessToken: string;
 }
 
-/**
- * The authenticated user stored in Zustand after login.
- */
-export interface AuthUser {
+export interface SignupRequest {
   email: string;
-  roles: string[];
-  token: string;
-  refreshToken?: string;
-  expiresAt: number;    // Unix timestamp (ms)
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  adress?: string;
+  approved: boolean;
+  activated: boolean;
+}
+
+export interface SignupResponse {
+  user: User;
+  accessToken: string;
 }

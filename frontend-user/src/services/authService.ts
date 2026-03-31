@@ -1,44 +1,44 @@
-import axiosInstance, { TOKEN_KEY } from '../api/axiosInstance';
-import type { AuthResponse, LoginRequest } from '../types/auth';
+// services/authService.ts
+import api, { setAccessToken, clearAccessToken } from '../api/axiosInstance';
+import type {
+  LoginRequest,
+  SignupRequest,
+  AuthResponse,
+  RefreshResponse,
+} from '../types/auth';
+import type { User } from '../types/user';
 
-/**
- * Sends credentials to the gateway's auth endpoint.
- * Stores the returned JWT in localStorage on success.
- */
-export async function login(credentials: LoginRequest): Promise<AuthResponse> {
-  const { data } = await axiosInstance.post<AuthResponse>(
-    '/api/auth/login',
-    credentials,
-  );
-  localStorage.setItem(TOKEN_KEY, data.token);
-  return data;
-}
+const storeToken = (accessToken: string): void => {
+  setAccessToken(accessToken);
+};
 
-/**
- * Clears the local token.
- * Call this before redirecting to /login.
- */
-export function logout(): void {
-  localStorage.removeItem(TOKEN_KEY);
-}
+const authService = {
+  login: async (data: LoginRequest): Promise<AuthResponse> => {
+    const { data: response } = await api.post<AuthResponse>('/auth/login', data);
+    storeToken(response.accessToken);
+    return response;
+  },
 
-/**
- * Returns the raw JWT string from localStorage, or null if absent.
- */
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
+  signup: async (data: SignupRequest): Promise<AuthResponse> => {
+    const { data: response } = await api.post<AuthResponse>('/auth/signup', data);
+    storeToken(response.accessToken);
+    return response;
+  },
 
-/**
- * Decodes a JWT payload without verifying the signature.
- * Verification is handled server-side by the gateway.
- */
-export function decodeToken<T>(token: string): T | null {
-  try {
-    const payloadB64 = token.split('.')[1];
-    const decoded = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded) as T;
-  } catch {
-    return null;
-  }
-}
+  getCurrentUser: async (): Promise<User> => {
+    const { data } = await api.get<User>('/auth/me');
+    return data;
+  },
+
+  refreshToken: async (): Promise<RefreshResponse> => {
+    const { data } = await api.post<RefreshResponse>('/auth/refresh');
+    storeToken(data.accessToken);
+    return data;
+  },
+
+  logout: async (): Promise<void> => {
+    await api.post('/auth/logout').finally(() => clearAccessToken());
+  },
+} as const;
+
+export default authService;

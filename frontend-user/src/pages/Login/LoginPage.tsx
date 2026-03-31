@@ -1,13 +1,14 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";  // ← added
 import Navbar from "../../components/Navbar/Navbar";
 import Button from "../../components/Button/Button";
-import Footer         from "../../components/Footer/Footer";
-import useLogin from "../../hooks/useLogin";
-
+import Footer from "../../components/Footer/Footer";
+import useAuth from "../../hooks/useAuth";
+import { ROUTES } from "../../constants/routes";  // ← added
 import type { NavCategory } from "../../types";
 import "./LoginPage.css";
 
 // ─── Sample categories ────────────────────────────────────────────────────────
-
 const CATEGORIES: NavCategory[] = [
   {
     id: 1,
@@ -24,26 +25,34 @@ const CATEGORIES: NavCategory[] = [
 ];
 
 // ─── LoginPage ────────────────────────────────────────────────────────────────
-
 const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
- const { email, setEmail, password, setPassword, errorMsg, handleLogin } = useLogin();
- 
+  const { login, loading, error } = useAuth();
+  const navigate = useNavigate();  // ← added
+
+  const handleLogin = async () => {
+    try {
+      await login({ email, password });
+      navigate(ROUTES.HOME, { replace: true });  // ← redirect on success
+    } catch {
+      // error is already set inside the hook
+    }
+  };
+
   return (
     <div className="page">
-
-      {/* ── Navbar ── */}
       <Navbar
         categories={CATEGORIES}
         onSearchSubmit={(q: any) => console.log("Search:", q)}
       />
 
-      {/* ── Login form ── */}
       <main className="login-section">
         <div className="login-card">
           <h2>Vous avez déjà un compte ?</h2>
 
-          {errorMsg && <p className="form-error">{errorMsg}</p>}
+          {error && <p className="form-error">{error}</p>}
 
           <div className="login-field">
             <input
@@ -69,23 +78,19 @@ const LoginPage: React.FC = () => {
 
           <div className="login-btn-wrap">
             <Button
-              text="Se connecter"
+              text={loading ? "Connexion…" : "Se connecter"}
               variant="outline"
               type="submit"
               onClick={handleLogin}
+              disabled={loading}
             />
           </div>
         </div>
       </main>
 
-      {/* ── Footer ── */}
       <Footer />
-
     </div>
   );
 };
 
 export default LoginPage;
-
-
-

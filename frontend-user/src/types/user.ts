@@ -31,33 +31,22 @@ export interface UserFilters {
 }
 
 /**
- * Request body for creating a new user.
- */
-export interface UserCreatePayload {
-  firstname: string;
-  lastname: string;
-  email: string;
-  phone?: string;
-  adress?: string;
-  approved?: boolean;
-  activated?: boolean;
-}
-
-/**
- * Request body for updating a user.
- */
-export interface UserUpdatePayload {
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-  phone?: string;
-  adress?: string;
-}
-
-/**
  * Request body for updating a user's status or roles.
  */
 export interface UpdateUserRequest {
   enabled?: boolean;
   roles?: UserRole[];
+}
+
+/**
+ * Request body for creating or updating a user.
+ */
+export interface UserPayload {
+  email?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  roles?: UserRole[];
+  enabled?: boolean;
 }
