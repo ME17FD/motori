@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";  // ← added
-import Navbar from "../../components/Navbar/Navbar";
-import Button from "../../components/Button/Button";
-import Footer from "../../components/Footer/Footer";
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Button from "../../components/ui/Button/Button";
+import Footer from "../../components/layout/Footer/Footer";
 import useAuth from "../../hooks/useAuth";
-import { ROUTES } from "../../constants/routes";  // ← added
+import { ROUTES } from "../../constants/routes";
 import type { NavCategory } from "../../types";
-import "./LoginPage.css";
+import "../../styles/components/LoginPage.css";
 
 // ─── Sample categories ────────────────────────────────────────────────────────
 const CATEGORIES: NavCategory[] = [
@@ -24,7 +24,9 @@ const CATEGORIES: NavCategory[] = [
   { id: 4, label: "Divers", href: "/divers" },
 ];
 
-// ─── LoginPage ────────────────────────────────────────────────────────────────
+/**
+ * Email/password login using `useAuth`; redirects to home on success.
+ */
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,7 +47,7 @@ const LoginPage: React.FC = () => {
     <div className="page">
       <Navbar
         categories={CATEGORIES}
-        onSearchSubmit={(q: any) => console.log("Search:", q)}
+        onSearchSubmit={(q: string) => console.log("Search:", q)}
       />
 
       <main className="login-section">

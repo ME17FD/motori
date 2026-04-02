@@ -1,6 +1,7 @@
 import { CART_STORAGE_KEY } from "../constants/cart.constants";
 import type { CartItem } from "../types/cart.types";
 
+/** Reads and parses cart JSON from `localStorage`; returns `[]` on missing or invalid data. */
 export const loadCart = (): CartItem[] => {
   try {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
@@ -10,6 +11,7 @@ export const loadCart = (): CartItem[] => {
   }
 };
 
+/** Persists the full cart array under `CART_STORAGE_KEY`. */
 export const saveCart = (items: CartItem[]): void => {
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
@@ -18,6 +20,7 @@ export const saveCart = (items: CartItem[]): void => {
   }
 };
 
+/** Removes the cart key from `localStorage`. */
 export const clearCartStorage = (): void => {
   localStorage.removeItem(CART_STORAGE_KEY);
 };

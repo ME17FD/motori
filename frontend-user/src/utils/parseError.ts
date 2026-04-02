@@ -28,6 +28,13 @@ const isBackendErrorResponse = (data: unknown): data is BackendErrorResponse =>
 const extractValidationErrors = (errors: BackendValidationError[]): string =>
   errors.map(({ field, message }) => `${field}: ${message}`).join(', ');
 
+/**
+ * Normalizes axios/network/unknown errors into a short user-facing string.
+ * Prefers backend validation arrays, then `message`, then HTTP status map, then generic fallbacks.
+ *
+ * @param error - Any thrown value (typically an AxiosError)
+ * @returns Single-line message safe to display in UI
+ */
 const parseError = (error: unknown): string => {
   if (!axios.isAxiosError(error)) {
     if (error instanceof Error) return error.message;

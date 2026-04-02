@@ -1,4 +1,5 @@
-import axiosInstance from "../api/axiosInstance";
+import apiClient from "../api/apiClient";
+import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { mapEquipementParams } from "../utils/equipementParams";
 import type {
   EquipementResponse,
@@ -15,16 +16,16 @@ const BASE = "/api/equipements" as const;
 export const getEquipements = async (
   params: EquipementQueryParams = {}
 ): Promise<PagedEquipements> => {
-  const { data } = await axiosInstance.get<PagedEquipements>(BASE, {
+  const { data } = await apiClient.get<unknown>(BASE, {
     params: mapEquipementParams(params),
   });
-  return data;
+  return normalizePagedResponse<EquipementResponse>(data);
 };
 
 // ── GET /api/equipements/:id ──────────────────────────────────────────────────
 
 export const getEquipementById = async (id: UUID): Promise<EquipementResponse> => {
-  const { data } = await axiosInstance.get<EquipementResponse>(`${BASE}/${id}`);
+  const { data } = await apiClient.get<EquipementResponse>(`${BASE}/${id}`);
   return data;
 };
 
@@ -33,7 +34,7 @@ export const getEquipementById = async (id: UUID): Promise<EquipementResponse> =
 export const createEquipement = async (
   payload: EquipementRequest
 ): Promise<EquipementResponse> => {
-  const { data } = await axiosInstance.post<EquipementResponse>(BASE, payload);
+  const { data } = await apiClient.post<EquipementResponse>(BASE, payload);
   return data;
 };
 
@@ -43,7 +44,7 @@ export const updateEquipement = async (
   id: UUID,
   payload: EquipementRequest
 ): Promise<EquipementResponse> => {
-  const { data } = await axiosInstance.put<EquipementResponse>(
+  const { data } = await apiClient.put<EquipementResponse>(
     `${BASE}/${id}`,
     payload
   );
@@ -53,7 +54,7 @@ export const updateEquipement = async (
 // ── DELETE /api/equipements/:id ───────────────────────────────────────────────
 
 export const deleteEquipement = async (id: UUID): Promise<void> => {
-  await axiosInstance.delete(`${BASE}/${id}`);
+  await apiClient.delete(`${BASE}/${id}`);
 };
 
 // ── POST /api/equipements/:id/image ───────────────────────────────────────────
@@ -67,7 +68,7 @@ export const uploadEquipementImage = async (
   const formData = new FormData();
   formData.append("image", file);
 
-  const { data } = await axiosInstance.post<EquipementResponse>(
+  const { data } = await apiClient.post<EquipementResponse>(
     `${BASE}/${id}/image`,
     formData,
     { headers: { "Content-Type": "multipart/form-data" } }
@@ -78,5 +79,5 @@ export const uploadEquipementImage = async (
 // ── DELETE /api/equipements/:id/image ─────────────────────────────────────────
 
 export const deleteEquipementImage = async (id: UUID): Promise<void> => {
-  await axiosInstance.delete(`${BASE}/${id}/image`);
+  await apiClient.delete(`${BASE}/${id}/image`);
 };

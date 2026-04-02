@@ -10,9 +10,10 @@ import PartDetailsPage from './pages/PartDetailsPage/PartDetailsPage';
 import CartPage from './pages/CartPage/CartPage';
 
 /**
- * TanStack Query client with sensible defaults for a backoffice.
- * - staleTime: 30s — backoffice data changes infrequently.
- * - retry: 1 — one retry on network errors, fail fast for UX.
+ * TanStack Query client shared by all data hooks.
+ * - `staleTime` 30s — treat server data as fresh briefly to limit refetches.
+ * - `retry` 1 — single retry on transient network errors.
+ * - `refetchOnWindowFocus` false — avoids surprise reloads when switching tabs.
  */
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,9 +22,13 @@ const queryClient = new QueryClient({
       retry:                1,
       refetchOnWindowFocus: false,
     },
+    mutations: {
+      retry: 0,
+    },
   },
 });
 
+/** Root layout: React Query provider + browser router and public routes. */
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,4 +1,4 @@
-import axiosInstance from "../api/axiosInstance";
+import apiClient from "../api/apiClient";
 import type { OrderResponse, OrderRequest } from "../types/order.types";
 import type { UUID } from "../types/common.types";
 
@@ -14,7 +14,7 @@ export const createOrder = async (
   userId: UUID,
   payload: OrderRequest
 ): Promise<OrderResponse> => {
-  const { data } = await axiosInstance.post<OrderResponse>(BASE, payload, {
+  const { data } = await apiClient.post<OrderResponse>(BASE, payload, {
     headers: userHeader(userId),
   });
   return data;
@@ -23,7 +23,7 @@ export const createOrder = async (
 // ── GET /api/orders/user/:userId ──────────────────────────────────────────────
 
 export const getOrdersByUser = async (userId: UUID): Promise<readonly OrderResponse[]> => {
-  const { data: raw } = await axiosInstance.get<unknown>(`${BASE}/user/${userId}`);
+  const { data: raw } = await apiClient.get<unknown>(`${BASE}/user/${userId}`);
 
   const resolveArray = (value: unknown): OrderResponse[] | null => {
     if (Array.isArray(value)) return value as OrderResponse[];
@@ -60,6 +60,6 @@ export const getOrdersByUser = async (userId: UUID): Promise<readonly OrderRespo
 // ── GET /api/orders/:id ───────────────────────────────────────────────────────
 
 export const getOrderById = async (id: UUID): Promise<OrderResponse> => {
-  const { data } = await axiosInstance.get<OrderResponse>(`${BASE}/${id}`);
+  const { data } = await apiClient.get<OrderResponse>(`${BASE}/${id}`);
   return data;
 };

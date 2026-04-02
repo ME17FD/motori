@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import styles from "./CartPage.module.css";
+import styles from "../../styles/components/CartPage.module.css";
 import { useNavigate, Link } from "react-router-dom";
 import useCart from "../../hooks/useCart";
 import useParts from "../../hooks/useParts";
@@ -14,11 +14,11 @@ import {
   buildOrderRequest,
 } from "../../services/cartService";
 import type { CartItemDisplay } from "../../types/cart.types";
-import Navbar from "../../components/Navbar/Navbar";
-import Footer from "../../components/Footer/Footer";
-import Button from "../../components/Button/Button";
-import Loading from "../../components/common/Loading";
-import Error from "../../components/common/Error";
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Footer from "../../components/layout/Footer/Footer";
+import Button from "../../components/ui/Button/Button";
+import Loading from "../../components/ui/Loading/Loading";
+import Error from "../../components/ui/Error/Error";
 import { MOCK_CATEGORIES } from "../../mocks/categories.mock";
 import { CART_CONSTANTS } from "../../constants/cart.constants";
 
@@ -51,7 +51,9 @@ const EmptyCart: React.FC = () => (
   </div>
 );
 
-// ─── CartPage ────────────────────────────────────────────────
+/**
+ * Cart and checkout summary: merges `useCart` with `useParts` for labels/images, coupons, totals.
+ */
 const CartPage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -100,12 +102,6 @@ const displayItems = useMemo<CartItemDisplay[]>(() =>
       setApplied(null);
     }
   }, [coupon]);
-
-  const handleRemoveCoupon = useCallback(() => {
-    setApplied(null);
-    setCoupon("");
-    setCouponError(null);
-  }, []);
 
   // Totals
   const subtotal = calcSubtotal(items);

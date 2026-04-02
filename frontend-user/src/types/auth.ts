@@ -10,7 +10,7 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface RegisterRequest extends UserPayload {}
+export type RegisterRequest = UserPayload;
 
 export interface AuthResponse {
   user: User;

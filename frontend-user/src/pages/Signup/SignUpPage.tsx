@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import authService from "../../services/authService";
 import { useNavigate } from "react-router-dom"; 
-import Navbar from "../../components/Navbar/Navbar";
-import Button from "../../components/Button/Button";
-import Footer         from "../../components/Footer/Footer";
-import { ROUTES } from "../../constants/routes"; 
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Button from "../../components/ui/Button/Button";
+import Footer from "../../components/layout/Footer/Footer";
+import { ROUTES } from "../../constants/routes";
 
 import type { NavCategory } from "../../types";
-import "./SignUpPage.css";
+import "../../styles/components/SignUpPage.css";
 
 // ─── Sample categories ────────────────────────────────────────────────────────
 
@@ -26,8 +26,9 @@ const CATEGORIES: NavCategory[] = [
   { id: 4, label: "Divers", href: "/divers" },
 ];
 
-// ─── SignupPage ───────────────────────────────────────────────────────────────
-
+/**
+ * Registration form calling `authService.signup`, then redirecting to login.
+ */
 const SignupPage: React.FC = () => {
   const [form, setForm] = useState({
     lastname:  "",
@@ -36,7 +37,7 @@ const SignupPage: React.FC = () => {
     password:  "",
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
+  const [, setLoading] = useState(false);
   const [success, setSuccess]   = useState(false);
   const navigate = useNavigate();
 
@@ -78,7 +79,7 @@ const SignupPage: React.FC = () => {
       {/* ── Navbar ── */}
       <Navbar
         categories={CATEGORIES}
-        onSearchSubmit={(q: any) => console.log("Search:", q)}
+        onSearchSubmit={(q: string) => console.log("Search:", q)}
       />
 
       {/* ── Signup form ── */}

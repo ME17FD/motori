@@ -1,62 +1,41 @@
-import { useState, useCallback, useMemo } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getCompatibleParts } from "../services/compatibilityService";
-import useAsyncState from "./useAsyncState";
+import { queryKeys } from "../api/queryKeys";
+import parseError from "../utils/parseError";
 import type { PartResponse } from "../types/part.types";
 import type { UUID } from "../types/common.types";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
+import { useVehicleStore } from "../store/vehicleStore";
 
 export interface UseVehicleFilterReturn {
-  // State
   selectedVehicleId: UUID | null;
   compatibleParts: readonly PartResponse[];
   loading: boolean;
   error: string | null;
-  // Actions
-  selectVehicle: (vehiculeId: UUID) => Promise<void>;
-  clearVehicle: () => void;
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
+/**
+ * When a vehicle is selected, loads compatible parts via GET compatibilities (React Query).
+ */
 const useVehicleFilter = (): UseVehicleFilterReturn => {
-  const [selectedVehicleId, setSelectedVehicleId] = useState<UUID | null>(null);
+  const selectedVehicleId = useVehicleStore((s) => s.selectedVehicle?.id ?? null);
 
-  const { state, setLoading, setSuccess, setError } =
-    useAsyncState<readonly PartResponse[]>([]);
+  const q = useQuery({
+    queryKey: selectedVehicleId
+      ? queryKeys.compatibility.partsByVehicle(selectedVehicleId)
+      : [...queryKeys.compatibility.all, "idle"],
+    queryFn: () => getCompatibleParts(selectedVehicleId!),
+    enabled: !!selectedVehicleId,
+  });
 
-  // ── Select vehicle + fetch compatible parts ────────────────────────────────
-
-  const selectVehicle = useCallback(async (vehiculeId: UUID) => {
-    setSelectedVehicleId(vehiculeId);
-    setLoading();
-
-    try {
-      const parts = await getCompatibleParts(vehiculeId);
-      setSuccess(parts);
-    } catch (err) {
-      setError(err, "Failed to fetch compatible parts.");
-    }
-  }, [setLoading, setSuccess, setError]);
-
-  // ── Clear selection ────────────────────────────────────────────────────────
-
-  const clearVehicle = useCallback(() => {
-    setSelectedVehicleId(null);
-    setSuccess([]);
-  }, [setSuccess]);
-
-  // Stable return reference
   return useMemo(
     () => ({
       selectedVehicleId,
-      compatibleParts: state.data,
-      loading: state.loading,
-      error: state.error,
-      selectVehicle,
-      clearVehicle,
+      compatibleParts: q.data ?? [],
+      loading: q.isFetching,
+      error: q.isError ? parseError(q.error) : null,
     }),
-    [selectedVehicleId, state, selectVehicle, clearVehicle]
+    [selectedVehicleId, q.data, q.isFetching, q.isError, q.error]
   );
 };
 

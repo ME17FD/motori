@@ -1,6 +1,10 @@
-// Reusable across ALL services — strips undefined/null/empty values
-// so axios never sends empty query keys to the server
-// Accepts any object shape — no index signature required on the caller's type
+/**
+ * Merges optional defaults with `params` and drops `undefined`, `null`, and empty strings
+ * so axios query strings stay clean for Spring-style APIs.
+ *
+ * @param params - Caller-provided query fields
+ * @param defaults - Baseline values merged under `params` (e.g. pagination defaults)
+ */
 export const buildCleanParams = <T extends object>(
   params: T,
   defaults?: Partial<T>

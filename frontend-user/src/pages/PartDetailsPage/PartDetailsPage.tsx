@@ -1,17 +1,22 @@
-import React, { useState, useCallback } from "react";
-import styles from "./PartDetailsPage.module.css";
-import { useParams } from "react-router-dom";
+import React, { useState, useCallback, useMemo } from "react";
+import styles from "../../styles/components/PartDetailsPage.module.css";
+import { Link, useParams } from "react-router-dom";
 import usePart from "../../hooks/usePart";
-import useCart  from "../../hooks/useCart";
-import  useEquipments  from "../../hooks/useEquipments";
+import useCart from "../../hooks/useCart";
+import useEquipments from "../../hooks/useEquipments";
+import useVehicleFilter from "../../hooks/useVehicleFilter";
 import type { EquipementResponse } from "../../types/equipement.types";
 import type { UUID } from "../../types/common.types";
-import Navbar from "../../components/Navbar/Navbar";
-import Footer from "../../components/Footer/Footer";
-import Button from "../../components/Button/Button";
-import Loading from "../../components/common/Loading";
-import Error from "../../components/common/Error";
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Footer from "../../components/layout/Footer/Footer";
+import Button from "../../components/ui/Button/Button";
+import Loading from "../../components/ui/Loading/Loading";
+import Error from "../../components/ui/Error/Error";
+import ProductCard from "../../components/product/ProductCard/ProductCard";
 import { MOCK_CATEGORIES } from "../../mocks/categories.mock";
+import { useVehicleStore } from "../../store/vehicleStore";
+import { isProductCompatible } from "../../utils/compatibility/isProductCompatible";
+import { ROUTES } from "../../constants/routes";
 
 // ─── Mock reviews (replace with useReviews hook if available) ─────────────────
 interface Review {
@@ -39,7 +44,9 @@ const StarRating: React.FC<{ value: number; max?: number }> = ({ value, max = 5 
   </span>
 );
 
-// ─── PartDetailsPage ──────────────────────────────────────────────────────────
+/**
+ * Single-part PDP: gallery, pricing, quantity, cart add, compatibility check, related equipment, mock reviews.
+ */
 const PartDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
@@ -47,6 +54,40 @@ const PartDetailsPage: React.FC = () => {
   const { part, loading, error } = usePart(id ? (id as UUID) : null);
   const { addToCart }            = useCart();
   const { equipements }           = useEquipments();
+  const { compatibleParts, loading: compatLoading, error: compatError } = useVehicleFilter();
+  const selectedVehicle = useVehicleStore((s) => s.selectedVehicle);
+
+  const compatiblePartIdsSet = React.useMemo(
+    () => new Set(compatibleParts.map((p) => p.id)),
+    [compatibleParts]
+  );
+
+  const compatReady = !compatLoading && !compatError;
+  const compatibilityCtx = selectedVehicle
+    ? {
+        ...selectedVehicle,
+        compatiblePartIds: compatReady ? compatiblePartIdsSet : undefined,
+        assumeAllCompatible: false,
+      }
+    : null;
+
+  const isCompatible = part && selectedVehicle
+    ? isProductCompatible(part, compatibilityCtx)
+    : null;
+
+  const compatState = compatLoading
+    ? "loading"
+    : isCompatible === true
+      ? "ok"
+      : isCompatible === false
+        ? "no"
+        : "unknown";
+
+  /** Optional upsell: show a few other parts known-compatible with the same bike (excludes current SKU). */
+  const similarCompatibleParts = useMemo(() => {
+    if (!part || !selectedVehicle || !compatReady || isCompatible !== false) return [];
+    return compatibleParts.filter((p) => p.id !== part.id).slice(0, 4);
+  }, [compatibleParts, compatReady, isCompatible, part, selectedVehicle]);
 
   // ── Gallery ──
   const [activeImg, setActiveImg] = useState<number>(0);
@@ -57,7 +98,7 @@ const PartDetailsPage: React.FC = () => {
   // ── Add to cart ──
   const handleAddToCart = useCallback(() => {
     if (!part) return;
-    addToCart(part.id, qty);
+    addToCart(part.id, qty, part.price);
   }, [part, qty, addToCart]);
 
   // ── Average rating ──
@@ -103,9 +144,9 @@ const PartDetailsPage: React.FC = () => {
 
         {/* ── Breadcrumb ── */}
         <nav className={styles.breadcrumb} aria-label="Fil d'Ariane">
-          <a href="/" className={styles.breadcrumbLink}>Accueil</a>
+          <Link to={ROUTES.HOME} className={styles.breadcrumbLink}>Accueil</Link>
           <span className={styles.breadcrumbSep}>/</span>
-          <a href="/parts" className={styles.breadcrumbLink}>Pièces</a>
+          <Link to={ROUTES.PARTS} className={styles.breadcrumbLink}>Pièces</Link>
           <span className={styles.breadcrumbSep}>/</span>
           <span className={styles.breadcrumbCurrent}>{part.name}</span>
         </nav>
@@ -192,6 +233,38 @@ const PartDetailsPage: React.FC = () => {
                 </span>
               )}
             </div>
+
+            {/* Compatibility — dedicated block so PDP scanning matches PLP mental model */}
+            {selectedVehicle ? (
+              <div className={styles.compatBlock}>
+                <h2 className={styles.compatHeading}>Compatibilité</h2>
+                <p className={styles.compatHint}>
+                  Basée sur la moto sélectionnée dans la barre de navigation (API compatibilités).
+                </p>
+                <div
+                  className={[
+                    styles.compatBanner,
+                    compatState === "loading" || compatState === "unknown"
+                      ? styles.compatBannerLoading
+                      : compatState === "ok"
+                        ? styles.compatBannerOk
+                        : styles.compatBannerNo,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {compatState === "loading"
+                    ? "Vérification de compatibilité…"
+                    : compatState === "ok"
+                      ? "Compatible avec votre véhicule"
+                      : compatState === "no"
+                        ? "Cette pièce n'est pas compatible avec votre véhicule"
+                        : "Compatibilité indisponible"}
+                </div>
+              </div>
+            ) : null}
 
             {/* Short description */}
             {part.description && (
@@ -287,6 +360,32 @@ const PartDetailsPage: React.FC = () => {
             </section>
           )}
         </div>
+
+        {/* ── Similar compatible picks (only when current SKU is a mismatch — guides recovery without dead-ends) ── */}
+        {similarCompatibleParts.length > 0 ? (
+          <section className={styles.similarSection} aria-label="Pièces compatibles suggérées">
+            <h2 className={styles.sectionTitle}>Pièces compatibles avec votre moto</h2>
+            <p className={styles.similarLead}>
+              Voici quelques références qui correspondent à votre véhicule sélectionné.
+            </p>
+            <ul className={styles.similarGrid} role="list">
+              {similarCompatibleParts.map((p) => (
+                <li key={p.id} className={styles.similarItem}>
+                  <ProductCard
+                    id={p.id}
+                    image={p.image}
+                    title={p.name}
+                    dimensions={p.dimensions ?? p.ref ?? ""}
+                    price={`${p.price} DH`}
+                    detailHref={ROUTES.PARTDETAILS.replace(":id", p.id)}
+                    compatibility={{ isCompatible: true }}
+                    onAddToCart={() => addToCart(p.id as UUID, 1, p.price)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {/* ── Reviews ── */}
         <section className={styles.reviewsSection} aria-label="Avis clients">

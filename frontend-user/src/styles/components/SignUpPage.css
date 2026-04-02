@@ -1,0 +1,62 @@
+@import "../globals.css";
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-light);
+}
+
+.signup-section {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-8) var(--space-5);
+}
+
+.signup-card {
+  width: 100%;
+  max-width: 600px;
+}
+
+.signup-card h2 {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.signup-field {
+  margin-bottom: var(--space-4);
+}
+
+.signup-field input {
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  background: var(--color-white);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.signup-field input:focus {
+  border-color: var(--color-red);
+}
+
+.signup-field input::placeholder {
+  color: var(--alpha-gray-35);
+}
+
+.signup-btn-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-2);
+}

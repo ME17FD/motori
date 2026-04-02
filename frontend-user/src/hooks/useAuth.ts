@@ -1,4 +1,10 @@
-// hooks/useAuth.ts
+/**
+ * Authentication/session hook: login, signup, logout, and silent refresh on mount.
+ *
+ * **State:** `user`, `isAuthenticated`, `loading`, `error`.
+ *
+ * **Side effects:** restores session via `/auth/me` and refresh cookie; listens for `auth:logout` from axios refresh failure.
+ */
 import { useState, useCallback, useEffect } from 'react';
 import authService from '../services/authService';
 import parseError from '../utils/parseError';

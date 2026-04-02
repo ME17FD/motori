@@ -1,0 +1,167 @@
+@import "../variables.css";
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  padding: var(--space-4);
+  gap: var(--space-2);
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  height: 100%;
+}
+
+.product-card:hover {
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+/* Clickable main area when `detailHref` is set — keeps the CTA separate for clarity */
+.product-card__main-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  width: 100%;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity var(--transition-fast);
+}
+
+.product-card__main-link:hover .product-card__title {
+  color: var(--color-red);
+}
+
+.product-card__main-link:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+/* Image */
+.product-card__image-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: var(--color-bg-light);
+  border-radius: 2px;
+}
+
+.product-card__image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform var(--transition-normal);
+}
+
+.product-card:hover .product-card__image-wrapper img {
+  transform: scale(1.04);
+}
+
+/* Info */
+.product-card__info {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.product-card__title {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.product-card__dimensions {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xs);
+  color: var(--color-gray);
+  margin: 0;
+}
+
+.product-card__price {
+  font-family: var(--font-primary);
+  font-size: 15px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin: var(--space-1) 0 0 0;
+}
+
+/* CTA button */
+.product-card__btn {
+  width: 100%;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border: none;
+  padding: 10px var(--space-4);
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  outline: none;
+  margin-top: auto;
+}
+
+.product-card__btn:hover {
+  background-color: var(--color-red);
+}
+
+/* ─── Compatibility UI ───────────────────────────────────────────── */
+.product-card {
+  position: relative;
+}
+
+.product-card__compat-badge {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  z-index: 3;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 2px;
+  pointer-events: none;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.product-card__compat-badge--ok {
+  background: var(--alpha-red-10);
+  color: var(--color-red);
+  border: 1px solid var(--alpha-red-35);
+}
+
+.product-card__compat-badge--no {
+  background: var(--alpha-gray-12);
+  color: var(--color-gray);
+  border: 1px solid var(--alpha-gray-35);
+}
+
+.product-card--compatible {
+  border-color: var(--alpha-red-45);
+  box-shadow: 0 0 0 3px var(--alpha-red-10), var(--shadow-card);
+}
+
+.product-card--not-compatible {
+  opacity: 0.65;
+}
+
+.product-card--not-compatible:hover {
+  opacity: 0.85;
+}

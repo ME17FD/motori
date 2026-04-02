@@ -41,6 +41,40 @@
   /* Transitions */
   --transition-fast:   0.2s ease;
   --transition-normal: 0.3s ease;
+
+  /* ─── Storefront layout & reusable alpha mixes (palette-derived) ─── */
+  --layout-max-width:     1200px;
+  --layout-wide:          1280px;
+  --radius-sm:            4px;
+  --radius-md:            6px;
+  --color-hero-gradient-end: #1a0a0a;
+  --gradient-hero: linear-gradient(135deg, var(--color-black) 60%, var(--color-hero-gradient-end) 100%);
+  --overlay-scrim:      rgba(17, 17, 17, 0.5);
+  --alpha-hero-overlay-strong: rgba(17, 17, 17, 0.82);
+  --alpha-hero-overlay-soft:   rgba(17, 17, 17, 0.35);
+  --alpha-hero-slide-shade:      rgba(17, 17, 17, 0.45);
+  --alpha-on-light-03:  rgba(17, 17, 17, 0.03);
+  --alpha-on-light-05:  rgba(17, 17, 17, 0.05);
+  --alpha-on-light-08:  rgba(17, 17, 17, 0.08);
+  --alpha-on-light-10:  rgba(17, 17, 17, 0.1);
+  --alpha-on-light-12:  rgba(17, 17, 17, 0.12);
+  --alpha-on-dark-06:   rgba(255, 255, 255, 0.06);
+  --alpha-on-dark-10:   rgba(255, 255, 255, 0.1);
+  --alpha-on-dark-18:   rgba(255, 255, 255, 0.18);
+  --alpha-on-dark-35:   rgba(255, 255, 255, 0.35);
+  --alpha-on-dark-55:   rgba(255, 255, 255, 0.55);
+  --alpha-on-dark-72:   rgba(255, 255, 255, 0.72);
+  --alpha-on-dark-85:   rgba(255, 255, 255, 0.85);
+  --alpha-red-05:       rgba(193, 18, 31, 0.05);
+  --alpha-red-06:       rgba(193, 18, 31, 0.06);
+  --alpha-red-08:       rgba(193, 18, 31, 0.08);
+  --alpha-red-10:       rgba(193, 18, 31, 0.1);
+  --alpha-red-25:       rgba(193, 18, 31, 0.25);
+  --alpha-red-35:       rgba(193, 18, 31, 0.35);
+  --alpha-red-45:       rgba(193, 18, 31, 0.45);
+  --alpha-red-50:       rgba(193, 18, 31, 0.5);
+  --alpha-gray-12:      rgba(92, 92, 92, 0.12);
+  --alpha-gray-35:      rgba(92, 92, 92, 0.35);
 }
 
 /* Dark mode tokens (opt-in via .dark class) */

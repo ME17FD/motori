@@ -11,6 +11,12 @@ const EQUIPEMENT_DEFAULTS = {
   size: 20, // API param name for pagination
 } as const;
 
+/**
+ * Maps UI-facing `EquipementQueryParams` to query keys the backend expects
+ * (`clothingSize` / `pageSize` both compete for the `size` key — pagination wins when both set).
+ *
+ * @param params - Raw filter + pagination object from hooks
+ */
 export const mapEquipementParams = (
   params: EquipementQueryParams
 ): Partial<Record<string, unknown>> => {

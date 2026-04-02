@@ -1,0 +1,42 @@
+@import "./variables.css";
+
+/**
+ * Global storefront primitives. All page/section CSS should compose these tokens
+ * from `variables.css` — avoid hardcoded hex/rgba in feature CSS when a token exists.
+ */
+
+#root {
+  min-height: 100vh;
+}
+
+/* Aligns with `--layout-max-width` (single source for content width). */
+.section-wrapper {
+  padding: var(--space-8) var(--space-5);
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+}
+
+@media (max-width: 639px) {
+  .section-wrapper {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+/* Accessible focus — matches brand accent */
+:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+/* Text links in prose / secondary surfaces */
+.link-inline {
+  color: var(--color-red);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: opacity var(--transition-fast);
+}
+
+.link-inline:hover {
+  opacity: 0.85;
+  text-decoration: underline;
+}

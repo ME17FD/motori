@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles/variables.css';
-import './styles/global.css';    // ton fichier de reset existant
+import './styles/globals.css';
 import App from './App';
 
 const rootElement = document.getElementById('root');

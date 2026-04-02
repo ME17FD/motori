@@ -1,10 +1,7 @@
-import axiosInstance from "../api/axiosInstance";
+import apiClient from "../api/apiClient";
+import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { buildCleanParams } from "../utils/buildParams";
-import type {
-  CompatibilityResponse,
-  CompatibilityQueryParams,
-  PagedCompatibility,
-} from "../types/compatibility.types";
+import type { CompatibilityResponse, CompatibilityQueryParams } from "../types/compatibility.types";
 import type { PartResponse } from "../types/part.types";
 import type { UUID } from "../types/common.types";
 
@@ -21,10 +18,10 @@ const COMPATIBILITY_DEFAULTS: Required<Pick<CompatibilityQueryParams, "page" | "
 const getCompatibilities = async (
   params: CompatibilityQueryParams = {}
 ): Promise<readonly CompatibilityResponse[]> => {
-  const { data } = await axiosInstance.get<PagedCompatibility>(BASE, {
+  const { data } = await apiClient.get<unknown>(BASE, {
     params: buildCleanParams(params, COMPATIBILITY_DEFAULTS),
   });
-  return data.content;
+  return normalizePagedResponse<CompatibilityResponse>(data).content;
 };
 
 // ── getCompatibleParts(vehiculeId) ────────────────────────────────────────────

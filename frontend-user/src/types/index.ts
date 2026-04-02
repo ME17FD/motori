@@ -8,6 +8,12 @@ export interface Product {
   title: string;
   dimensions: string;
   price: string;
+  /** When set, clicking the card body navigates to part detail (React Router). */
+  detailHref?: string;
+  /** Optional compatibility chip for the global selected vehicle (home / sliders). */
+  compatibility?: {
+    readonly isCompatible: boolean;
+  };
 }
 
 export interface Brand {

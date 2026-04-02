@@ -9,6 +9,11 @@ import type { CartItem } from "../types/cart.types";
 import type { OrderRequest } from "../types/order.types";
 
 // ─── Existing ────────────────────────────────────────────────────────────────
+
+/**
+ * Builds the minimal order payload expected by the API from cart lines (inventory ids only).
+ * @param items - Current cart rows
+ */
 export const cartToOrderRequest = (items: readonly CartItem[]): OrderRequest => ({
   items: items.map(({ inventoryId }) => ({ inventoryId })),
 });

@@ -1,4 +1,5 @@
-import axiosInstance from "../api/axiosInstance";
+import apiClient from "../api/apiClient";
+import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { buildCleanParams } from "../utils/buildParams";
 import type {
   InventoryResponse,
@@ -21,15 +22,15 @@ const INVENTORY_DEFAULTS: Required<Pick<InventoryQueryParams, "page" | "size">> 
 export const getInventories = async (
   params: InventoryQueryParams = {}
 ): Promise<PagedInventory> => {
-  const { data } = await axiosInstance.get<PagedInventory>(BASE, {
+  const { data } = await apiClient.get<unknown>(BASE, {
     params: buildCleanParams(params, INVENTORY_DEFAULTS),
   });
-  return data;
+  return normalizePagedResponse<InventoryResponse>(data);
 };
 
 // ── GET /api/inventories/:id ──────────────────────────────────────────────────
 
 export const getInventoryById = async (id: UUID): Promise<InventoryResponse> => {
-  const { data } = await axiosInstance.get<InventoryResponse>(`${BASE}/${id}`);
+  const { data } = await apiClient.get<InventoryResponse>(`${BASE}/${id}`);
   return data;
 };

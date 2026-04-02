@@ -1,13 +1,14 @@
 import { useState, useCallback, useMemo } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getEquipements } from "../services/equipementService";
-import usePaginatedFetch, {DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "./usePaginatedFetch";
+import { queryKeys } from "../api/queryKeys";
+import parseError from "../utils/parseError";
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "../constants/pagination.constants";
 import type {
   EquipementResponse,
   EquipementQueryParams,
   EquipementFilterParams,
 } from "../types/equipement.types";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type EquipementFilters = EquipementFilterParams;
 
@@ -25,38 +26,47 @@ export interface UseEquipementsReturn {
   refetch: () => void;
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
-const useEquipements = (
-  initialFilters: EquipementFilters = {}
-): UseEquipementsReturn => {
+/**
+ * Equipment list with client-side filters + pagination, backed by React Query.
+ */
+const useEquipements = (initialFilters: EquipementFilters = {}): UseEquipementsReturn => {
   const [filters, setFiltersState] = useState<EquipementFilters>(initialFilters);
-  const [page, setPage]            = useState(DEFAULT_PAGE);
+  const [page, setPage] = useState(DEFAULT_PAGE);
 
-  // Memoized params — new reference only when filters or page change
   const params = useMemo<EquipementQueryParams>(
     () => ({ ...filters, page, pageSize: DEFAULT_PAGE_SIZE }),
     [filters, page]
   );
 
-  const { data, loading, error, totalPages, hasNextPage, hasPrevPage, nextPage, prevPage, refetch } =
-    usePaginatedFetch<EquipementResponse, EquipementQueryParams>(
-      getEquipements,
-      params,
-      "Failed to fetch equipements."
-    );
+  const q = useQuery({
+    queryKey: queryKeys.equipements.list(params),
+    queryFn: () => getEquipements(params),
+    placeholderData: keepPreviousData,
+  });
 
-  // Reset to page 0 on filter change — skip update if already there
+  const totalPages = q.data?.page.totalPages ?? 0;
+
   const setFilters = useCallback((newFilters: EquipementFilters) => {
     setPage((prev) => (prev === DEFAULT_PAGE ? prev : DEFAULT_PAGE));
     setFiltersState(newFilters);
   }, []);
 
+  const nextPage = useCallback(() => {
+    setPage((prev) => (prev >= totalPages - 1 ? prev : prev + 1));
+  }, [totalPages]);
+
+  const prevPage = useCallback(() => {
+    setPage((prev) => (prev <= 0 ? prev : prev - 1));
+  }, []);
+
+  const hasNextPage = page < totalPages - 1;
+  const hasPrevPage = page > 0;
+
   return useMemo(
     () => ({
-      equipements: data,
-      loading,
-      error,
+      equipements: q.data?.content ?? [],
+      loading: q.isPending && !q.isPlaceholderData,
+      error: q.isError ? parseError(q.error) : null,
       page,
       totalPages,
       hasNextPage,
@@ -64,9 +74,23 @@ const useEquipements = (
       setFilters,
       nextPage,
       prevPage,
-      refetch,
+      refetch: q.refetch,
     }),
-    [data, loading, error, page, totalPages, hasNextPage, hasPrevPage, setFilters, nextPage, prevPage, refetch]
+    [
+      q.data,
+      q.isPending,
+      q.isPlaceholderData,
+      q.isError,
+      q.error,
+      q.refetch,
+      page,
+      totalPages,
+      hasNextPage,
+      hasPrevPage,
+      setFilters,
+      nextPage,
+      prevPage,
+    ]
   );
 };
 

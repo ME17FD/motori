@@ -1,16 +1,22 @@
-import React, { useCallback, useState } from "react";
-import styles from "./PartsPage.module.css";
-import useParts  from "../../hooks/useParts";
+import React, { useCallback, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import styles from "../../styles/components/PartsPage.module.css";
+import useParts from "../../hooks/useParts";
 import useVehicleFilter from "../../hooks/useVehicleFilter";
-import  { buildCleanParams }  from "../../utils/buildParams";
-import ProductCard from "../../components/ProductCard/ProductCard";
-import Button from "../../components/Button/Button";
-import Loading from "../../components/common/Loading";
-import Error from "../../components/common/Error";
-import Footer from "../../components/Footer/Footer";
-import Navbar from "../../components/Navbar/Navbar";
-import Header from "../../components/Header/Header";
+import useCart from "../../hooks/useCart";
+import { buildCleanParams } from "../../utils/buildParams";
+import ProductCard from "../../components/product/ProductCard/ProductCard";
+import Button from "../../components/ui/Button/Button";
+import Error from "../../components/ui/Error/Error";
+import Skeleton from "../../components/ui/Skeleton/Skeleton";
+import Footer from "../../components/layout/Footer/Footer";
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Header from "../../components/layout/Header/Header";
 import { MOCK_CATEGORIES } from "../../mocks/categories.mock";
+import { useVehicleStore } from "../../store/vehicleStore";
+import { isProductCompatible } from "../../utils/compatibility/isProductCompatible";
+import { ROUTES } from "../../constants/routes";
+import type { UUID } from "../../types/common.types";
 
 type SortOption = "price_asc" | "price_desc" | "name_asc" | "name_desc" | "newest";
 
@@ -24,39 +30,102 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 const PAGE_SIZE = 12;
 
+/**
+ * Parts catalog: search, sort, vehicle filter (compatible parts), grid with stock badges, pagination.
+ */
 const PartsPage: React.FC = () => {
-  const [search, setSearch] = useState<string>("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  /** URL is the source of truth — matches Navbar navigation (`?q=`) without `useEffect` sync. */
+  const search = (searchParams.get("q") ?? "").trim();
   const [sort,   setSort]   = useState<SortOption>("newest");
   const [page,   setPage]   = useState<number>(1);
   const [year, setYear] = useState<string | null>(null);
   const [make, setMake] = useState<string | null>(null);
   const [model, setModel] = useState<string | null>(null);
+  const [showOnlyCompatible, setShowOnlyCompatible] = useState<boolean>(true);
   const years: string[] = ["2020", "2021", "2022"];
   const makes: string[] = ["Toyota", "Honda", "Ford"];
   const models: string[] = ["Model A", "Model B", "Model C"];
 
-  const {
-    selectedVehicleId, compatibleParts
-  } = useVehicleFilter();
+  const { selectedVehicleId, compatibleParts, loading: compatLoading, error: compatError } =
+    useVehicleFilter();
+  const selectedVehicle = useVehicleStore((s) => s.selectedVehicle);
+  const { addToCart } = useCart();
 
-  const params = buildCleanParams({
-    search,
-    sort,
-    page,
-    pageSize: PAGE_SIZE,
-    vehicleId: selectedVehicleId,
-    compatibleParts: compatibleParts.length > 0 ? compatibleParts.map((p) => p.id) : undefined,
-  });
+  const compatiblePartIdsSet = useMemo(
+    () => new Set(compatibleParts.map((p) => p.id)),
+    [compatibleParts]
+  );
 
-  const { parts,totalPages,loading, error } = useParts(params);
+  const compatReady = !compatLoading && !compatError;
+  const compatibilityCtx = selectedVehicle
+    ? {
+        ...selectedVehicle,
+        compatiblePartIds: compatReady ? compatiblePartIdsSet : undefined,
+        // When fetching with `vehiculeId` (toggle on), we can optimistically assume compatibility
+        // even before `/api/compatibilities` finishes loading.
+        assumeAllCompatible: showOnlyCompatible,
+      }
+    : null;
+
+  const params = useMemo(
+    () =>
+      buildCleanParams({
+        search,
+        sort,
+        page,
+        pageSize: PAGE_SIZE,
+        // When ON, fetch compatible parts by sending `vehiculeId`.
+        // When OFF, fetch the full catalog and compute compatibility in the UI.
+        vehicleId: showOnlyCompatible ? selectedVehicleId : undefined,
+        disableVehicleInjection: !showOnlyCompatible,
+      }),
+    [search, sort, page, selectedVehicleId, showOnlyCompatible]
+  );
+
+  const { parts, totalPages, loading, error } = useParts(params);
+
+  const partsForDisplay = useMemo(() => {
+    let list = [...parts];
+
+    // Strict filtering when toggle is ON (client-side enforcement for UX correctness).
+    if (showOnlyCompatible && selectedVehicleId && compatReady) {
+      list = list.filter((p) => compatiblePartIdsSet.has(p.id));
+    }
+
+    // Prioritize compatible parts visually when showing all.
+    if (!showOnlyCompatible && selectedVehicleId && compatReady) {
+      list.sort((a, b) => {
+        const aOk = compatiblePartIdsSet.has(a.id);
+        const bOk = compatiblePartIdsSet.has(b.id);
+        if (aOk === bOk) return 0;
+        return aOk ? -1 : 1;
+      });
+    }
+
+    return list;
+  }, [
+    parts,
+    showOnlyCompatible,
+    selectedVehicleId,
+    compatReady,
+    compatiblePartIdsSet,
+  ]);
 
   const total = Math.ceil((totalPages ?? 0) / PAGE_SIZE);
-  const hasActiveFilters = Boolean( selectedVehicleId || compatibleParts.length > 0 || search);
+  const hasActiveFilters = Boolean(search || !showOnlyCompatible);
 
-  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1);
-  }, []);
+  const handleSearch = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = e.target.value;
+      const next = new URLSearchParams(searchParams);
+      if (v.trim()) next.set("q", v.trim());
+      else next.delete("q");
+      setSearchParams(next, { replace: true });
+      setPage(1);
+    },
+    [searchParams, setSearchParams]
+  );
 
   const handleSort = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setSort(e.target.value as SortOption);
@@ -67,7 +136,11 @@ const PartsPage: React.FC = () => {
     setYear(null);
     setMake(null);
     setModel(null);
-  }, []);
+    setSearchParams({}, { replace: true });
+    setSort("newest");
+    setShowOnlyCompatible(true);
+    setPage(1);
+  }, [setSearchParams]);
 
   // Build ellipsis-collapsed page number list
   const pageList = Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -152,6 +225,22 @@ const PartsPage: React.FC = () => {
                   </select>
               </div>
 
+              {/* Compatibility filter toggle */}
+              <div className={styles.compatToggleWrap} role="group" aria-label="Filtre compatibilité">
+                <label className={styles.compatToggle}>
+                  <input
+                    type="checkbox"
+                    checked={showOnlyCompatible}
+                    disabled={!selectedVehicleId}
+                    onChange={(e) => {
+                      setShowOnlyCompatible(e.target.checked);
+                      setPage(1);
+                    }}
+                  />
+                  <span>Afficher uniquement les produits compatibles</span>
+                </label>
+              </div>
+
               {/* Reset — uses your Button component */}
               {hasActiveFilters && (
                   <Button
@@ -166,8 +255,8 @@ const PartsPage: React.FC = () => {
           <section className={styles.content}>
 
               {loading && (
-                  <div className={styles.stateWrap} aria-live="polite" aria-busy="true">
-                      <Loading />
+                  <div className={styles.skeletonWrap} aria-live="polite" aria-busy="true">
+                      <Skeleton variant="card" count={PAGE_SIZE} />
                   </div>
               )}
 
@@ -177,7 +266,7 @@ const PartsPage: React.FC = () => {
                   </div>
               )}
 
-              {!loading && !error && parts.length === 0 && (
+              {!loading && !error && partsForDisplay.length === 0 && (
                   <div className={styles.empty} role="status">
                       <p className={styles.emptyText}>Aucun article trouvé.</p>
                       <Button
@@ -188,19 +277,30 @@ const PartsPage: React.FC = () => {
                   </div>
               )}
 
-              {!loading && !error && parts.length > 0 && (
+              {!loading && !error && partsForDisplay.length > 0 && (
                   <>
                       {/* Grid — ProductCard expects: id, image, title, dimensions, price, onAddToCart */}
                       <ul className={styles.grid} role="list">
-                          {parts.map((part) => (
+                          {partsForDisplay.map((part) => (
                               <li key={part.id} className={styles.gridItem}>
                                   <ProductCard
                                       id={part.id}
                                       image={part.image}
                                       title={part.name}
-                                      dimensions={part.dimensions ?? ""}
+                                      dimensions={part.dimensions ?? part.ref ?? ""}
                                       price={`${part.price} DH`}
-                                      onAddToCart={(id) => console.log("add to cart", id)} // wire to useCart
+                                      detailHref={ROUTES.PARTDETAILS.replace(":id", part.id)}
+                                      onAddToCart={() => addToCart(part.id as UUID, 1, part.price)}
+                                      compatibility={
+                                        selectedVehicleId
+                                          ? (() => {
+                                              const compatible = isProductCompatible(part, compatibilityCtx);
+                                              return compatible === null
+                                                ? undefined
+                                                : { isCompatible: compatible };
+                                            })()
+                                          : undefined
+                                      }
                                   />
                                   {/* Stock badge overlaid via CSS on the card wrapper */}
                                   {part.stock === 0 && (

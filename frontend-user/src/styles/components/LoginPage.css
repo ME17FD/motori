@@ -1,0 +1,75 @@
+@import "../globals.css";
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg-light);
+}
+
+.login-section {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--space-8) var(--space-5);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 600px;
+}
+
+.login-card h2 {
+  font-family: var(--font-primary);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.login-field {
+  margin-bottom: var(--space-4);
+}
+
+.login-field input {
+  width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  background: var(--color-white);
+  outline: none;
+  transition: border-color var(--transition-fast);
+  box-sizing: border-box;
+}
+
+.login-field input:focus {
+  border-color: var(--color-red);
+}
+
+.login-field input::placeholder {
+  color: var(--alpha-gray-35);
+}
+
+.forgot {
+  display: inline-block;
+  font-size: var(--font-size-xs);
+  color: var(--color-gray);
+  margin-bottom: var(--space-6);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.forgot:hover {
+  color: var(--color-red);
+  text-decoration: underline;
+}
+
+.login-btn-wrap {
+  display: flex;
+  justify-content: center;
+}

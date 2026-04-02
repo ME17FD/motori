@@ -3,8 +3,15 @@ import { loadCart, saveCart, clearCartStorage } from "../utils/cartStorage";
 import type { CartItem, UseCartReturn } from "../types/cart.types";
 import type { UUID } from "../types/common.types";
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
+/**
+ * Shopping cart backed by `localStorage` via `cartStorage` helpers.
+ *
+ * **State:** line items (`inventoryId`, `quantity`, `price`), derived totals, membership checks.
+ *
+ * **Side effects:** reads initial cart on mount; persists on every mutation; `clearCart` wipes storage.
+ *
+ * @returns Stable API: items, totals, mutators, and `isInCart` for quick lookups
+ */
 const useCart = (): UseCartReturn => {
   const [items, setItems] = useState<CartItem[]>(loadCart);
 

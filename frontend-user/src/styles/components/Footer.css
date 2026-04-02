@@ -1,0 +1,58 @@
+@import "../variables.css";
+
+.footer {
+  background-color: var(--color-red);
+  padding: var(--space-8) var(--space-6);
+}
+
+.footer__inner {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-7);
+  flex-wrap: wrap;
+}
+
+.footer__column {
+  min-width: 200px;
+}
+
+.footer__title {
+  color: var(--color-white);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-4);
+}
+
+.footer__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer__list li {
+  margin-bottom: 10px;
+}
+
+.footer__link {
+  color: var(--color-white);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-md);
+  transition: opacity var(--transition-fast);
+}
+
+.footer__link:hover {
+  opacity: 0.92;
+  text-decoration: underline;
+}
+
+.footer__copyright {
+  color: var(--alpha-on-dark-72);
+  text-align: center;
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-7);
+  margin-bottom: 0;
+  font-family: var(--font-primary);
+}

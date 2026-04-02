@@ -1,67 +1,87 @@
-import { useState, useCallback, useMemo } from "react";
-import { getParts } from "../services/partService";
-import usePaginatedFetch, { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "./usePaginatedFetch";
-import type { PartResponse, PartQueryParams } from "../types/part.types";
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-
-export type PartFilters = Record<string, unknown>;
+import { useMemo } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { catalogParamsToPartQuery, getParts } from "../services/partService";
+import { queryKeys } from "../api/queryKeys";
+import parseError from "../utils/parseError";
+import { useVehicleStore } from "../store/vehicleStore";
+import type { PartResponse } from "../types/part.types";
 
 export interface UsePartsReturn {
   parts: PartResponse[];
   loading: boolean;
   error: string | null;
-  page: number;
   totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  setFilters: (filters: PartFilters) => void;
-  nextPage: () => void;
-  prevPage: () => void;
   refetch: () => void;
+  isFetching: boolean;
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
+/**
+ * Paginated parts catalog via React Query. Pass the same shape the Parts page builds
+ * (`search`, 1-based `page`, `pageSize`, `vehicleId`, …); it is mapped to `PartQueryParams` internally.
+ *
+ * **Global vehicle:** when `catalogParams.vehicleId` is missing, the hook injects the persisted
+ * `selectedVehicle.id` from `useVehicleStore`, so the query key updates when the user changes
+ * their bike in the Navbar and React Query refetches automatically.
+ */
+const useParts = (catalogParams: Record<string, unknown> = {}): UsePartsReturn => {
+  const globalVehicleId = useVehicleStore((s) => s.selectedVehicle?.id ?? null);
+  const disableVehicleInjection = Boolean(catalogParams.disableVehicleInjection);
 
-const useParts = (initialFilters: PartFilters = {}): UsePartsReturn => {
-  const [filters, setFiltersState] = useState<PartFilters>(initialFilters);
-  const [page, setPage]            = useState(DEFAULT_PAGE);
+  const mergedCatalogParams = useMemo(() => {
+    const raw = catalogParams.vehicleId;
+    const hasExplicit =
+      raw !== undefined &&
+      raw !== null &&
+      (typeof raw !== "string" || raw.trim() !== "");
+    const vehicleId = hasExplicit ? raw : globalVehicleId;
 
-  // Memoized params — new reference only when filters or page change
-  const params = useMemo<PartQueryParams>(
-    () => ({ ...filters, page, size: DEFAULT_PAGE_SIZE }),
-    [filters, page]
+    // When the caller wants the *full* catalog (compatibility computed in UI),
+    // disable the automatic injection of the persisted vehicle id.
+    if (disableVehicleInjection && !hasExplicit) return catalogParams;
+
+    if (vehicleId === null || vehicleId === undefined) return catalogParams;
+    return { ...catalogParams, vehicleId };
+  }, [catalogParams, globalVehicleId, disableVehicleInjection]);
+
+  const apiParams = useMemo(
+    () => catalogParamsToPartQuery(mergedCatalogParams),
+    [mergedCatalogParams]
   );
 
-  const { data, loading, error, totalPages, hasNextPage, hasPrevPage, nextPage, prevPage, refetch } =
-    usePaginatedFetch<PartResponse, PartQueryParams>(
-      getParts,
-      params,
-      "Failed to fetch parts."
-    );
+  const queryKeyParams = (() => {
+    if (!disableVehicleInjection) return apiParams;
 
-  // Reset to page 0 on filter change — skip update if already there
-  const setFilters = useCallback((newFilters: PartFilters) => {
-    setPage((prev) => (prev
-         === DEFAULT_PAGE ? prev : DEFAULT_PAGE));
-    setFiltersState(newFilters);
-  }, []);
+    // Keep a stable refetch when vehicle changes even if we don't send `vehiculeId` to the API.
+    const raw = catalogParams.vehicleId;
+    const hasExplicit =
+      raw !== undefined &&
+      raw !== null &&
+      (typeof raw !== "string" || raw.trim() !== "");
+    if (hasExplicit) return apiParams;
+
+    return {
+      ...(apiParams as object),
+      // Extra field for cache identity only (not used by `catalogParamsToPartQuery`).
+      vehicleIdForKey: globalVehicleId,
+    } as typeof apiParams;
+  })();
+
+  const q = useQuery({
+    queryKey: queryKeys.parts.list(queryKeyParams),
+    queryFn: () => getParts(apiParams),
+    placeholderData: keepPreviousData,
+  });
 
   return useMemo(
     () => ({
-      parts: data,
-      loading,
-      error,
-      page,
-      totalPages,
-      hasNextPage,
-      hasPrevPage,
-      setFilters,
-      nextPage,
-      prevPage,
-      refetch,
+      parts: q.data?.content ?? [],
+      loading: q.isPending && !q.isPlaceholderData,
+      error: q.isError ? parseError(q.error) : null,
+      totalPages: q.data?.page.totalPages ?? 0,
+      refetch: q.refetch,
+      isFetching: q.isFetching,
     }),
-    [data, loading, error, page, totalPages, hasNextPage, hasPrevPage, setFilters, nextPage, prevPage, refetch]
+    [q.data, q.isPending, q.isPlaceholderData, q.isError, q.error, q.isFetching, q.refetch]
   );
 };
 

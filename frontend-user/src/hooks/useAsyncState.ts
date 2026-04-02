@@ -16,8 +16,11 @@ interface UseAsyncStateReturn<T> {
   setState: React.Dispatch<React.SetStateAction<AsyncState<T>>>;
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
+/**
+ * Minimal async UI state machine: loading preserves previous `data` to avoid empty flashes.
+ *
+ * @param initialData - Seed value for `state.data`
+ */
 const useAsyncState = <T>(initialData: T): UseAsyncStateReturn<T> => {
   const [state, setState] = useState<AsyncState<T>>({
     data: initialData,
