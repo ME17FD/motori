@@ -20,6 +20,12 @@ export const ROUTES = {
   //Cart
   CART:       '/cart',
 
+  //checkout
+  CHECKOUT:   '/checkout',
+
+  // Compatibility
+  COMPATIBILITY: '/compatibility',
+
   // Orders
   ORDERS:          '/orders',
   ORDER_DETAIL:    '/orders/:id',
