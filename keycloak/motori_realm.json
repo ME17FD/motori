@@ -1113,6 +1113,20 @@
         "phone",
         "offline_access",
         "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567891",
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "motori-backoffice",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
       ]
     }
   ],
