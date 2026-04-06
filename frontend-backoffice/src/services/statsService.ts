@@ -52,10 +52,10 @@ export async function fetchDashboardStats(
     '/api/statistics/dashboard',
     {
       params: {
-        arg0: params.days,
-        arg1: params.from,
-        arg2: params.to,
-        arg3: params.topProductsLimit ?? 10,
+        days: params.days,
+        fromDate: params.from,      // ✅ fixed: fromDate (backend expects this)
+        toDate: params.to,          // ✅ fixed: toDate
+        topProducts: params.topProductsLimit ?? 10, // ✅ fixed: topProducts
       },
     }
   );
@@ -81,8 +81,8 @@ export async function fetchTopProducts(
     '/api/statistics/top-products',
     {
       params: {
-        arg0: params.days ?? 30,
-        arg1: params.limit ?? 10,
+        days: params.days ?? 30,   // ✅ fixed: days
+        limit: params.limit ?? 10, // ✅ fixed: limit
       },
     }
   );

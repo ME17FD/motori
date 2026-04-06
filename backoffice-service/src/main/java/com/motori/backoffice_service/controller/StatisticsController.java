@@ -35,10 +35,10 @@ public class StatisticsController {
     @GetMapping("/dashboard")
     @Operation(summary = "Statistiques dashboard (période en jours ou dates personnalisées)")
     public StatisticsDto getDashboard(
-            @RequestParam(required = false) @Min(1) @Max(365) Integer days,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int topProducts) {
+            @RequestParam(name = "days", required = false) @Min(1) @Max(365) Integer days,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(name = "topProducts", defaultValue = "10") @Min(1) @Max(100) int topProducts) {
         if (fromDate != null && toDate != null) {
             return statisticsService.getDashboardStats(fromDate, toDate, topProducts);
         }
@@ -54,10 +54,10 @@ public class StatisticsController {
     @GetMapping("/top-products")
     @Operation(summary = "Top produits vendus (sur N jours ou intervalle de dates)")
     public List<TopProductDto> getTopProducts(
-            @RequestParam(defaultValue = "30") @Min(1) @Max(365) int days,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int limit) {
+            @RequestParam(name = "days", defaultValue = "30") @Min(1) @Max(365) int days,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(name = "limit", defaultValue = "10") @Min(1) @Max(100) int limit) {
         if (fromDate != null && toDate != null) {
             return statisticsService.getTopProducts(fromDate, toDate, limit);
         }
@@ -67,9 +67,9 @@ public class StatisticsController {
     @GetMapping("/kpis")
     @Operation(summary = "KPI synthétiques (commandes, CA, panier moyen) sur une période")
     public KpiSummaryDto getKpis(
-            @RequestParam(required = false) @Min(1) @Max(365) Integer days,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+            @RequestParam(name = "days", required = false) @Min(1) @Max(365) Integer days,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
         if (fromDate != null && toDate != null) {
             return statisticsService.getKpiSummary(fromDate, toDate);
         }
@@ -85,9 +85,9 @@ public class StatisticsController {
     @GetMapping("/status-breakdown/period")
     @Operation(summary = "Répartition des commandes par statut sur une période")
     public Map<String, Long> getStatusBreakdownPeriod(
-            @RequestParam(required = false) @Min(1) @Max(365) Integer days,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+            @RequestParam(name = "days", required = false) @Min(1) @Max(365) Integer days,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
         if (fromDate != null && toDate != null) {
             return statisticsService.getStatusBreakdown(fromDate, toDate);
         }
@@ -99,9 +99,9 @@ public class StatisticsController {
     @GetMapping("/daily-metrics")
     @Operation(summary = "Série journalière commandes + chiffre d'affaires")
     public List<DailyMetricDto> getDailyMetrics(
-            @RequestParam(required = false) @Min(1) @Max(365) Integer days,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+            @RequestParam(name = "days", required = false) @Min(1) @Max(365) Integer days,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
         if (fromDate != null && toDate != null) {
             return statisticsService.getDailyMetrics(fromDate, toDate);
         }
@@ -111,10 +111,10 @@ public class StatisticsController {
     @GetMapping("/overview")
     @Operation(summary = "Vue consolidée du dashboard (today + kpis + statuts + courbe + top produits)")
     public StatisticsOverviewDto getOverview(
-            @RequestParam(required = false) @Min(1) @Max(365) Integer days,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            @RequestParam(defaultValue = "10") @Min(1) @Max(100) int topProducts) {
+            @RequestParam(name = "days", required = false) @Min(1) @Max(365) Integer days,
+            @RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
+            @RequestParam(name = "topProducts", defaultValue = "10") @Min(1) @Max(100) int topProducts) {
         if (fromDate != null && toDate != null) {
             return statisticsService.getOverview(fromDate, toDate, topProducts);
         }

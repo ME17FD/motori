@@ -45,7 +45,7 @@ export interface ExportParams {
 /** Fetch recent N orders for the dashboard */
 export async function fetchRecentOrders(limit = 10): Promise<OrderDto[]> {
   const { data } = await apiClient.get<OrderDto[]>('/api/orders/recent', {
-    params: { arg0: limit },
+    params: { limit }, // ✅ already correct
   });
   return data;
 }
@@ -65,11 +65,11 @@ export async function fetchOrders(
   if (hasFilters) {
     const { data } = await apiClient.get<PageOrderDto>('/api/orders/search', {
       params: {
-        arg0: params.trackingNumber,
-        arg1: params.status,
-        arg2: params.userId,
-        arg3: params.from,
-        arg4: params.to,
+        trackingNumber: params.trackingNumber, // ✅ fixed
+        status: params.status,                 // ✅ fixed
+        userId: params.userId,                 // ✅ fixed
+        fromDate: params.from,                 // ✅ fixed (backend expects fromDate)
+        toDate: params.to,                     // ✅ fixed (backend expects toDate)
         page: params.page ?? 0,
         size: params.size ?? 20,
         sort: params.sort,
@@ -102,7 +102,7 @@ export async function updateOrderStatus(
   const { data } = await apiClient.patch<OrderDto>(
     `/api/orders/${id}/status`,
     null,
-    { params: { arg1: status } }
+    { params: { status } } // ✅ fixed (was arg1)
   );
   return data;
 }
@@ -126,10 +126,10 @@ export async function updateTracking(
 export async function exportOrders(params: ExportParams = {}): Promise<Blob> {
   const { data } = await apiClient.get<Blob>('/api/orders/export', {
     params: {
-      arg0: params.format ?? 'csv',
-      arg1: params.status,
-      arg2: params.from,
-      arg3: params.to,
+      format: params.format ?? 'csv', // ✅ fixed
+      status: params.status,          // ✅ fixed
+      fromDate: params.from,          // ✅ fixed (backend expects fromDate)
+      toDate: params.to,              // ✅ fixed (backend expects toDate)
     },
     responseType: 'blob',
   });

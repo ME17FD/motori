@@ -20,6 +20,9 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://keycloak:8080/realms/motori_realm/protocol/openid-connect/certs
+        audiences: 
+            - account
+            - motori-backoffice
 
   cloud:
     gateway:
@@ -254,11 +257,7 @@ spring:
               filters:
                 - RewritePath=/api/product-service/actuator/(?<segment>.*), /actuator/$\{segment}
 
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:8082/realms/motori_realm
+
 
 server:
   port: 8080
@@ -301,3 +300,5 @@ logging:
     org.springframework.cloud.gateway: TRACE
     com.motori.gateway: DEBUG
     reactor.netty: DEBUG
+    org.springframework.security.oauth2.jwt: DEBUG
+    org.springframework.security.oauth2.server.resource: DEBUG

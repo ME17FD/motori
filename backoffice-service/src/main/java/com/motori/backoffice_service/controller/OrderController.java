@@ -58,28 +58,28 @@ public class OrderController {
     @GetMapping("/search")
     @Operation(summary = "Recherche avec filtres (tracking, statut, dates)")
     public Page<OrderDto> search(
-            @RequestParam(required = false) String trackingNumber,
-            @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) String userId,
-            @RequestParam(required = false) java.time.LocalDate fromDate,
-            @RequestParam(required = false) java.time.LocalDate toDate,
+            @RequestParam(name = "trackingNumber", required = false) String trackingNumber,
+            @RequestParam(name = "status", required = false) OrderStatus status,
+            @RequestParam(name = "userId", required = false) String userId,
+            @RequestParam(name = "fromDate", required = false) java.time.LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) java.time.LocalDate toDate,
             @PageableDefault(page = 0, size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return orderService.search(trackingNumber, status, userId, fromDate, toDate, pageable);
     }
 
     @GetMapping("/recent")
     @Operation(summary = "Dernières commandes (pour tableau de bord)")
-    public List<OrderDto> findRecent(@RequestParam(defaultValue = "10") int limit) {
+    public List<OrderDto> findRecent(@RequestParam(name = "limit", defaultValue = "10") int limit) {
         return orderService.findRecent(limit);
     }
 
     @GetMapping("/export")
     @Operation(summary = "Export des commandes (CSV ou JSON)")
     public ResponseEntity<?> export(
-            @RequestParam(defaultValue = "csv") String format,
-            @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) java.time.LocalDate fromDate,
-            @RequestParam(required = false) java.time.LocalDate toDate) {
+            @RequestParam(name = "format", defaultValue = "csv") String format,
+            @RequestParam(name = "status", required = false) OrderStatus status,
+            @RequestParam(name = "fromDate", required = false) java.time.LocalDate fromDate,
+            @RequestParam(name = "toDate", required = false) java.time.LocalDate toDate) {
         return orderService.export(format, status, fromDate, toDate);
     }
 
@@ -91,7 +91,7 @@ public class OrderController {
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Changer le statut d'une commande")
-    public OrderDto updateStatus(@PathVariable UUID id, @RequestParam OrderStatus status) {
+    public OrderDto updateStatus(@PathVariable UUID id, @RequestParam(name = "status") OrderStatus status) {
         return orderService.updateStatus(id, status);
     }
 }

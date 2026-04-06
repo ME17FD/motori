@@ -3,6 +3,14 @@ ARG SERVICE_DIR
 FROM maven:3.9.12-eclipse-temurin-25 AS build
 ARG SERVICE_DIR
 WORKDIR /app
+
+# Install the shared local dependency first
+COPY order-model/pom.xml ./order-model/pom.xml
+COPY order-model/src ./order-model/src
+RUN mvn -B -DskipTests -f order-model/pom.xml install
+
+
+
 COPY ${SERVICE_DIR}/pom.xml .
 COPY ${SERVICE_DIR}/src ./src
 RUN mvn -q -B -DskipTests package spring-boot:repackage

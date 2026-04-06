@@ -130,6 +130,11 @@
             <artifactId>minio</artifactId>
             <version>8.5.9</version>
         </dependency>
+        <dependency>
+			<groupId>com.motori</groupId>
+			<artifactId>order-model</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
         
         <!--redis-->
         <dependency>
