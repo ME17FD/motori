@@ -28,26 +28,26 @@ export interface ArticleBase {
 // ─── Part ──────────────────────────────────────────────────────────────────
 
 export interface PartDto extends ArticleBase {
-  reference: string;
-  brandId: number;
-  brandName?: string;
-  categoryId: number;
-  categoryName?: string;
+  ref: string;
+  partBrandId: string;
+  partBrandName?: string;
+  partCategoryId: string;
+  partCategoryName?: string;
   /** IDs of compatible vehicles */
-  compatibleVehicleIds?: number[];
+  compatibleVehicleIds?: string[];
 }
 
 export interface CreatePartRequest {
   name: string;
   description?: string;
   price: number;
-  reference: string;
-  brandId: number;
-  categoryId: number;
+  ref: string;
+  partBrandId: string;
+  partCategoryId: string;
   status?: ProductStatus;
   stock?: number;
   properties?: DynamicProperties;
-  compatibleVehicleIds?: number[];
+  compatibleVehicleIds?: string[];
   imageUrl?: string;
 }
 

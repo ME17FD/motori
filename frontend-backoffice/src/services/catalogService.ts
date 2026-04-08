@@ -74,10 +74,11 @@ export async function createBrand(payload: CreateBrandRequest): Promise<BrandDto
 /** Update an existing brand */
 export async function updateBrand(
   id: number,
-  payload: UpdateBrandRequest & { type: BrandType }
+  type: BrandType,
+  payload: UpdateBrandRequest
 ): Promise<BrandDto> {
   const { data } = await apiClient.put<BrandDto>(
-    `${BRAND_PATHS[payload.type]}/${id}`,
+    `${BRAND_PATHS[type]}/${id}`,
     payload
   );
   return data;
@@ -127,36 +128,34 @@ export async function createCategory(
 
 /** Update an existing category */
 export async function updateCategory(
-  id: number,
-  payload: UpdateCategoryRequest & { type: CategoryType }
+  id: string,
+  type: CategoryType,
+  payload: UpdateCategoryRequest
 ): Promise<CategoryDto> {
   const { data } = await apiClient.put<CategoryDto>(
-    `${CATEGORY_PATHS[payload.type]}/${id}`,
+    `${CATEGORY_PATHS[type]}/${id}`,
     payload
   );
   return data;
 }
 
 /** Delete a category */
-export async function deleteCategory(
-  id: number,
-  type: CategoryType
-): Promise<void> {
+export async function deleteCategory(id: string, type: CategoryType): Promise<void> {
   await apiClient.delete(`${CATEGORY_PATHS[type]}/${id}`);
 }
 
 // ─── Vehicles ──────────────────────────────────────────────────────────────
 
 /** Fetch all vehicles, optionally filtered by brand */
-export async function fetchVehicles(brandId?: number): Promise<VehicleDto[]> {
+export async function fetchVehicles(vehiculeBrandId?: string): Promise<VehicleDto[]> {
   const { data } = await apiClient.get<unknown>('/api/products/vehicules', {
-    params: brandId ? { brandId } : undefined,
+    params: vehiculeBrandId ? { vehiculeBrandId } : undefined,
   });
   return extractArray<VehicleDto>(data);
 }
 
 /** Fetch a single vehicle by ID */
-export async function fetchVehicleById(id: number): Promise<VehicleDto> {
+export async function fetchVehicleById(id: string): Promise<VehicleDto> {
   const { data } = await apiClient.get<VehicleDto>(`/api/products/vehicules/${id}`);
   return data;
 }
@@ -165,26 +164,38 @@ export async function fetchVehicleById(id: number): Promise<VehicleDto> {
 export async function createVehicle(
   payload: CreateVehicleRequest
 ): Promise<VehicleDto> {
+  // Ensure brandId is sent as string (UUID)
+ const cleanedPayload = {
+    name: payload.name,
+    model: payload.model,
+    vehiculeBrandId: payload.vehiculeBrandId,  
+  };
   const { data } = await apiClient.post<VehicleDto>(
     '/api/products/vehicules',
-    payload
+    cleanedPayload
   );
   return data;
 }
 
 /** Update an existing vehicle */
 export async function updateVehicle(
-  id: number,
+  id: string,  // ← changed from number to string
   payload: UpdateVehicleRequest
 ): Promise<VehicleDto> {
+  // Ensure brandId is a string
+  const cleanedPayload = {
+    name: payload.name,
+    model: payload.model,
+    vehiculeBrandId: String(payload.vehiculeBrandId),
+  };
   const { data } = await apiClient.put<VehicleDto>(
     `/api/products/vehicules/${id}`,
-    payload
+    cleanedPayload
   );
   return data;
 }
 
 /** Delete a vehicle */
-export async function deleteVehicle(id: number): Promise<void> {
+export async function deleteVehicle(id: string): Promise<void> {
   await apiClient.delete(`/api/products/vehicules/${id}`);
 }

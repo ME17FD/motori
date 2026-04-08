@@ -9,22 +9,23 @@
 export type CategoryType = 'PartCategory' | 'EquipementCategory';
 
 export interface CategoryDto {
-  id: number;
+  id: string;
   name: string;
-  type: CategoryType;
-  /** Parent category ID — null for root categories */
-  parentId?: number | null;
-  /** Nested children (populated when fetching tree) */
+  type?: CategoryType;
+  parentCategoryId?: string | null;
+  parentCategoryName?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   children?: CategoryDto[];
 }
 
 export interface CreateCategoryRequest {
   name: string;
   type: CategoryType;
-  parentId?: number | null;
+  parentCategoryId?: string | null;
 }
 
 export interface UpdateCategoryRequest {
   name: string;
-  parentId?: number | null;
+  parentCategoryId?: string | null;
 }

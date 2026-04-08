@@ -68,13 +68,13 @@ export function BrandModal({ brandType, editBrand, onClose }: Props) {
   }, []);
 
   const onSubmit = async (data: BrandFormData) => {
-    if (isEdit && editBrand) {
-      await updateBrand.mutateAsync({ id: editBrand.id, payload: { name: data.name } });
-    } else {
-      await createBrand.mutateAsync({ name: data.name, type: brandType });
-    }
-    onClose();
-  };
+  if (isEdit && editBrand) {
+    await updateBrand.mutateAsync({ id: editBrand.id, type: brandType, payload: { name: data.name } });
+  } else {
+    await createBrand.mutateAsync({ name: data.name, type: brandType });
+  }
+  onClose();
+};
 
   const typeLabel: Record<BrandType, string> = {
     VehiculeBrand:   'Vehicle Brand',

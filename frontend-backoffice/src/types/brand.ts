@@ -10,7 +10,7 @@
 export type BrandType = 'VehiculeBrand' | 'PartBrand' | 'EquipementBrand';
 
 export interface BrandDto {
-  id: number;
+  id: string;
   name: string;
   type: BrandType;
   /** Soft-delete flag — true means brand is active */

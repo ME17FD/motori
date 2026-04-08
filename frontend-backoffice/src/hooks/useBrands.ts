@@ -50,8 +50,8 @@ export function useCreateBrand() {
 export function useUpdateBrand() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdateBrandRequest }) =>
-      updateBrand(id, payload),
+    mutationFn: ({ id, type, payload }: { id: number; type: BrandType; payload: UpdateBrandRequest }) =>
+      updateBrand(id, type, payload),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: brandKeys.byType(updated.type) });
       toast.success(`Brand "${updated.name}" updated.`);

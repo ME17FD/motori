@@ -14,10 +14,11 @@ import styles from '../../styles/Components/modals/FormModal.module.css';
 
 // ─── Validation ────────────────────────────────────────────────────────────
 
+// ✅ brandId is now a string (UUID), no parseInt later
 const vehicleSchema = z.object({
-  name:    z.string().min(1, 'Name is required').max(100),
-  model:   z.string().min(1, 'Model is required').max(100),
-  brandId: z.string().min(1, 'Brand is required'),
+  name:           z.string().min(1, 'Name is required').max(100),
+  model:          z.string().min(1, 'Model is required').max(100),
+  vehiculeBrandId: z.string().min(1, 'Brand is required'),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -44,17 +45,17 @@ export function VehicleModal({ editVehicle, onClose }: Props) {
   } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      name:    editVehicle?.name    ?? '',
-      model:   editVehicle?.model   ?? '',
-      brandId: editVehicle?.brandId?.toString() ?? '',
+      name:            editVehicle?.name    ?? '',
+      model:           editVehicle?.model   ?? '',
+      vehiculeBrandId: editVehicle?.vehiculeBrandId ?? '',
     },
   });
 
   useEffect(() => {
     reset({
-      name:    editVehicle?.name    ?? '',
-      model:   editVehicle?.model   ?? '',
-      brandId: editVehicle?.brandId?.toString() ?? '',
+      name:            editVehicle?.name    ?? '',
+      model:           editVehicle?.model   ?? '',
+      vehiculeBrandId: editVehicle?.vehiculeBrandId ?? '',
     });
   }, [editVehicle, reset]);
 
@@ -70,10 +71,11 @@ export function VehicleModal({ editVehicle, onClose }: Props) {
   }, []);
 
   const onSubmit = async (data: VehicleFormData) => {
+    // ✅ Send the correct field name 'vehiculeBrandId' as a string (UUID)
     const payload = {
-      name:    data.name,
-      model:   data.model,
-      brandId: parseInt(data.brandId, 10),
+      name:            data.name,
+      model:           data.model,
+      vehiculeBrandId: data.vehiculeBrandId,   // already a string, no parseInt
     };
 
     if (isEdit && editVehicle) {
@@ -131,20 +133,20 @@ export function VehicleModal({ editVehicle, onClose }: Props) {
             )}
           </div>
 
-          {/* Brand */}
+          {/* Brand – value is the brand UUID string */}
           <div className={styles.field}>
             <label className={styles.label}>Brand *</label>
             <select
-              className={`${styles.select} ${errors.brandId ? styles.inputError : ''}`}
-              {...register('brandId')}
+              className={`${styles.select} ${errors.vehiculeBrandId ? styles.inputError : ''}`}
+              {...register('vehiculeBrandId')}
             >
               <option value="">Select a brand…</option>
               {vehicleBrands.map((b) => (
                 <option key={b.id} value={b.id}>{b.name}</option>
               ))}
             </select>
-            {errors.brandId && (
-              <span className={styles.fieldError}>{errors.brandId.message}</span>
+            {errors.vehiculeBrandId && (
+              <span className={styles.fieldError}>{errors.vehiculeBrandId.message}</span>
             )}
           </div>
 

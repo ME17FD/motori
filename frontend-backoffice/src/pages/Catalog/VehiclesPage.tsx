@@ -12,7 +12,7 @@ import type { VehicleDto } from '../../types/vehicle';
 import styles from '../../styles/pages/Catalog/CatalogPage.module.css';
 
 export function VehiclesPage() {
-  const [brandFilter, setBrandFilter]   = useState<number | undefined>();
+  const [brandFilter, setBrandFilter]   = useState<string | undefined>();
   const [showCreate, setShowCreate]     = useState(false);
   const [editTarget, setEditTarget]     = useState<VehicleDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VehicleDto | null>(null);
@@ -20,6 +20,9 @@ export function VehiclesPage() {
   const { data: vehicles = [], isLoading } = useVehicles(brandFilter);
   const { data: brands = [] }              = useBrands('VehiculeBrand');
   const deleteVehicle                      = useDeleteVehicle();
+
+
+  
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -38,16 +41,12 @@ export function VehiclesPage() {
 
       <div className={styles.card}>
         <div className={styles.listSection}>
-          {/* Toolbar */}
           <div className={styles.toolbar}>
-            {/* Brand filter */}
             <select
               className={styles.filterSelect}
               value={brandFilter ?? ''}
               onChange={(e) =>
-                setBrandFilter(
-                  e.target.value ? parseInt(e.target.value, 10) : undefined
-                )
+                setBrandFilter(e.target.value ? e.target.value : undefined)
               }
             >
               <option value="">All brands</option>
@@ -65,7 +64,6 @@ export function VehiclesPage() {
             </button>
           </div>
 
-          {/* Table */}
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
@@ -105,7 +103,7 @@ export function VehiclesPage() {
                         <span className={styles.modelChip}>{v.model}</span>
                       </td>
                       <td className={styles.td}>
-                        {v.brandName ?? `Brand #${v.brandId}`}
+                        {v.brand?.name || '—'}
                       </td>
                       <td className={styles.td}>
                         <div className={styles.rowActions}>

@@ -44,14 +44,14 @@ export function CategoryModal({ categoryType, editCategory, onClose }: Props) {
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name:     editCategory?.name ?? '',
-      parentId: editCategory?.parentId?.toString() ?? '',
+      parentId: editCategory?.parentCategoryId?.toString() ?? '',
     },
   });
 
   useEffect(() => {
     reset({
       name:     editCategory?.name ?? '',
-      parentId: editCategory?.parentId?.toString() ?? '',
+      parentId: editCategory?.parentCategoryId?.toString() ?? '',
     });
   }, [editCategory, reset]);
 
@@ -67,22 +67,23 @@ export function CategoryModal({ categoryType, editCategory, onClose }: Props) {
   }, []);
 
   const onSubmit = async (data: CategoryFormData) => {
-    const parentId = data.parentId ? parseInt(data.parentId, 10) : null;
+  const parentCategoryId = data.parentId || null;
 
-    if (isEdit && editCategory) {
-      await updateCategory.mutateAsync({
-        id: editCategory.id,
-        payload: { name: data.name, parentId },
-      });
-    } else {
-      await createCategory.mutateAsync({
-        name: data.name,
-        type: categoryType,
-        parentId,
-      });
-    }
-    onClose();
-  };
+  if (isEdit && editCategory) {
+    await updateCategory.mutateAsync({
+      id: editCategory.id,
+      type: categoryType,
+      payload: { name: data.name, parentCategoryId },
+    });
+  } else {
+    await createCategory.mutateAsync({
+      name: data.name,
+      type: categoryType,
+      parentCategoryId,
+    });
+  }
+  onClose();
+};
 
   // Exclude self from parent options when editing
   const parentOptions = allCategories.filter(

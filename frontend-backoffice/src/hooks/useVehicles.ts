@@ -16,16 +16,17 @@ import type { CreateVehicleRequest, UpdateVehicleRequest } from '../types/vehicl
 
 export const vehicleKeys = {
   all:          ['vehicles'] as const,
-  list:         (brandId?: number) => ['vehicles', 'list', brandId] as const,
+  // vehiculeBrandId is now a string (UUID)
+  list:         (vehiculeBrandId?: string) => ['vehicles', 'list', vehiculeBrandId] as const,
 };
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────
 
 /** Fetch all vehicles, optionally filtered by brand */
-export function useVehicles(brandId?: number) {
+export function useVehicles(vehiculeBrandId?: string) {
   return useQuery({
-    queryKey: vehicleKeys.list(brandId),
-    queryFn:  () => fetchVehicles(brandId),
+    queryKey: vehicleKeys.list(vehiculeBrandId),
+    queryFn:  () => fetchVehicles(vehiculeBrandId),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -47,7 +48,8 @@ export function useCreateVehicle() {
 export function useUpdateVehicle() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdateVehicleRequest }) =>
+    // id is now string (UUID)
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateVehicleRequest }) =>
       updateVehicle(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vehicleKeys.all });
@@ -61,7 +63,7 @@ export function useUpdateVehicle() {
 export function useDeleteVehicle() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteVehicle(id),
+    mutationFn: (id: string) => deleteVehicle(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: vehicleKeys.all });
       toast.success('Vehicle deleted.');

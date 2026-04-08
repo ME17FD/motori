@@ -1,16 +1,9 @@
 /**
  * ProductModal — unified create/edit form for Parts and Equipements.
- *
- * Mode is determined by the `productType` prop:
- *   'part'       → shows reference, compatible vehicles
- *   'equipement' → shows size, color
- *
- * Common fields: name, description, price, brand, category,
- *                status, stock, image, dynamic properties
  */
 
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';  // ✅ removed SubmitHandler import
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X } from 'lucide-react';
@@ -32,26 +25,21 @@ import styles from '../../styles/Components/modals/FormModal.module.css';
 import modalStyles from '../../styles/Components/modals/ProductModal.module.css';
 
 // ─── Validation schema ─────────────────────────────────────────────────────
-
 const productSchema = z.object({
   name:        z.string().min(1, 'Name is required').max(200),
   description: z.string().optional(),
   price:       z.number().min(0, 'Price must be positive'),
-  brandId:     z.string().min(1, 'Brand is required'),
-  categoryId:  z.string().min(1, 'Category is required'),
+  partBrandId:     z.string().min(1, 'Brand is required'),
+  partCategoryId:  z.string().min(1, 'Category is required'),
   status:      z.enum(['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED']),
   stock:       z.number().min(0).default(0),
-  // Part-specific
-  reference:   z.string().optional(),
-  compatibleVehicleIds: z.array(z.number()).optional(),
-  // Equipement-specific
+  ref:         z.string().optional(),
+  compatibleVehicleIds: z.array(z.string()).optional(),
   size:        z.string().optional(),
   color:       z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
-
-// ─── Props ─────────────────────────────────────────────────────────────────
 
 interface Props {
   productType: 'part' | 'equipement';
@@ -62,71 +50,72 @@ interface Props {
 const SIZES: EquipementSize[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const STATUSES: ProductStatus[] = ['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED'];
 
-// ─── Component ─────────────────────────────────────────────────────────────
+function getInitialBrandId(editItem: PartDto | EquipementDto | null | undefined, isPart: boolean): string {
+  if (!editItem) return '';
+  if (isPart) return (editItem as PartDto).partBrandId ?? '';
+  return String((editItem as EquipementDto).brandId ?? '');
+}
+
+function getInitialCategoryId(editItem: PartDto | EquipementDto | null | undefined, isPart: boolean): string {
+  if (!editItem) return '';
+  if (isPart) return (editItem as PartDto).partCategoryId ?? '';
+  return String((editItem as EquipementDto).categoryId ?? '');
+}
 
 export function ProductModal({ productType, editItem, onClose }: Props) {
-  const isEdit  = !!editItem;
-  const isPart  = productType === 'part';
+  const isEdit = !!editItem;
+  const isPart = productType === 'part';
 
-  // ── State ────────────────────────────────────────────────────────────
-  const [properties, setProperties]  = useState<DynamicProperties>(
-    editItem?.properties ?? {}
-  );
-  const [imageFile, setImageFile]    = useState<File | null>(null);
-  const [selectedVehicles, setSelectedVehicles] = useState<number[]>(
+  const [properties, setProperties] = useState<DynamicProperties>(editItem?.properties ?? {});
+  const [, setImageFile] = useState<File | null>(null); // kept for future use
+  const [selectedVehicles, setSelectedVehicles] = useState<string[]>(
     isPart && editItem ? (editItem as PartDto)?.compatibleVehicleIds ?? [] : []
   );
 
-  // ── Data ─────────────────────────────────────────────────────────────
   const brandType    = isPart ? 'PartBrand' : 'EquipementBrand';
   const categoryType = isPart ? 'PartCategory' : 'EquipementCategory';
-
-  const { data: brands     = [] } = useBrands(brandType);
+  const { data: brands = [] } = useBrands(brandType);
   const { data: categories = [] } = useCategories(categoryType);
-  const { data: vehicles   = [] } = useVehicles();
+  const { data: vehicles = [] } = useVehicles();
 
-  // ── Mutations ─────────────────────────────────────────────────────────
-  const createPart       = useCreatePart();
-  const updatePart       = useUpdatePart();
+  const createPart = useCreatePart();
+  const updatePart = useUpdatePart();
   const createEquipement = useCreateEquipement();
   const updateEquipement = useUpdateEquipement();
 
-  // ── Form ──────────────────────────────────────────────────────────────
   const {
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name:        editItem?.name        ?? '',
+      name:        editItem?.name ?? '',
       description: editItem?.description ?? '',
-      price:       editItem?.price       ?? 0,
-      brandId:     editItem?.brandId?.toString()    ?? '',
-      categoryId:  editItem?.categoryId?.toString() ?? '',
-      status:      editItem?.status      ?? 'AVAILABLE',
-      stock:       editItem?.stock       ?? 0,
-      reference:   isPart && editItem ? (editItem as PartDto)?.reference ?? '' : '',
+      price:       editItem?.price ?? 0,
+      partBrandId: getInitialBrandId(editItem, isPart),
+      partCategoryId: getInitialCategoryId(editItem, isPart),
+      status:      editItem?.status ?? 'AVAILABLE',
+      stock:       editItem?.stock ?? 0,
+      ref:         isPart && editItem ? (editItem as PartDto)?.ref ?? '' : '',
       size:        !isPart && editItem ? (editItem as EquipementDto)?.size ?? '' : '',
       color:       !isPart && editItem ? (editItem as EquipementDto)?.color ?? '' : '',
     },
   });
 
-  // Initialize state when editItem changes - using useEffect is appropriate here
-  // since we're syncing external data with form state
+  // Reset form when editItem changes
   useEffect(() => {
     if (editItem) {
       reset({
-        name:        editItem.name        ?? '',
+        name:        editItem.name ?? '',
         description: editItem.description ?? '',
-        price:       editItem.price       ?? 0,
-        brandId:     editItem.brandId?.toString()    ?? '',
-        categoryId:  editItem.categoryId?.toString() ?? '',
-        status:      editItem.status      ?? 'AVAILABLE',
-        stock:       editItem.stock       ?? 0,
-        reference:   isPart ? (editItem as PartDto)?.reference ?? '' : '',
+        price:       editItem.price ?? 0,
+        partBrandId: getInitialBrandId(editItem, isPart),
+        partCategoryId: getInitialCategoryId(editItem, isPart),
+        status:      editItem.status ?? 'AVAILABLE',
+        stock:       editItem.stock ?? 0,
+        ref:         isPart ? (editItem as PartDto)?.ref ?? '' : '',
         size:        !isPart ? (editItem as EquipementDto)?.size ?? '' : '',
         color:       !isPart ? (editItem as EquipementDto)?.color ?? '' : '',
       });
@@ -135,25 +124,24 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
         isPart ? (editItem as PartDto)?.compatibleVehicleIds ?? [] : []
       );
     } else {
-      // Reset to defaults when creating new
       reset({
-        name:        '',
+        name: '',
         description: '',
-        price:       0,
-        brandId:     '',
-        categoryId:  '',
-        status:      'AVAILABLE',
-        stock:       0,
-        reference:   '',
-        size:        '',
-        color:       '',
+        price: 0,
+        partBrandId: '',
+        partCategoryId: '',
+        status: 'AVAILABLE',
+        stock: 0,
+        ref: '',
+        size: '',
+        color: '',
       });
       setProperties({});
       setSelectedVehicles([]);
     }
   }, [editItem, isPart, reset]);
 
-  // Escape key + body scroll lock
+  // Escape key and body scroll lock
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
@@ -164,24 +152,23 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
     };
   }, [onClose]);
 
-  // ── Submit ────────────────────────────────────────────────────────────
+  // ✅ onSubmit now without explicit SubmitHandler type
   const onSubmit = async (data: ProductFormData) => {
     const base = {
       name:        data.name,
       description: data.description,
       price:       data.price,
-      brandId:     parseInt(data.brandId, 10),
-      categoryId:  parseInt(data.categoryId, 10),
-      status:      data.status as ProductStatus,
+      partBrandId: data.partBrandId,
+      partCategoryId: data.partCategoryId,
+      status:      data.status,
       stock:       data.stock,
       properties,
-      // imageUrl handled separately via upload endpoint after create/update
     };
 
     if (isPart) {
       const payload = {
         ...base,
-        reference:            data.reference ?? '',
+        ref: data.ref ?? '',
         compatibleVehicleIds: selectedVehicles,
       };
       if (isEdit && editItem) {
@@ -190,29 +177,33 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
         await createPart.mutateAsync(payload);
       }
     } else {
-      const payload = {
-        ...base,
-        size:  data.size as EquipementSize | undefined,
-        color: data.color,
+      const equipPayload = {
+        name:        data.name,
+        description: data.description,
+        price:       data.price,
+        brandId:     parseInt(data.partBrandId, 10),
+        categoryId:  parseInt(data.partCategoryId, 10),
+        status:      data.status,
+        stock:       data.stock,
+        size:        data.size as EquipementSize | undefined,
+        color:       data.color,
+        properties,
       };
       if (isEdit && editItem) {
-        await updateEquipement.mutateAsync({ id: editItem.id, payload });
+        await updateEquipement.mutateAsync({ id: editItem.id, payload: equipPayload });
       } else {
-        await createEquipement.mutateAsync(payload);
+        await createEquipement.mutateAsync(equipPayload);
       }
     }
-
     onClose();
   };
 
-  // ── Vehicle toggle ─────────────────────────────────────────────────
-  const toggleVehicle = (id: number) => {
+  const toggleVehicle = (id: string) => {
     setSelectedVehicles((prev) =>
       prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
     );
   };
 
-  // ── Render ────────────────────────────────────────────────────────
   return (
     <div
       className={styles.overlay}
@@ -221,7 +212,6 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
       aria-modal="true"
     >
       <div className={modalStyles.modal}>
-        {/* Header */}
         <div className={styles.header}>
           <h2 className={styles.title}>
             {isEdit ? 'Edit' : 'New'} {isPart ? 'Part' : 'Equipment'}
@@ -231,18 +221,10 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
           </button>
         </div>
 
-        {/* Scrollable form body */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className={modalStyles.formBody}
-          noValidate
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className={modalStyles.formBody} noValidate>
           <div className={modalStyles.grid}>
-
-            {/* ── Left column ────────────────────────────────── */}
+            {/* Left column */}
             <div className={modalStyles.col}>
-
-              {/* Name */}
               <div className={styles.field}>
                 <label className={styles.label}>Name *</label>
                 <input
@@ -251,28 +233,22 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                   placeholder="Product name"
                   {...register('name')}
                 />
-                {errors.name && (
-                  <span className={styles.fieldError}>{errors.name.message}</span>
-                )}
+                {errors.name && <span className={styles.fieldError}>{errors.name.message}</span>}
               </div>
 
-              {/* Reference (parts only) */}
               {isPart && (
                 <div className={styles.field}>
                   <label className={styles.label}>Reference *</label>
                   <input
                     type="text"
-                    className={`${styles.input} ${errors.reference ? styles.inputError : ''}`}
+                    className={`${styles.input} ${errors.ref ? styles.inputError : ''}`}
                     placeholder="e.g. NGK-BR8ES"
-                    {...register('reference')}
+                    {...register('ref')}
                   />
-                  {errors.reference && (
-                    <span className={styles.fieldError}>{errors.reference.message}</span>
-                  )}
+                  {errors.ref && <span className={styles.fieldError}>{errors.ref.message}</span>}
                 </div>
               )}
 
-              {/* Description */}
               <div className={styles.field}>
                 <label className={styles.label}>Description</label>
                 <textarea
@@ -283,7 +259,6 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                 />
               </div>
 
-              {/* Price + Stock */}
               <div className={modalStyles.row2}>
                 <div className={styles.field}>
                   <label className={styles.label}>Price (MAD) *</label>
@@ -294,9 +269,7 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                     placeholder="0.00"
                     {...register('price', { valueAsNumber: true })}
                   />
-                  {errors.price && (
-                    <span className={styles.fieldError}>{errors.price.message}</span>
-                  )}
+                  {errors.price && <span className={styles.fieldError}>{errors.price.message}</span>}
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Stock</label>
@@ -309,41 +282,35 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                 </div>
               </div>
 
-              {/* Brand + Category */}
               <div className={modalStyles.row2}>
                 <div className={styles.field}>
                   <label className={styles.label}>Brand *</label>
                   <select
-                    className={`${styles.select} ${errors.brandId ? styles.inputError : ''}`}
-                    {...register('brandId')}
+                    className={`${styles.select} ${errors.partBrandId ? styles.inputError : ''}`}
+                    {...register('partBrandId')}
                   >
                     <option value="">Select brand…</option>
                     {brands.map((b) => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
-                  {errors.brandId && (
-                    <span className={styles.fieldError}>{errors.brandId.message}</span>
-                  )}
+                  {errors.partBrandId && <span className={styles.fieldError}>{errors.partBrandId.message}</span>}
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Category *</label>
                   <select
-                    className={`${styles.select} ${errors.categoryId ? styles.inputError : ''}`}
-                    {...register('categoryId')}
+                    className={`${styles.select} ${errors.partCategoryId ? styles.inputError : ''}`}
+                    {...register('partCategoryId')}
                   >
                     <option value="">Select category…</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
-                  {errors.categoryId && (
-                    <span className={styles.fieldError}>{errors.categoryId.message}</span>
-                  )}
+                  {errors.partCategoryId && <span className={styles.fieldError}>{errors.partCategoryId.message}</span>}
                 </div>
               </div>
 
-              {/* Status */}
               <div className={styles.field}>
                 <label className={styles.label}>Status</label>
                 <select className={styles.select} {...register('status')}>
@@ -353,7 +320,6 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                 </select>
               </div>
 
-              {/* Size + Color (equipment only) */}
               {!isPart && (
                 <div className={modalStyles.row2}>
                   <div className={styles.field}>
@@ -376,13 +342,10 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                   </div>
                 </div>
               )}
-
             </div>
 
-            {/* ── Right column ───────────────────────────────── */}
+            {/* Right column */}
             <div className={modalStyles.col}>
-
-              {/* Image */}
               <div className={styles.field}>
                 <label className={styles.label}>Product image</label>
                 <ImageUploader
@@ -391,16 +354,11 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                 />
               </div>
 
-              {/* Dynamic properties */}
               <div className={styles.field}>
                 <label className={styles.label}>Dynamic properties</label>
-                <DynamicPropertiesEditor
-                  value={properties}
-                  onChange={setProperties}
-                />
+                <DynamicPropertiesEditor value={properties} onChange={setProperties} />
               </div>
 
-              {/* Compatible vehicles (parts only) */}
               {isPart && (
                 <div className={styles.field}>
                   <label className={styles.label}>Compatible vehicles</label>
@@ -418,34 +376,20 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
                   </div>
                   {selectedVehicles.length > 0 && (
                     <p className={modalStyles.vehicleCount}>
-                      {selectedVehicles.length} vehicle
-                      {selectedVehicles.length !== 1 ? 's' : ''} selected
+                      {selectedVehicles.length} vehicle{selectedVehicles.length !== 1 ? 's' : ''} selected
                     </p>
                   )}
                 </div>
               )}
-
             </div>
           </div>
 
-          {/* Footer actions */}
           <div className={modalStyles.footer}>
-            <button
-              type="button"
-              className={styles.cancelBtn}
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
+            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={isSubmitting}>
               Cancel
             </button>
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? isEdit ? 'Saving…' : 'Creating…'
-                : isEdit ? 'Save Changes' : `Create ${isPart ? 'Part' : 'Equipment'}`}
+            <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
+              {isSubmitting ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : `Create ${isPart ? 'Part' : 'Equipment'}`)}
             </button>
           </div>
         </form>

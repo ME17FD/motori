@@ -1,7 +1,3 @@
-/**
- * useCategories — TanStack Query hooks for category endpoints.
- */
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -17,17 +13,12 @@ import type {
   UpdateCategoryRequest,
 } from '../types/category';
 
-// ─── Query keys ────────────────────────────────────────────────────────────
-
 export const categoryKeys = {
   all:    ['categories'] as const,
   byType: (type: CategoryType) => ['categories', 'list', type] as const,
   tree:   (type: CategoryType) => ['categories', 'tree', type] as const,
 };
 
-// ─── Hooks ─────────────────────────────────────────────────────────────────
-
-/** Flat list of categories by type */
 export function useCategories(type: CategoryType) {
   return useQuery({
     queryKey: categoryKeys.byType(type),
@@ -36,7 +27,6 @@ export function useCategories(type: CategoryType) {
   });
 }
 
-/** Nested tree of categories by type */
 export function useCategoryTree(type: CategoryType) {
   return useQuery({
     queryKey: categoryKeys.tree(type),
@@ -45,45 +35,37 @@ export function useCategoryTree(type: CategoryType) {
   });
 }
 
-/** Create a new category */
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: CreateCategoryRequest) => createCategory(payload),
-    onSuccess: (created) => {
-      queryClient.invalidateQueries({
-        queryKey: categoryKeys.byType(created.type),
-      });
-      queryClient.invalidateQueries({
-        queryKey: categoryKeys.tree(created.type),
-      });
+    onSuccess: (created, { type }) => {
+      queryClient.invalidateQueries({ queryKey: categoryKeys.byType(type) });
+      queryClient.invalidateQueries({ queryKey: categoryKeys.tree(type) });
       toast.success(`Category "${created.name}" created.`);
     },
     onError: () => toast.error('Failed to create category.'),
   });
 }
 
-/** Update an existing category */
 export function useUpdateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdateCategoryRequest }) =>
-      updateCategory(id, payload),
-    onSuccess: (updated) => {
-      queryClient.invalidateQueries({ queryKey: categoryKeys.byType(updated.type) });
-      queryClient.invalidateQueries({ queryKey: categoryKeys.tree(updated.type) });
+    mutationFn: ({ id, type, payload }: { id: string; type: CategoryType; payload: UpdateCategoryRequest }) =>
+      updateCategory(id, type, payload),
+    onSuccess: (updated, { type }) => {
+      queryClient.invalidateQueries({ queryKey: categoryKeys.byType(type) });
+      queryClient.invalidateQueries({ queryKey: categoryKeys.tree(type) });
       toast.success(`Category "${updated.name}" updated.`);
     },
     onError: () => toast.error('Failed to update category.'),
   });
 }
-  
-/** Delete a category */
+
 export function useDeleteCategory(type: CategoryType) {
   const queryClient = useQueryClient();
   return useMutation({
-    // ✅ Passe le type au service
-    mutationFn: (id: number) => deleteCategory(id, type),
+    mutationFn: (id: string) => deleteCategory(id, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: categoryKeys.byType(type) });
       queryClient.invalidateQueries({ queryKey: categoryKeys.tree(type) });

@@ -1,8 +1,3 @@
-/**
- * CategoriesPage — manage Part and Equipment categories.
- * Tabs: Part Categories | Equipment Categories
- */
-
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { useCategories, useDeleteCategory } from '../../hooks/useCategories';
@@ -28,9 +23,6 @@ function CategoryList({ categoryType }: CategoryListProps) {
 
   const { data: categories = [], isLoading } = useCategories(categoryType);
   const deleteCategory = useDeleteCategory(categoryType);
-
-  // Build a name lookup for displaying parent names
-  const nameById = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
   const filtered = categories.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
@@ -96,9 +88,9 @@ function CategoryList({ categoryType }: CategoryListProps) {
                   </td>
                   <td className={styles.td}>{cat.name}</td>
                   <td className={styles.td}>
-                    {cat.parentId
+                    {cat.parentCategoryId
                       ? <span className={styles.parentChip}>
-                          {nameById[cat.parentId] ?? `#${cat.parentId}`}
+                          {cat.parentCategoryName ?? `#${cat.parentCategoryId}`}
                         </span>
                       : <span className={styles.rootChip}>Root</span>}
                   </td>
