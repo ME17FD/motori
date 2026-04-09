@@ -10,7 +10,7 @@ export type InventoryItemType = 'PART' | 'EQUIPEMENT';
 
 export interface InventoryItemDto {
   id: number;
-  productId: number;
+  productId: string;
   productName?: string;
   type: InventoryItemType;
   paymentStatus: PaymentStatus;
@@ -22,7 +22,8 @@ export interface InventoryItemDto {
 }
 
 export interface CreateInventoryRequest {
-  productId: number;
+  partId?: string;       // for PART type
+  equipementId?: string;
   type: InventoryItemType;
   quantity: number;
   expiresAt?: string;

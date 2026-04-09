@@ -19,8 +19,8 @@ export async function fetchEquipements(filters: ProductFilters = {}): Promise<Pa
   const { data } = await apiClient.get<PageResult<EquipementDto>>('/api/products/equipements', {
     params: {
       name:       filters.name,
-      brandId:    filters.brandId,
-      categoryId: filters.categoryId,
+      equipementBrandId:    filters.equipementBrandId,
+      equipementCategoryId: filters.equipementCategoryId,
       minPrice:   filters.minPrice,
       maxPrice:   filters.maxPrice,
       status:     filters.status,
@@ -32,7 +32,7 @@ export async function fetchEquipements(filters: ProductFilters = {}): Promise<Pa
   return data;
 }
 
-export async function fetchEquipementById(id: number): Promise<EquipementDto> {
+export async function fetchEquipementById(id: string): Promise<EquipementDto> {
   const { data } = await apiClient.get<EquipementDto>(`/api/products/equipements/${id}`);
   return data;
 }
@@ -42,12 +42,12 @@ export async function createEquipement(payload: CreateEquipementRequest): Promis
   return data;
 }
 
-export async function updateEquipement(id: number, payload: UpdateEquipementRequest): Promise<EquipementDto> {
+export async function updateEquipement(id: string, payload: UpdateEquipementRequest): Promise<EquipementDto> {
   const { data } = await apiClient.put<EquipementDto>(`/api/products/equipements/${id}`, payload);
   return data;
 }
 
-export async function deleteEquipement(id: number): Promise<void> {
+export async function deleteEquipement(id: string): Promise<void> {
   await apiClient.delete(`/api/products/equipements/${id}`);
 }
 

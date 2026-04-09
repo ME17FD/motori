@@ -316,7 +316,16 @@
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
-
+.thumbnail {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.noImage {
+  text-align: center;
+  color: #999;
+}
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }

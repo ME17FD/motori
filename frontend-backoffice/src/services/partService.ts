@@ -18,8 +18,8 @@ export async function fetchParts(filters: ProductFilters = {}): Promise<PageResu
   const { data } = await apiClient.get<PageResult<PartDto>>('/api/products/parts', {
     params: {
       name:       filters.name,
-      brandId:    filters.brandId,
-      categoryId: filters.categoryId,
+      partBrandId:    filters.partBrandId,     
+      partCategoryId: filters.partCategoryId,   
       minPrice:   filters.minPrice,
       maxPrice:   filters.maxPrice,
       status:     filters.status,
@@ -31,7 +31,7 @@ export async function fetchParts(filters: ProductFilters = {}): Promise<PageResu
   return data;
 }
 
-export async function fetchPartById(id: number): Promise<PartDto> {
+export async function fetchPartById(id: string): Promise<PartDto> {
   const { data } = await apiClient.get<PartDto>(`/api/products/parts/${id}`);
   return data;
 }
@@ -41,12 +41,12 @@ export async function createPart(payload: CreatePartRequest): Promise<PartDto> {
   return data;
 }
 
-export async function updatePart(id: number, payload: UpdatePartRequest): Promise<PartDto> {
+export async function updatePart(id: string, payload: UpdatePartRequest): Promise<PartDto> {
   const { data } = await apiClient.put<PartDto>(`/api/products/parts/${id}`, payload);
   return data;
 }
 
-export async function deletePart(id: number): Promise<void> {
+export async function deletePart(id: string): Promise<void> {
   await apiClient.delete(`/api/products/parts/${id}`);
 }
 

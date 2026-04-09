@@ -14,7 +14,7 @@ export type DynamicProperties = Record<string, string | number | boolean>;
 
 /** Base fields shared by both Part and Equipement */
 export interface ArticleBase {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   price: number;
@@ -58,9 +58,9 @@ export interface UpdatePartRequest extends Partial<CreatePartRequest> {}
 export type EquipementSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
 
 export interface EquipementDto extends ArticleBase {
-  brandId: number;
+  equipementBrandId: string;
   brandName?: string;
-  categoryId: number;
+  equipementCategoryId: string;
   categoryName?: string;
   size?: EquipementSize;
   color?: string;
@@ -70,8 +70,8 @@ export interface CreateEquipementRequest {
   name: string;
   description?: string;
   price: number;
-  brandId: number;
-  categoryId: number;
+  equipementBrandId: string;
+  equipementCategoryId: string;
   status?: ProductStatus;
   stock?: number;
   size?: EquipementSize;
@@ -99,8 +99,13 @@ export interface PageResult<T> {
 
 export interface ProductFilters {
   name?: string;
-  brandId?: number;
-  categoryId?: number;
+  // Part filters (UUID strings, not numbers)
+  partBrandId?: string;
+  partCategoryId?: string;
+  // Equipment filters
+  equipementBrandId?: string;
+  equipementCategoryId?: string;
+  // Common
   minPrice?: number;
   maxPrice?: number;
   status?: ProductStatus;

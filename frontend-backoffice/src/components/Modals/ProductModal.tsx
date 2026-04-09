@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';  // ✅ removed SubmitHandler import
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X } from 'lucide-react';
@@ -32,7 +32,7 @@ const productSchema = z.object({
   partBrandId:     z.string().min(1, 'Brand is required'),
   partCategoryId:  z.string().min(1, 'Category is required'),
   status:      z.enum(['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED']),
-  stock:       z.number().min(0).default(0),
+  stock:       z.number().min(0, 'Stock cannot be negative').int(),
   ref:         z.string().optional(),
   compatibleVehicleIds: z.array(z.string()).optional(),
   size:        z.string().optional(),
@@ -52,14 +52,20 @@ const STATUSES: ProductStatus[] = ['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED'];
 
 function getInitialBrandId(editItem: PartDto | EquipementDto | null | undefined, isPart: boolean): string {
   if (!editItem) return '';
-  if (isPart) return (editItem as PartDto).partBrandId ?? '';
-  return String((editItem as EquipementDto).brandId ?? '');
+  if (isPart) {
+    return (editItem as PartDto).partBrandId ?? '';
+  } else {
+    return (editItem as EquipementDto).equipementBrandId ?? '';
+  }
 }
 
 function getInitialCategoryId(editItem: PartDto | EquipementDto | null | undefined, isPart: boolean): string {
   if (!editItem) return '';
-  if (isPart) return (editItem as PartDto).partCategoryId ?? '';
-  return String((editItem as EquipementDto).categoryId ?? '');
+  if (isPart) {
+    return (editItem as PartDto).partCategoryId ?? '';
+  } else {
+    return (editItem as EquipementDto).equipementCategoryId ?? '';
+  }
 }
 
 export function ProductModal({ productType, editItem, onClose }: Props) {
@@ -119,10 +125,6 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
         size:        !isPart ? (editItem as EquipementDto)?.size ?? '' : '',
         color:       !isPart ? (editItem as EquipementDto)?.color ?? '' : '',
       });
-      setProperties(editItem.properties ?? {});
-      setSelectedVehicles(
-        isPart ? (editItem as PartDto)?.compatibleVehicleIds ?? [] : []
-      );
     } else {
       reset({
         name: '',
@@ -136,8 +138,6 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
         size: '',
         color: '',
       });
-      setProperties({});
-      setSelectedVehicles([]);
     }
   }, [editItem, isPart, reset]);
 
@@ -152,7 +152,6 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
     };
   }, [onClose]);
 
-  // ✅ onSubmit now without explicit SubmitHandler type
   const onSubmit = async (data: ProductFormData) => {
     const base = {
       name:        data.name,
@@ -177,12 +176,13 @@ export function ProductModal({ productType, editItem, onClose }: Props) {
         await createPart.mutateAsync(payload);
       }
     } else {
+      // ✅ Equipment: send equipementBrandId and equipementCategoryId as strings (no parseInt)
       const equipPayload = {
         name:        data.name,
         description: data.description,
         price:       data.price,
-        brandId:     parseInt(data.partBrandId, 10),
-        categoryId:  parseInt(data.partCategoryId, 10),
+        equipementBrandId: data.partBrandId,      // string UUID
+        equipementCategoryId: data.partCategoryId,
         status:      data.status,
         stock:       data.stock,
         size:        data.size as EquipementSize | undefined,

@@ -26,7 +26,7 @@ const STATUSES: ProductStatus[] = ['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED'];
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: 9 }).map((_, i) => (
         <td key={i} className={styles.td}>
           <div className={styles.skeletonCell} />
         </td>
@@ -36,41 +36,42 @@ function SkeletonRow() {
 }
 
 export function EquipmentPage() {
-  const [name, setName]             = useState('');
-  const [brandId, setBrandId]       = useState<number | undefined>();
-  const [categoryId, setCategoryId] = useState<number | undefined>();
-  const [status, setStatus]         = useState<ProductStatus | ''>('');
-  const [page, setPage]             = useState(0);
+  // Filters: use equipementBrandId and equipementCategoryId (string UUIDs)
+  const [name, setName]                           = useState('');
+  const [equipementBrandId, setEquipementBrandId] = useState<string | undefined>();
+  const [equipementCategoryId, setEquipementCategoryId] = useState<string | undefined>();
+  const [status, setStatus]                       = useState<ProductStatus | ''>('');
+  const [page, setPage]                           = useState(0);
 
   const [showCreate, setShowCreate]     = useState(false);
   const [editTarget, setEditTarget]     = useState<EquipementDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EquipementDto | null>(null);
 
   const filters: ProductFilters = {
-    name:       name       || undefined,
-    brandId,
-    categoryId,
-    status:     status     || undefined,
+    name:                name || undefined,
+    equipementBrandId:   equipementBrandId,
+    equipementCategoryId: equipementCategoryId,
+    status:              status || undefined,
     page,
     size: PAGE_SIZE,
   };
 
   const { data, isLoading, isError } = useEquipements(filters);
-  const { data: brands     = [] }    = useBrands('EquipementBrand');
-  const { data: categories = [] }    = useCategories('EquipementCategory');
-  const deleteEquipement             = useDeleteEquipement();
+  const { data: brands = [] } = useBrands('EquipementBrand');
+  const { data: categories = [] } = useCategories('EquipementCategory');
+  const deleteEquipement = useDeleteEquipement();
 
   const resetPage = useCallback(() => setPage(0), []);
 
   const clearFilters = () => {
     setName('');
-    setBrandId(undefined);
-    setCategoryId(undefined);
+    setEquipementBrandId(undefined);
+    setEquipementCategoryId(undefined);
     setStatus('');
     setPage(0);
   };
 
-  const hasFilters = name || brandId || categoryId || status;
+  const hasFilters = !!(name || equipementBrandId || equipementCategoryId || status);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -109,11 +110,12 @@ export function EquipmentPage() {
           />
         </div>
 
+        {/* Brand filter (UUID string) */}
         <select
           className={styles.select}
-          value={brandId ?? ''}
+          value={equipementBrandId ?? ''}
           onChange={(e) => {
-            setBrandId(e.target.value ? parseInt(e.target.value, 10) : undefined);
+            setEquipementBrandId(e.target.value || undefined);
             resetPage();
           }}
         >
@@ -123,11 +125,12 @@ export function EquipmentPage() {
           ))}
         </select>
 
+        {/* Category filter (UUID string) */}
         <select
           className={styles.select}
-          value={categoryId ?? ''}
+          value={equipementCategoryId ?? ''}
           onChange={(e) => {
-            setCategoryId(e.target.value ? parseInt(e.target.value, 10) : undefined);
+            setEquipementCategoryId(e.target.value || undefined);
             resetPage();
           }}
         >
@@ -137,6 +140,7 @@ export function EquipmentPage() {
           ))}
         </select>
 
+        {/* Status filter */}
         <select
           className={styles.select}
           value={status}
@@ -170,7 +174,7 @@ export function EquipmentPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.th}>ID</th>
+                  <th className={styles.th}>Image</th>
                   <th className={styles.th}>Name</th>
                   <th className={styles.th}>Brand</th>
                   <th className={styles.th}>Size</th>
@@ -183,24 +187,29 @@ export function EquipmentPage() {
               </thead>
               <tbody>
                 {isLoading
-                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                      <SkeletonRow key={i} />
-                    ))
+                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonRow key={i} />)
                   : data?.content.map((eq) => (
                       <tr key={eq.id} className={styles.row}>
                         <td className={styles.td}>
-                          <span className={styles.idChip}>#{eq.id}</span>
+                          {eq.imageUrl ? (
+                            <img
+                              src={eq.imageUrl}
+                              alt={eq.name}
+                              className={styles.thumbnail}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className={styles.noImage}>—</div>
+                          )}
                         </td>
                         <td className={styles.td}>
                           <span className={styles.productName}>{eq.name}</span>
                         </td>
                         <td className={styles.td}>
-                          {eq.brandName ?? `#${eq.brandId}`}
+                          {eq.brandName ?? (eq.equipementBrandId ? eq.equipementBrandId.slice(0,8) + '…' : '—')}
                         </td>
                         <td className={styles.td}>
-                          {eq.size
-                            ? <span className={styles.sizeChip}>{eq.size}</span>
-                            : <span className={styles.na}>—</span>}
+                          {eq.size ? <span className={styles.sizeChip}>{eq.size}</span> : <span className={styles.na}>—</span>}
                         </td>
                         <td className={styles.td}>
                           {eq.color ? (
@@ -211,36 +220,22 @@ export function EquipmentPage() {
                               />
                               {eq.color}
                             </div>
-                          ) : (
-                            <span className={styles.na}>—</span>
-                          )}
+                          ) : <span className={styles.na}>—</span>}
                         </td>
+                        <td className={styles.td}>{formatCurrency(eq.price)}</td>
                         <td className={styles.td}>
-                          {formatCurrency(eq.price)}
-                        </td>
-                        <td className={styles.td}>
-                          <span
-                            className={
-                              eq.stock === 0
-                                ? styles.stockZero
-                                : eq.stock < 5
-                                ? styles.stockLow
-                                : styles.stockOk
-                            }
-                          >
+                          <span className={
+                            eq.stock === 0 ? styles.stockZero
+                            : eq.stock < 5 ? styles.stockLow
+                            : styles.stockOk
+                          }>
                             {eq.stock}
                           </span>
                         </td>
-                        <td className={styles.td}>
-                          <StatusBadge status={eq.status} />
-                        </td>
+                        <td className={styles.td}><StatusBadge status={eq.status} /></td>
                         <td className={styles.td}>
                           <div className={styles.rowActions}>
-                            <button
-                              className={styles.iconBtn}
-                              onClick={() => setEditTarget(eq)}
-                              title="Edit"
-                            >
+                            <button className={styles.iconBtn} onClick={() => setEditTarget(eq)} title="Edit">
                               <Pencil size={14} />
                             </button>
                             <button
@@ -254,7 +249,6 @@ export function EquipmentPage() {
                         </td>
                       </tr>
                     ))}
-
                 {!isLoading && data?.content.length === 0 && (
                   <tr>
                     <td colSpan={9} className={styles.emptyState}>
@@ -266,30 +260,18 @@ export function EquipmentPage() {
             </table>
           </div>
         )}
-
         {data && data.totalPages > 1 && (
           <div className={styles.paginationWrapper}>
-            <Pagination
-              currentPage={page}
-              totalPages={data.totalPages}
-              onPageChange={setPage}
-            />
+            <Pagination currentPage={page} totalPages={data.totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>
 
       {showCreate && (
-        <ProductModal
-          productType="equipement"
-          onClose={() => setShowCreate(false)}
-        />
+        <ProductModal productType="equipement" onClose={() => setShowCreate(false)} />
       )}
       {editTarget && (
-        <ProductModal
-          productType="equipement"
-          editItem={editTarget}
-          onClose={() => setEditTarget(null)}
-        />
+        <ProductModal productType="equipement" editItem={editTarget} onClose={() => setEditTarget(null)} />
       )}
       {deleteTarget && (
         <ConfirmDialog

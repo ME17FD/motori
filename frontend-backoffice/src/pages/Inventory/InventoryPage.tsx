@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * InventoryPage — stock management with filters and actions.
- *
- * Features:
- *   - Paginated inventory table
- *   - Filters: type, paymentStatus, available/sold, product name
- *   - Actions: mark as sold, update payment status, delete
- *   - Add stock modal
  */
 
 import { useState } from 'react';
@@ -16,12 +10,11 @@ import {
   useMarkAsSold,
   useUpdatePaymentStatus,
   useDeleteInventoryItem,
-  useAddStock,
 } from '../../hooks/useInventory';
 import { ConfirmDialog } from '../../components/Modals/ConfirmDialog';
 import { InventoryModal } from '../../components/Modals/InventoryModal';
 import { Pagination } from '../../components/ui/Pagination';
-import { formatDate, formatCurrency } from '../../utils/formatters';
+import { formatDate } from '../../utils/formatters';
 import type {
   InventoryItemDto,
   InventoryFilters,
@@ -31,8 +24,6 @@ import type {
 import styles from '../../styles/pages/Inventory/InventoryPage.module.css';
 
 const PAGE_SIZE = 20;
-
-// ─── Payment status badge ──────────────────────────────────────────────────
 
 function PaymentBadge({ status }: { status: PaymentStatus }) {
   const map: Record<PaymentStatus, { label: string; cls: string }> = {
@@ -44,12 +35,10 @@ function PaymentBadge({ status }: { status: PaymentStatus }) {
   return <span className={`${styles.payBadge} ${cls}`}>{label}</span>;
 }
 
-// ─── Skeleton row ──────────────────────────────────────────────────────────
-
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 7 }).map((_, i) => (
+      {Array.from({ length: 8 }).map((_, i) => (
         <td key={i} className={styles.td}>
           <div className={styles.skeletonCell} />
         </td>
@@ -58,27 +47,22 @@ function SkeletonRow() {
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────
-
 export function InventoryPage() {
-  // ── Filters ────────────────────────────────────────────────────────────
-  const [productName, setProductName]     = useState('');
-  const [type, setType]                   = useState<InventoryItemType | ''>('');
+  const [productName, setProductName] = useState('');
+  const [type, setType] = useState<InventoryItemType | ''>('');
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | ''>('');
-  const [available, setAvailable]         = useState<boolean | undefined>();
-  const [page, setPage]                   = useState(0);
+  const [available, setAvailable] = useState<boolean | undefined>();
+  const [page, setPage] = useState(0);
 
-  // ── Modal state ────────────────────────────────────────────────────────
-  const [showAddStock, setShowAddStock]       = useState(false);
-  const [sellTarget, setSellTarget]           = useState<InventoryItemDto | null>(null);
-  const [deleteTarget, setDeleteTarget]       = useState<InventoryItemDto | null>(null);
-  const [paymentTarget, setPaymentTarget]     = useState<InventoryItemDto | null>(null);
+  const [showAddStock, setShowAddStock] = useState(false);
+  const [sellTarget, setSellTarget] = useState<InventoryItemDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<InventoryItemDto | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<InventoryItemDto | null>(null);
   const [newPaymentStatus, setNewPaymentStatus] = useState<PaymentStatus>('PAID');
 
-  // ── Data ───────────────────────────────────────────────────────────────
   const filters: InventoryFilters = {
     productName: productName || undefined,
-    type:          type          || undefined,
+    type: type || undefined,
     paymentStatus: paymentStatus || undefined,
     available,
     page,
@@ -86,9 +70,9 @@ export function InventoryPage() {
   };
 
   const { data, isLoading, isError } = useInventory(filters);
-  const markAsSold         = useMarkAsSold();
-  const updatePayment      = useUpdatePaymentStatus();
-  const deleteItem         = useDeleteInventoryItem();
+  const markAsSold = useMarkAsSold();
+  const updatePayment = useUpdatePaymentStatus();
+  const deleteItem = useDeleteInventoryItem();
 
   const clearFilters = () => {
     setProductName('');
@@ -98,33 +82,21 @@ export function InventoryPage() {
     setPage(0);
   };
 
-  const hasFilters = productName || type || paymentStatus || available !== undefined;
+  const hasFilters = !!(productName || type || paymentStatus || available !== undefined);
 
   return (
     <div className={styles.page}>
-
-      {/* ── Header ────────────────────────────────────────────────── */}
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>Inventory</h2>
-          {data && (
-            <p className={styles.subtitle}>
-              {data.totalElements.toLocaleString()} items
-            </p>
-          )}
+          {data && <p className={styles.subtitle}>{data.totalElements.toLocaleString()} items</p>}
         </div>
-        <button
-          className={styles.addBtn}
-          onClick={() => setShowAddStock(true)}
-        >
-          <Plus size={15} />
-          Add Stock
+        <button className={styles.addBtn} onClick={() => setShowAddStock(true)}>
+          <Plus size={15} /> Add Stock
         </button>
       </div>
 
-      {/* ── Filter bar ────────────────────────────────────────────── */}
       <div className={styles.filterBar}>
-        {/* Product name search */}
         <div className={styles.searchWrapper}>
           <Search size={14} className={styles.searchIcon} />
           <input
@@ -135,37 +107,25 @@ export function InventoryPage() {
             onChange={(e) => { setProductName(e.target.value); setPage(0); }}
           />
         </div>
-
-        {/* Type */}
         <select
           className={styles.select}
           value={type}
-          onChange={(e) => {
-            setType(e.target.value as InventoryItemType | '');
-            setPage(0);
-          }}
+          onChange={(e) => { setType(e.target.value as InventoryItemType | ''); setPage(0); }}
         >
           <option value="">All types</option>
           <option value="PART">Part</option>
           <option value="EQUIPEMENT">Equipment</option>
         </select>
-
-        {/* Payment status */}
         <select
           className={styles.select}
           value={paymentStatus}
-          onChange={(e) => {
-            setPaymentStatus(e.target.value as PaymentStatus | '');
-            setPage(0);
-          }}
+          onChange={(e) => { setPaymentStatus(e.target.value as PaymentStatus | ''); setPage(0); }}
         >
           <option value="">All payment statuses</option>
           <option value="PENDING">Pending</option>
           <option value="PAID">Paid</option>
           <option value="CANCELLED">Cancelled</option>
         </select>
-
-        {/* Availability */}
         <select
           className={styles.select}
           value={available === undefined ? '' : String(available)}
@@ -179,57 +139,49 @@ export function InventoryPage() {
           <option value="true">Available only</option>
           <option value="false">Sold only</option>
         </select>
-
         {hasFilters && (
           <button className={styles.clearBtn} onClick={clearFilters}>
-            <X size={13} />
-            Clear
+            <X size={13} /> Clear
           </button>
         )}
       </div>
 
-      {/* ── Table ─────────────────────────────────────────────────── */}
       <div className={styles.tableCard}>
         {isError ? (
-          <div className={styles.errorState}>
-            Failed to load inventory. Please refresh.
-          </div>
+          <div className={styles.errorState}>Failed to load inventory. Please refresh.</div>
         ) : (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.th}>ID</th>
                   <th className={styles.th}>Product</th>
                   <th className={styles.th}>Type</th>
+                  <th className={styles.th}>Qty</th>
                   <th className={styles.th}>Payment</th>
                   <th className={styles.th}>Status</th>
                   <th className={styles.th}>Created</th>
+                  <th className={styles.th}>Expires</th>
                   <th className={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading
-                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                      <SkeletonRow key={i} />
-                    ))
+                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonRow key={i} />)
                   : data?.content.map((item) => (
                       <tr key={item.id} className={styles.row}>
-                        <td className={styles.td}>
-                          <span className={styles.idChip}>#{item.id}</span>
-                        </td>
                         <td className={styles.td}>
                           <span className={styles.productName}>
                             {item.productName ?? `Product #${item.productId}`}
                           </span>
                         </td>
                         <td className={styles.td}>
-                          <span className={
-                            item.type === 'PART'
-                              ? styles.typePart
-                              : styles.typeEquip
-                          }>
+                          <span className={item.type === 'PART' ? styles.typePart : styles.typeEquip}>
                             {item.type === 'PART' ? 'Part' : 'Equipment'}
+                          </span>
+                        </td>
+                        <td className={styles.td}>
+                          <span className={item.soldAt ? styles.stockZero : styles.stockOk}>
+                            {item.soldAt ? '0' : '1'}
                           </span>
                         </td>
                         <td className={styles.td}>
@@ -237,19 +189,17 @@ export function InventoryPage() {
                         </td>
                         <td className={styles.td}>
                           {item.soldAt ? (
-                            <span className={styles.statusSold}>
-                              Sold {formatDate(item.soldAt)}
-                            </span>
+                            <span className={styles.statusSold}>Out of stock</span>
                           ) : (
-                            <span className={styles.statusAvail}>Available</span>
+                            <span className={styles.statusAvail}>In stock</span>
                           )}
                         </td>
+                        <td className={styles.td}>{formatDate(item.createdAt)}</td>
                         <td className={styles.td}>
-                          {formatDate(item.createdAt)}
+                          {item.expiresAt ? formatDate(item.expiresAt) : <span className={styles.na}>—</span>}
                         </td>
                         <td className={styles.td}>
                           <div className={styles.rowActions}>
-                            {/* Mark as sold */}
                             {!item.soldAt && (
                               <button
                                 className={styles.iconBtn}
@@ -259,7 +209,6 @@ export function InventoryPage() {
                                 <CheckCircle size={14} />
                               </button>
                             )}
-                            {/* Update payment */}
                             <button
                               className={styles.iconBtn}
                               onClick={() => {
@@ -270,7 +219,6 @@ export function InventoryPage() {
                             >
                               <span className={styles.payIcon}>$</span>
                             </button>
-                            {/* Delete */}
                             <button
                               className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
                               onClick={() => setDeleteTarget(item)}
@@ -282,10 +230,9 @@ export function InventoryPage() {
                         </td>
                       </tr>
                     ))}
-
                 {!isLoading && data?.content.length === 0 && (
                   <tr>
-                    <td colSpan={7} className={styles.emptyState}>
+                    <td colSpan={8} className={styles.emptyState}>
                       No inventory items match the current filters.
                     </td>
                   </tr>
@@ -294,32 +241,20 @@ export function InventoryPage() {
             </table>
           </div>
         )}
-
         {data && data.totalPages > 1 && (
           <div className={styles.paginationWrapper}>
-            <Pagination
-              currentPage={page}
-              totalPages={data.totalPages}
-              onPageChange={setPage}
-            />
+            <Pagination currentPage={page} totalPages={data.totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>
 
-      {/* ── Modals ────────────────────────────────────────────────── */}
+      {showAddStock && <InventoryModal onClose={() => setShowAddStock(false)} />}
 
-      {/* Add stock */}
-      {showAddStock && (
-        <InventoryModal onClose={() => setShowAddStock(false)} />
-      )}
-
-      {/* Confirm sell */}
       {sellTarget && (
         <ConfirmDialog
           title="Mark as Sold"
           message={`Mark item #${sellTarget.id} (${sellTarget.productName ?? 'Product #' + sellTarget.productId}) as sold?`}
           confirmLabel="Mark as Sold"
-          isDangerous={false}
           isLoading={markAsSold.isPending}
           onConfirm={async () => {
             await markAsSold.mutateAsync(sellTarget.id);
@@ -329,7 +264,6 @@ export function InventoryPage() {
         />
       )}
 
-      {/* Update payment status */}
       {paymentTarget && (
         <div
           style={{
@@ -341,39 +275,26 @@ export function InventoryPage() {
           onClick={(e) => { if (e.target === e.currentTarget) setPaymentTarget(null); }}
         >
           <div className={styles.paymentDialog}>
-            <h3 className={styles.paymentDialogTitle}>
-              Update Payment Status
-            </h3>
+            <h3 className={styles.paymentDialogTitle}>Update Payment Status</h3>
             <p className={styles.paymentDialogSub}>
-              Item #{paymentTarget.id} —{' '}
-              {paymentTarget.productName ?? `Product #${paymentTarget.productId}`}
+              Item #{paymentTarget.id} — {paymentTarget.productName ?? `Product #${paymentTarget.productId}`}
             </p>
             <select
               className={styles.select}
               value={newPaymentStatus}
-              onChange={(e) =>
-                setNewPaymentStatus(e.target.value as PaymentStatus)
-              }
+              onChange={(e) => setNewPaymentStatus(e.target.value as PaymentStatus)}
             >
               <option value="PENDING">Pending</option>
               <option value="PAID">Paid</option>
               <option value="CANCELLED">Cancelled</option>
             </select>
             <div className={styles.paymentDialogActions}>
-              <button
-                className={styles.cancelBtn}
-                onClick={() => setPaymentTarget(null)}
-              >
-                Cancel
-              </button>
+              <button className={styles.cancelBtn} onClick={() => setPaymentTarget(null)}>Cancel</button>
               <button
                 className={styles.confirmBtn}
                 disabled={updatePayment.isPending}
                 onClick={async () => {
-                  await updatePayment.mutateAsync({
-                    id: paymentTarget.id,
-                    payload: { paymentStatus: newPaymentStatus },
-                  });
+                  await updatePayment.mutateAsync({ id: paymentTarget.id, payload: { paymentStatus: newPaymentStatus } });
                   setPaymentTarget(null);
                 }}
               >
@@ -384,7 +305,6 @@ export function InventoryPage() {
         </div>
       )}
 
-      {/* Delete confirm */}
       {deleteTarget && (
         <ConfirmDialog
           title="Remove Inventory Item"

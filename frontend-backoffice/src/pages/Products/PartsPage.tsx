@@ -1,11 +1,5 @@
 /**
  * PartsPage — full-featured spare parts management page.
- *
- * Features:
- *   - Paginated table with filters (name, brand, category, status, price range)
- *   - Create / Edit via ProductModal
- *   - Delete with ConfirmDialog
- *   - Status badge and stock indicator per row
  */
 
 import { useState, useCallback } from 'react';
@@ -28,7 +22,7 @@ const STATUSES: ProductStatus[] = ['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED'];
 function SkeletonRow() {
   return (
     <tr>
-      {Array.from({ length: 7 }).map((_, i) => (
+      {Array.from({ length: 8 }).map((_, i) => (
         <td key={i} className={styles.td}>
           <div className={styles.skeletonCell} />
         </td>
@@ -38,14 +32,14 @@ function SkeletonRow() {
 }
 
 export function PartsPage() {
-  // ── Filters ────────────────────────────────────────────────────────────
-  const [name, setName]           = useState('');
-  const [brandId, setBrandId]     = useState<number | undefined>();
-  const [categoryId, setCategoryId] = useState<number | undefined>();
-  const [status, setStatus]       = useState<ProductStatus | ''>('');
-  const [minPrice, setMinPrice]   = useState('');
-  const [maxPrice, setMaxPrice]   = useState('');
-  const [page, setPage]           = useState(0);
+  // ── Filters (using string UUIDs) ────────────────────────────────────────
+  const [name, setName]                     = useState('');
+  const [partBrandId, setPartBrandId]       = useState<string | undefined>();
+  const [partCategoryId, setPartCategoryId] = useState<string | undefined>();
+  const [status, setStatus]                 = useState<ProductStatus | ''>('');
+  const [minPrice, setMinPrice]             = useState('');
+  const [maxPrice, setMaxPrice]             = useState('');
+  const [page, setPage]                     = useState(0);
 
   // ── Modal state ────────────────────────────────────────────────────────
   const [showCreate, setShowCreate]     = useState(false);
@@ -54,35 +48,34 @@ export function PartsPage() {
 
   // ── Data ───────────────────────────────────────────────────────────────
   const filters: ProductFilters = {
-    name:       name       || undefined,
-    brandId:    brandId,
-    categoryId: categoryId,
-    status:     status     || undefined,
-    minPrice:   minPrice   ? parseFloat(minPrice) : undefined,
-    maxPrice:   maxPrice   ? parseFloat(maxPrice) : undefined,
+    name:           name || undefined,
+    partBrandId:    partBrandId,
+    partCategoryId: partCategoryId,
+    status:         status || undefined,
+    minPrice:       minPrice ? parseFloat(minPrice) : undefined,
+    maxPrice:       maxPrice ? parseFloat(maxPrice) : undefined,
     page,
     size: PAGE_SIZE,
   };
 
   const { data, isLoading, isError } = useParts(filters);
-  const { data: brands     = [] }    = useBrands('PartBrand');
-  const { data: categories = [] }    = useCategories('PartCategory');
-  const deletePart                   = useDeletePart();
+  const { data: brands = [] } = useBrands('PartBrand');
+  const { data: categories = [] } = useCategories('PartCategory');
+  const deletePart = useDeletePart();
 
-  // ── Helpers ────────────────────────────────────────────────────────────
   const resetPage = useCallback(() => setPage(0), []);
 
   const clearFilters = () => {
     setName('');
-    setBrandId(undefined);
-    setCategoryId(undefined);
+    setPartBrandId(undefined);
+    setPartCategoryId(undefined);
     setStatus('');
     setMinPrice('');
     setMaxPrice('');
     setPage(0);
   };
 
-  const hasFilters = name || brandId || categoryId || status || minPrice || maxPrice;
+  const hasFilters = !!(name || partBrandId || partCategoryId || status || minPrice || maxPrice);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -92,8 +85,7 @@ export function PartsPage() {
 
   return (
     <div className={styles.page}>
-
-      {/* ── Header ────────────────────────────────────────────────── */}
+      {/* Header */}
       <div className={styles.header}>
         <div>
           <h2 className={styles.title}>Parts</h2>
@@ -103,18 +95,14 @@ export function PartsPage() {
             </p>
           )}
         </div>
-        <button
-          className={styles.addBtn}
-          onClick={() => setShowCreate(true)}
-        >
+        <button className={styles.addBtn} onClick={() => setShowCreate(true)}>
           <Plus size={15} />
           Add Part
         </button>
       </div>
 
-      {/* ── Filter bar ────────────────────────────────────────────── */}
+      {/* Filter bar */}
       <div className={styles.filterBar}>
-        {/* Name search */}
         <div className={styles.searchWrapper}>
           <Search size={14} className={styles.searchIcon} />
           <input
@@ -126,12 +114,12 @@ export function PartsPage() {
           />
         </div>
 
-        {/* Brand */}
+        {/* Brand filter (UUID string) */}
         <select
           className={styles.select}
-          value={brandId ?? ''}
+          value={partBrandId ?? ''}
           onChange={(e) => {
-            setBrandId(e.target.value ? parseInt(e.target.value, 10) : undefined);
+            setPartBrandId(e.target.value || undefined);
             resetPage();
           }}
         >
@@ -141,12 +129,12 @@ export function PartsPage() {
           ))}
         </select>
 
-        {/* Category */}
+        {/* Category filter (UUID string) */}
         <select
           className={styles.select}
-          value={categoryId ?? ''}
+          value={partCategoryId ?? ''}
           onChange={(e) => {
-            setCategoryId(e.target.value ? parseInt(e.target.value, 10) : undefined);
+            setPartCategoryId(e.target.value || undefined);
             resetPage();
           }}
         >
@@ -156,7 +144,7 @@ export function PartsPage() {
           ))}
         </select>
 
-        {/* Status */}
+        {/* Status filter */}
         <select
           className={styles.select}
           value={status}
@@ -190,7 +178,6 @@ export function PartsPage() {
           />
         </div>
 
-        {/* Clear */}
         {hasFilters && (
           <button className={styles.clearBtn} onClick={clearFilters}>
             <X size={13} />
@@ -199,18 +186,16 @@ export function PartsPage() {
         )}
       </div>
 
-      {/* ── Table ─────────────────────────────────────────────────── */}
+      {/* Table */}
       <div className={styles.tableCard}>
         {isError ? (
-          <div className={styles.errorState}>
-            Failed to load parts. Please refresh.
-          </div>
+          <div className={styles.errorState}>Failed to load parts. Please refresh.</div>
         ) : (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.th}>ID</th>
+                  <th className={styles.th}>Image</th>
                   <th className={styles.th}>Name</th>
                   <th className={styles.th}>Reference</th>
                   <th className={styles.th}>Brand</th>
@@ -222,51 +207,44 @@ export function PartsPage() {
               </thead>
               <tbody>
                 {isLoading
-                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                      <SkeletonRow key={i} />
-                    ))
+                  ? Array.from({ length: PAGE_SIZE }).map((_, i) => <SkeletonRow key={i} />)
                   : data?.content.map((part) => (
                       <tr key={part.id} className={styles.row}>
                         <td className={styles.td}>
-                          <span className={styles.idChip}>#{part.id}</span>
+                          {part.imageUrl ? (
+                            <img
+                              src={part.imageUrl}
+                              alt={part.name}
+                              className={styles.thumbnail}
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className={styles.noImage}>—</div>
+                          )}
                         </td>
                         <td className={styles.td}>
                           <span className={styles.productName}>{part.name}</span>
                         </td>
                         <td className={styles.td}>
-                          <span className={styles.reference}>
-                            {part.reference}
-                          </span>
+                          <span className={styles.reference}>{part.ref}</span>
                         </td>
                         <td className={styles.td}>
-                          {part.brandName ?? `#${part.brandId}`}
+                          {part.partBrandName || (part.partBrandId ? part.partBrandId.slice(0,8) + '…' : '—')}
                         </td>
+                        <td className={styles.td}>{formatCurrency(part.price)}</td>
                         <td className={styles.td}>
-                          {formatCurrency(part.price)}
-                        </td>
-                        <td className={styles.td}>
-                          <span
-                            className={
-                              part.stock === 0
-                                ? styles.stockZero
-                                : part.stock < 5
-                                ? styles.stockLow
-                                : styles.stockOk
-                            }
-                          >
+                          <span className={
+                            part.stock === 0 ? styles.stockZero
+                            : part.stock < 5 ? styles.stockLow
+                            : styles.stockOk
+                          }>
                             {part.stock}
                           </span>
                         </td>
-                        <td className={styles.td}>
-                          <StatusBadge status={part.status} />
-                        </td>
+                        <td className={styles.td}><StatusBadge status={part.status} /></td>
                         <td className={styles.td}>
                           <div className={styles.rowActions}>
-                            <button
-                              className={styles.iconBtn}
-                              onClick={() => setEditTarget(part)}
-                              title="Edit"
-                            >
+                            <button className={styles.iconBtn} onClick={() => setEditTarget(part)} title="Edit">
                               <Pencil size={14} />
                             </button>
                             <button
@@ -280,48 +258,29 @@ export function PartsPage() {
                         </td>
                       </tr>
                     ))}
-
                 {!isLoading && data?.content.length === 0 && (
                   <tr>
-                    <td colSpan={8} className={styles.emptyState}>
-                      No parts match the current filters.
-                    </td>
+                    <td colSpan={8} className={styles.emptyState}>No parts match the current filters.</td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
-
         {data && data.totalPages > 1 && (
           <div className={styles.paginationWrapper}>
-            <Pagination
-              currentPage={page}
-              totalPages={data.totalPages}
-              onPageChange={setPage}
-            />
+            <Pagination currentPage={page} totalPages={data.totalPages} onPageChange={setPage} />
           </div>
         )}
       </div>
 
-      {/* ── Modals ────────────────────────────────────────────────── */}
-      {showCreate && (
-        <ProductModal
-          productType="part"
-          onClose={() => setShowCreate(false)}
-        />
-      )}
-      {editTarget && (
-        <ProductModal
-          productType="part"
-          editItem={editTarget}
-          onClose={() => setEditTarget(null)}
-        />
-      )}
+      {/* Modals */}
+      {showCreate && <ProductModal productType="part" onClose={() => setShowCreate(false)} />}
+      {editTarget && <ProductModal productType="part" editItem={editTarget} onClose={() => setEditTarget(null)} />}
       {deleteTarget && (
         <ConfirmDialog
           title="Delete Part"
-          message={`Delete "${deleteTarget.name}" (${deleteTarget.reference})? This cannot be undone.`}
+          message={`Delete "${deleteTarget.name}" (${deleteTarget.ref})? This cannot be undone.`}
           confirmLabel="Delete"
           isLoading={deletePart.isPending}
           onConfirm={handleDelete}
