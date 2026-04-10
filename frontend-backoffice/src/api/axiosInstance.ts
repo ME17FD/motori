@@ -114,11 +114,11 @@ apiClient.interceptors.response.use(
       try {
         const response = await refreshTokens(refreshToken);
         useAuthStore.getState().setAccessToken(
-          response.access_token,
-          response.expires_in
+          response.token,
+          300
         );
-        processQueue(null, response.access_token);
-        originalRequest.headers.Authorization = `Bearer ${response.access_token}`;
+        processQueue(null, response.token);
+        originalRequest.headers.Authorization = `Bearer ${response.token}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);

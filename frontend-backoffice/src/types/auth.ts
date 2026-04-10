@@ -69,3 +69,14 @@ export interface AuthState {
   isLoading: boolean;
   expiresAt: number | null;         // Unix timestamp (ms) when access token expires
 }
+
+/** Response from user-service /auth/login and /auth/refresh */
+export interface AuthResponse {
+  id: number;
+  token: string;
+  refreshToken: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  role: string;
+}

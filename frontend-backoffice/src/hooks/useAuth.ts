@@ -78,54 +78,47 @@ export function useAuth(): UseAuthReturn {
    * @param credentials - { username, password }
    */
   const login = useCallback(
-    async (credentials: LoginCredentials): Promise<void> => {
-      setIsLoading(true);
-      setError(null);
+  async (credentials: LoginCredentials): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const tokenResponse = await keycloakLogin(credentials);
 
-      try {
-        const tokenResponse = await keycloakLogin(credentials);
+      // user-service returns `token` not `access_token`, no expires_in
+      // decode JWT to get expiry from the token itself
+      setTokens(
+        tokenResponse.token,
+        tokenResponse.refreshToken,
+        300  // fallback — decoded from JWT exp in setTokens anyway
+      );
 
-        // Store tokens — this synchronously decodes the JWT and sets user
-        setTokens(
-          tokenResponse.access_token,
-          tokenResponse.refresh_token,
-          tokenResponse.expires_in
-        );
+      const { user: storedUser } = useAuthStore.getState();
+      const hasAdminAccess =
+        storedUser?.roles.includes('ADMIN') ||
+        storedUser?.roles.includes('SUPERADMIN');
 
-        // Read back the decoded user immediately after store update
-        const { user: storedUser } = useAuthStore.getState();
-
-        const hasAdminAccess =
-          storedUser?.roles.includes('ADMIN') ||
-          storedUser?.roles.includes('SUPERADMIN');
-
-        if (!hasAdminAccess) {
-          // Authenticated but unauthorized — revoke local session
-          clearAuth();
-          setError(
-            'Access denied. Your account does not have backoffice access.'
-          );
-          return;
-        }
-
-        const displayName = storedUser?.firstName || storedUser?.username;
-        toast.success(`Welcome back, ${displayName}!`);
-        navigate('/dashboard', { replace: true });
-
-      } catch (err) {
-        // isAuthError narrows the typed error from authService
-        if (isAuthError(err)) {
-          setError(err.message);
-        } else {
-          setError('An unexpected error occurred. Please try again.');
-          console.error('[useAuth] Unexpected login error:', err);
-        }
-      } finally {
-        setIsLoading(false);
+      if (!hasAdminAccess) {
+        clearAuth();
+        setError('Access denied. Your account does not have backoffice access.');
+        return;
       }
-    },
-    [setTokens, clearAuth, navigate]
-  );
+
+      const displayName = storedUser?.firstName || storedUser?.username;
+      toast.success(`Welcome back, ${displayName}!`);
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      if (isAuthError(err)) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+        console.error('[useAuth] Unexpected login error:', err);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [setTokens, clearAuth, navigate]
+);
 
   /**
    * Logs out the user.
