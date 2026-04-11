@@ -1,0 +1,316 @@
+@import "../variables.css";
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  background: var(--color-white);
+  color: var(--color-black);
+  font-family: var(--font-primary);
+}
+
+/* ── Controls bar ───────────────────────────────────────────── */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ── Search ─────────────────────────────────────────────────── */
+.searchWrap {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 160px;
+  max-width: 340px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  stroke: var(--color-gray);
+  fill: none;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput:focus {
+  border-color: var(--color-black);
+}
+
+/* ── Vehicle filter group ───────────────────────────────────── */
+.filterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── Shared select ──────────────────────────────────────────── */
+.select {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-black);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  height: 36px;
+}
+
+.select:focus {
+  border-color: var(--color-black);
+}
+
+.select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Sort ───────────────────────────────────────────────────── */
+.sortWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.sortLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray);
+  white-space: nowrap;
+}
+
+.sortSelect {
+  min-width: 160px;
+}
+
+/* ── Compatibility toggle ───────────────────────────────────── */
+.compatToggleWrap {
+  display: flex;
+  align-items: center;
+}
+
+.compatToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-black);
+  cursor: pointer;
+  user-select: none;
+}
+
+.compatToggle input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-black);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.compatToggle input[type="checkbox"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.compatToggle input[type="checkbox"]:disabled + span {
+  opacity: 0.4;
+}
+
+/* ── Content area ───────────────────────────────────────────── */
+.content {
+  max-width: var(--layout-wide);
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
+}
+
+/* ── Skeleton / error / empty states ───────────────────────── */
+.skeletonWrap {
+  padding: 1rem 0;
+}
+
+.stateWrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 5rem 0;
+  text-align: center;
+}
+
+.emptyText {
+  font-size: var(--font-size-md);
+  color: var(--color-gray);
+  margin: 0;
+}
+
+/* ── Grid ───────────────────────────────────────────────────── */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Grid item wrapper (needed for badge overlay) ───────────── */
+.gridItem {
+  position: relative;
+}
+
+/* ── Stock badges ───────────────────────────────────────────── */
+.badgeOut,
+.badgeLow {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.62rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.badgeOut {
+  background: var(--color-red);
+  color: var(--color-white);
+}
+
+.badgeLow {
+  background: var(--bo-status-pending);
+  color: var(--color-white);
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.pageBtn {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-black);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+}
+
+.pageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pageNumbers {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.pageNumber {
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-black);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.pageNumber:hover {
+  background: var(--color-bg-light);
+  border-color: var(--alpha-on-light-12);
+}
+
+.pageNumber.active {
+  background: var(--color-black);
+  color: var(--color-white);
+  border-color: var(--color-black);
+  font-weight: var(--font-weight-bold);
+}
+
+.ellipsis {
+  min-width: 2rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-gray);
+  user-select: none;
+}

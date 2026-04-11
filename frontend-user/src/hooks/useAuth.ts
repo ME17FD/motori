@@ -1,60 +1,53 @@
-/**
- * Authentication/session hook: login, signup, logout, and silent refresh on mount.
- *
- * **State:** `user`, `isAuthenticated`, `loading`, `error`.
- *
- * **Side effects:** restores session via `/auth/me` and refresh cookie; listens for `auth:logout` from axios refresh failure.
- */
 import { useState, useCallback, useEffect } from 'react';
 import authService from '../services/authService';
 import parseError from '../utils/parseError';
 import type { User } from '../types/user';
-import type { LoginRequest, SignupRequest } from '../types/auth';
-
+import type { LoginRequest, SignupRequest, UpdateProfileRequest, ChangePasswordRequest } from '../types/auth';
+ 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 }
-
+ 
 const INITIAL_STATE: AuthState = {
   user: null,
   isAuthenticated: false,
   loading: false,
   error: null,
 };
-
+ 
 const useAuth = () => {
   const [state, setState] = useState<AuthState>(INITIAL_STATE);
-
+ 
   // ─── State helpers ────────────────────────────────────────────────────────
-
+ 
   const setLoading = (loading: boolean) =>
     setState((prev) => ({ ...prev, loading }));
-
+ 
   const setError = (error: unknown) =>
     setState((prev) => ({
       ...prev,
       loading: false,
       error: parseError(error),
     }));
-
+ 
   const setUser = (user: User) =>
     setState({ user, isAuthenticated: true, loading: false, error: null });
-
+ 
   const clearUser = () =>
     setState({ ...INITIAL_STATE });
-
+ 
   // ─── fetchUser ────────────────────────────────────────────────────────────
-
+ 
   const fetchUser = useCallback(async (): Promise<void> => {
     const user = await authService.getCurrentUser();
     setUser(user);
   }, []);
-
+ 
   // ─── login ────────────────────────────────────────────────────────────────
-
+ 
   const login = useCallback(async (data: LoginRequest): Promise<void> => {
     setLoading(true);
     try {
@@ -65,9 +58,9 @@ const useAuth = () => {
       throw error;
     }
   }, []);
-
+ 
   // ─── signup ───────────────────────────────────────────────────────────────
-
+ 
   const signup = useCallback(async (data: SignupRequest): Promise<void> => {
     setLoading(true);
     try {
@@ -78,9 +71,9 @@ const useAuth = () => {
       throw error;
     }
   }, []);
-
+ 
   // ─── logout ───────────────────────────────────────────────────────────────
-
+ 
   const logout = useCallback(async (): Promise<void> => {
     try {
       await authService.logout();
@@ -90,12 +83,44 @@ const useAuth = () => {
       clearUser();
     }
   }, []);
-
+ 
+  // ─── updateProfile ────────────────────────────────────────────────────────
+ 
+  const updateProfile = useCallback(
+    async (data: UpdateProfileRequest): Promise<void> => {
+      setLoading(true);
+      try {
+        const updatedUser = await authService.updateProfile(data);
+        setUser(updatedUser);
+      } catch (error) {
+        setError(error);
+        throw error;
+      }
+    },
+    [],
+  );
+ 
+  // ─── changePassword ───────────────────────────────────────────────────────
+ 
+  const changePassword = useCallback(
+    async (data: ChangePasswordRequest): Promise<void> => {
+      setLoading(true);
+      try {
+        await authService.changePassword(data);
+        setState((prev) => ({ ...prev, loading: false, error: null }));
+      } catch (error) {
+        setError(error);
+        throw error;
+      }
+    },
+    [],
+  );
+ 
   // ─── Silent session restore on mount ─────────────────────────────────────
-
+ 
   useEffect(() => {
     let cancelled = false;
-
+ 
     const restoreSession = async (): Promise<void> => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
@@ -115,30 +140,34 @@ const useAuth = () => {
         }
       }
     };
-
+ 
     void restoreSession();
-
-    return () => { cancelled = true; };
+ 
+    return () => {
+      cancelled = true;
+    };
   }, [fetchUser]);
-
+ 
   // ─── Forced logout (refresh failure via interceptor) ─────────────────────
-
+ 
   useEffect(() => {
     const handleForcedLogout = () => clearUser();
     window.addEventListener('auth:logout', handleForcedLogout);
     return () => window.removeEventListener('auth:logout', handleForcedLogout);
   }, []);
-
+ 
   return {
     user: state.user,
     isAuthenticated: state.isAuthenticated,
-    loading: state.loading,
+    isLoading: state.loading,
     error: state.error,
     login,
     signup,
     logout,
     fetchUser,
+    updateProfile,
+    changePassword,
   } as const;
 };
-
+ 
 export default useAuth;

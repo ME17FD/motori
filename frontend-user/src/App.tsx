@@ -9,7 +9,10 @@ import PartsPage from './pages/PartsPage/PartsPage';
 import PartDetailsPage from './pages/PartDetailsPage/PartDetailsPage';
 import CartPage from './pages/CartPage/CartPage';
 import CheckoutPage from './pages/CheckoutPage/CheckoutPage';
-import CompatibilityPage from './pages/CompatibilityPage/CompatibilityPage';
+import ProfilePage from './pages/ProfilePage/ProfilePage';
+import EquipmentDetailsPage from './pages/Equipmentdetailspage/Equipmentdetailspage';
+import EquipmentPage from './pages/EquipmentPage/EquipmentPage';
+
 
 /**
  * TanStack Query client shared by all data hooks.
@@ -44,7 +47,10 @@ export default function App() {
           <Route path={ROUTES.PARTDETAILS} element={<PartDetailsPage/>}/>
           <Route path={ROUTES.CART} element={<CartPage/>}/>
           <Route path={ROUTES.CHECKOUT} element={<CheckoutPage/>}/>
-          <Route path={ROUTES.COMPATIBILITY} element={<CompatibilityPage/>}/>
+          <Route path={ROUTES.PROFILE} element={<ProfilePage/>}/>
+          <Route path={ROUTES.EQUIPMENT} element={<EquipmentPage/>}/>
+          <Route path={ROUTES.EQUIPDETAILS} element={<EquipmentDetailsPage/>}/>
+
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />

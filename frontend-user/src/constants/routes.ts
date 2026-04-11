@@ -7,15 +7,12 @@ export const ROUTES = {
   SIGNUP: '/signup',
 
   HOME:      '/',
-  // Catalog
-  BRANDS:     '/catalog/brands',
-  CATEGORIES: '/catalog/categories',
-  VEHICLES:   '/catalog/vehicles',
 
   // Products
   PARTS:      '/products/parts',
   PARTDETAILS: '/products/parts/:id',
   EQUIPMENT:  '/products/equipment',
+  EQUIPDETAILS: '/products/equipment/:id',
 
   //Cart
   CART:       '/cart',
@@ -23,9 +20,9 @@ export const ROUTES = {
   //checkout
   CHECKOUT:   '/checkout',
 
-  // Compatibility
-  COMPATIBILITY: '/compatibility',
-
+  // User
+  PROFILE:      '/profile',
+  
   // Orders
   ORDERS:          '/orders',
   ORDER_DETAIL:    '/orders/:id',

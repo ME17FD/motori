@@ -31,7 +31,7 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { login, loading, error } = useAuth();
+  const { login, isLoading, error } = useAuth();
   const navigate = useNavigate();  // ← added
 
   const handleLogin = async () => {
@@ -80,11 +80,11 @@ const LoginPage: React.FC = () => {
 
           <div className="login-btn-wrap">
             <Button
-              text={loading ? "Connexion…" : "Se connecter"}
+              text={isLoading ? "Connexion…" : "Se connecter"}
               variant="outline"
               type="submit"
               onClick={handleLogin}
-              disabled={loading}
+              disabled={isLoading}
             />
           </div>
         </div>
