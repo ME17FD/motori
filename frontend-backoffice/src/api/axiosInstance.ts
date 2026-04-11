@@ -88,16 +88,14 @@ apiClient.interceptors.response.use(
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken =
-        useAuthStore.getState().refreshToken ??
-        localStorage.getItem(REFRESH_TOKEN_KEY);
+      const { refreshToken, user } = useAuthStore.getState();
+      const resolvedRefreshToken = refreshToken ?? localStorage.getItem(REFRESH_TOKEN_KEY);
 
-      if (!refreshToken) {
+      if (!resolvedRefreshToken) {
         useAuthStore.getState().clearAuth();
         window.location.href = '/login';
         return Promise.reject(error);
       }
-
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -112,7 +110,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await refreshTokens(refreshToken);
+        const response = await refreshTokens(resolvedRefreshToken, user?.email ?? '');
         useAuthStore.getState().setAccessToken(
           response.token,
           300

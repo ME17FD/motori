@@ -97,13 +97,14 @@ export async function login(
 
 // refreshTokens
 export async function refreshTokens(
-  refreshToken: string
+  refreshToken: string,
+  email: string,          // ← add this
 ): Promise<AuthResponse> {
-  const params = new URLSearchParams({ refresh_token: refreshToken });
   try {
     const { data } = await gatewayAuthClient.post<AuthResponse>(
       REFRESH_URL,
-      params
+      { refreshToken, email },                               // ← add email
+      { headers: { 'Content-Type': 'application/json' } }
     );
     return data;
   } catch (error) {
