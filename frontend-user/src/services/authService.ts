@@ -5,6 +5,8 @@ import type {
   SignupRequest,
   AuthResponse,
   RefreshResponse,
+  UpdateProfileRequest,
+  ChangePasswordRequest
 } from '../types/auth';
 import type { User } from '../types/user';
 
@@ -34,6 +36,15 @@ const authService = {
     const { data } = await apiClient.post<RefreshResponse>('/auth/refresh');
     storeToken(data.accessToken);
     return data;
+  },
+
+  updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
+    const { data: updatedUser } = await apiClient.put<User>('/auth/profile', data);
+    return updatedUser;
+  },
+
+  changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+    await apiClient.post('/auth/password/change', data);
   },
 
   logout: async (): Promise<void> => {

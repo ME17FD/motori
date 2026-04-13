@@ -43,10 +43,12 @@ export interface EquipementResponse {
   readonly color: string;
   readonly brand: EquipementBrandResponse;
   readonly category: EquipementCategoryResponse;
-  readonly imageUrl: string | null;
+  readonly imageUrl: string;
   readonly properties: PropertiesMap;
   readonly createdAt: ISODateString;
   readonly updatedAt: ISODateString;
+  readonly reference: string; // Added
+  readonly stock: number; // Added
 }
 
 export type PagedEquipements = PagedModel<EquipementResponse>;
