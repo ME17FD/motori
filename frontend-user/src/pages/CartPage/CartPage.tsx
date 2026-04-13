@@ -146,11 +146,9 @@ const displayItems = useMemo<CartItemDisplay[]>(() =>
     return (
       <>
         <Navbar categories={MOCK_CATEGORIES} />
-        <main className={styles.page}>
-          <div className={styles.statePage}>
-            <Loading />
-          </div>
-        </main>
+        <div className={styles.statePage}>
+          <Loading />
+        </div>
         <Footer />
       </>
     );
@@ -161,11 +159,9 @@ const displayItems = useMemo<CartItemDisplay[]>(() =>
     return (
       <>
         <Navbar categories={MOCK_CATEGORIES} />
-        <main className={styles.page}>
-          <div className={styles.statePage}>
-            <Error message={partsError} />
-          </div>
-        </main>
+        <div className={styles.statePage}>
+          <Error message={partsError} />
+        </div>
         <Footer />
       </>
     );
