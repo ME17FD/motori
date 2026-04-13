@@ -14,4 +14,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByKeycloakId(String keycloakId);
 
     boolean existsByEmail(String email);
+<<<<<<< HEAD
+=======
+
+    long countByRole(User.Role role);
+
+    List<User> findByRole(User.Role role);
+>>>>>>> backoffice-frontend
 }

@@ -1,3 +1,12 @@
+/**
+ * Navigation bar Component with Search & Categories
+ * Displays responsive navigation with:
+ * - Hamburger menu toggle
+ * - Product search functionality
+ * - Nested category hierarchy with collapse/expand
+ * Includes CategoryItem sub-component for hierarchical category rendering.
+ */
+
 import React, { useState } from "react";
 import {
   FaMotorcycle,
@@ -15,6 +24,11 @@ import type { NavbarProps, CategoryItemProps } from "../../types/ui/Navbar.types
 
 // ─── CategoryItem (internal sub-component) ───────────────────────────────────
 
+/**
+ * Recursive category item renderer with nested support.
+ * @param category - Category data with optional children
+ * @param depth - Nesting level for CSS styling
+ */
 const CategoryItem: React.FC<CategoryItemProps> = ({ category, depth = 0 }) => {
   const [open, setOpen] = useState(false);
   const hasChildren = Boolean(category.children?.length);
@@ -51,6 +65,11 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, depth = 0 }) => {
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
+/**
+ * Main navigation component with hamburger menu, search bar, and categories.
+ * @param categories - Array of category objects to display
+ * @param onSearchSubmit - Callback fired when user searches
+ */
 const Navbar: React.FC<NavbarProps> = ({ categories, onSearchSubmit }) => {
   const [search, setSearch]     = useState("");
   const [menuOpen, setMenuOpen] = useState(false);

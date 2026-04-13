@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { useTodaySummary, useDashboard, useTopProducts } from '../../hooks/useStats';
 import { useRecentOrders } from '../../hooks/useOrders';
-import KpiCard from '../../components/ui/KpiCard';
-import SalesLineChart from '../../components/Charts/SalesLineChart';
-import TopProductsBarChart from '../../components/Charts/TopProductsBarChart';
 import RecentOrdersTable from '../../components/Tables/RecentOrdersTable';
-import { formatCurrency } from '../../utils/formatters';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, PieChart, Pie,
+  Cell, Legend,
+} from 'recharts';
 import styles from '../../styles/pages/Dashboard/Dashboard.module.css';
-import LowStockAlert from '../../components/ui/LowStockAlert';
-import PendingPaymentsAlert from '../../components/ui/PendingPaymentsAlert';
+import { formatCurrency } from '../../utils/formatters';
 
 const PERIOD_OPTIONS = [
   { label: '7 days',  value: 7  },
@@ -16,22 +15,54 @@ const PERIOD_OPTIONS = [
   { label: '90 days', value: 90 },
 ];
 
-/**
- * Main dashboard page.
- * Combines KPI cards, sales chart, top products bar chart
- * and a recent orders table.
- */
+const STATUS_COLORS: Record<string, string> = {
+  PENDING:   '#f59e0b',
+  CONFIRMED: '#3b82f6',
+  PROCESSING:'#8b5cf6',
+  SHIPPED:   '#14b8a6',
+  DELIVERED: '#10b981',
+  CANCELLED: '#ef4444',
+};
+
 export default function DashboardPage() {
   const [days, setDays] = useState(30);
+  const { data: recent, isLoading } = useRecentOrders(20);
 
-  const { data: today,   isLoading: loadingToday   } = useTodaySummary();
-  const { data: stats,   isLoading: loadingStats   } = useDashboard({ days });
-  const { data: topProds,isLoading: loadingTop     } = useTopProducts({ days, limit: 8 });
-  const { data: recent,  isLoading: loadingRecent  } = useRecentOrders(10);
+  // Derive stats from recent orders
+  const orders = recent ?? [];
+
+  const totalRevenue = orders
+    .filter((o) => !o.completed === false || o.status !== 'CANCELLED')
+    .reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0);
+
+  const statusCounts = orders.reduce<Record<string, number>>((acc, o) => {
+    const s = o.status ?? 'PENDING';
+    acc[s] = (acc[s] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const pieData = Object.entries(statusCounts).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
+  // Revenue by day (last N days from orders)
+  const revenueByDay = orders.reduce<Record<string, number>>((acc, o) => {
+    const day = o.createdAt?.slice(0, 10) ?? 'Unknown';
+    acc[day] = (acc[day] ?? 0) + (Number(o.totalPrice) || 0);
+    return acc;
+  }, {});
+
+  const barData = Object.entries(revenueByDay)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-7)
+    .map(([date, revenue]) => ({
+      date: date.slice(5),  // MM-DD
+      revenue,
+    }));
 
   return (
     <div className={styles.page}>
-
       {/* Period selector */}
       <div className={styles.toolbar}>
         <div className={styles.periodTabs}>
@@ -50,56 +81,98 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
-      <LowStockAlert />
-      <PendingPaymentsAlert />
-      {/* KPI row */}
+
+      {/* KPI cards */}
       <div className={styles.kpiGrid}>
-        <KpiCard
-          label="Orders today"
-          value={today?.ordersToday ?? 0}
-          accent="var(--bo-status-confirmed)"
-          loading={loadingToday}
-        />
-        <KpiCard
-          label="Revenue today"
-          value={today ? formatCurrency(today.revenueToday) : '—'}
-          accent="var(--bo-status-delivered)"
-          loading={loadingToday}
-        />
-        <KpiCard
-          label="Pending orders"
-          value={today?.pendingOrders ?? 0}
-          accent="var(--bo-status-pending)"
-          sublabel="Awaiting confirmation"
-          loading={loadingToday}
-        />
-        <KpiCard
-          label="To ship"
-          value={today?.toShipOrders ?? 0}
-          accent="var(--bo-status-processing)"
-          sublabel="Confirmed or processing"
-          loading={loadingToday}
-        />
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiLabel}>Total orders</div>
+          <div className={styles.kpiValue}>{orders.length}</div>
+        </div>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiLabel}>Revenue</div>
+          <div className={styles.kpiValue}>{formatCurrency(totalRevenue)}</div>
+        </div>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiLabel}>Pending</div>
+          <div className={styles.kpiValue} style={{ color: '#f59e0b' }}>
+            {statusCounts['PENDING'] ?? 0}
+          </div>
+        </div>
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiLabel}>Delivered</div>
+          <div className={styles.kpiValue} style={{ color: '#10b981' }}>
+            {statusCounts['DELIVERED'] ?? 0}
+          </div>
+        </div>
       </div>
 
-      {/* Charts row */}
+      {/* Charts */}
       <div className={styles.chartsGrid}>
-        {loadingStats || !stats ? (
-          <div className={styles.chartSkeleton} />
-        ) : (
-          <SalesLineChart data={stats} />
-        )}
+        {/* Revenue bar chart */}
+        <div className={styles.chartCard}>
+          <h3 className={styles.chartTitle}>Revenue (last 7 days)</h3>
+          {barData.length === 0 ? (
+            <div className={styles.chartEmpty}>No data yet</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={barData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}`} />
+                <Tooltip
+                  formatter={(value) => [
+                  typeof value === 'number' ? formatCurrency(value) : value,
+                  'Revenue'
+                  ]}
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                />
+                <Bar dataKey="revenue" fill="var(--color-red)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
 
-        {loadingTop || !topProds ? (
-          <div className={styles.chartSkeleton} />
-        ) : (
-          <TopProductsBarChart data={topProds} />
-        )}
+        {/* Status pie chart */}
+        <div className={styles.chartCard}>
+          <h3 className={styles.chartTitle}>Orders by status</h3>
+          {pieData.length === 0 ? (
+            <div className={styles.chartEmpty}>No data yet</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={85}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {pieData.map((entry) => (
+                    <Cell
+                      key={entry.name}
+                      fill={STATUS_COLORS[entry.name] ?? '#94a3b8'}
+                    />
+                  ))}
+                </Pie>a
+                <Tooltip
+                  formatter={(value, name) => [value, name]}
+                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: 11 }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </div>
 
-      {/* Recent orders */}
-      <RecentOrdersTable orders={recent ?? []} loading={loadingRecent} />
-
+      {/* Recent orders table */}
+      <RecentOrdersTable orders={orders} loading={isLoading} />
     </div>
   );
 }

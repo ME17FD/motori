@@ -17,7 +17,7 @@ import com.motori.product_service.dto.OrderItemDTO.OrderItemResponse;
  * Field Descriptions:
  * <ul>
  *   <li>id: UUID - Unique order identifier</li>
- *   <li>userId: UUID - Customer/user who placed the order</li>
+ *   <li>userId: String - Identifiant utilisateur (ex. sujet Keycloak, aligné sur X-User-ID)</li>
  *   <li>totalPrice: BigDecimal - Order total calculated from all line item prices at order time</li>
  *   <li>completed: boolean - Indicates if order is in a final state (true = DELIVERED or CANCELLED)</li>
  *   <li>status: String - Current order status (PENDING, CONFIRMED, DELIVERED, or CANCELLED)</li>
@@ -63,7 +63,7 @@ import com.motori.product_service.dto.OrderItemDTO.OrderItemResponse;
  */
 public record OrderResponse(
     UUID id,
-    UUID userId,              
+    String userId,
     BigDecimal totalPrice,
     boolean completed,
     String status,

@@ -1,3 +1,9 @@
+/**
+ * Promotion Service
+ * API client for promotion/discount campaign management.
+ * Endpoints hit the /api/promotions gateway endpoint.
+ */
+
 import axiosInstance from '../api/axiosInstance';
 import type {
   Promotion,

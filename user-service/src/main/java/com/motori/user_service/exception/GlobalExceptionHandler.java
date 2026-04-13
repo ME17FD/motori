@@ -48,11 +48,12 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(apiError, HttpStatus.CONFLICT);
     }
 
-    @ExceptionHandler({UserNotApprovedException.class})
-    public ResponseEntity<ApiError> handleUserNotApproved(UserNotApprovedException ex, HttpServletRequest request) {
-        String message = ex.getMessage() != null ? ex.getMessage() : "User not approved";
-        ApiError apiError = new ApiError(HttpStatus.FORBIDDEN.value(), "User Not Approved", message, request.getRequestURI());
-        return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
+    @ExceptionHandler({RegistrationException.class})
+    public ResponseEntity<ApiError> handleRegistration(RegistrationException ex, HttpServletRequest request) {
+        String message = ex.getMessage() != null ? ex.getMessage() : "Registration failed";
+        ApiError apiError = new ApiError(HttpStatus.SERVICE_UNAVAILABLE.value(), "Registration Failed", message, request.getRequestURI());
+        logService.externalServiceError("Registration failed: " + message, "GlobalExceptionHandler", "keycloak", ex.toString());
+        return new ResponseEntity<>(apiError, HttpStatus.SERVICE_UNAVAILABLE);
     }
 
     @ExceptionHandler({AuthenticationException.class})
@@ -66,9 +67,33 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleAll(Exception ex, HttpServletRequest request) {
         String message = ex.getMessage() != null ? ex.getMessage() : ex.getClass().getSimpleName();
+        boolean accessDenied = message.toLowerCase().contains("access denied")
+                || ex.getClass().getSimpleName().toLowerCase().contains("accessdenied");
+
+        if (accessDenied) {
+            ApiError apiError = new ApiError(HttpStatus.FORBIDDEN.value(), "Forbidden", message, request.getRequestURI());
+            logService.authWarn("Access denied: " + message, "GlobalExceptionHandler", null, request.getRemoteAddr(), request.getRequestURI(), request.getMethod(), ex.toString());
+            return new ResponseEntity<>(apiError, HttpStatus.FORBIDDEN);
+        }
+
         System.out.println("Unhandled exception: " + ex);
-        ApiError apiError = new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", message, request.getRequestURI());
-        logService.log(CentralizedLogService.LogLevel.ERROR, message, "GlobalExceptionHandler", null, request.getRemoteAddr(), request.getRequestURI(), request.getMethod(), ex.toString(), null);
+        ApiError apiError = new ApiError(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                message,
+                request.getRequestURI()
+        );
+        logService.log(
+                CentralizedLogService.LogLevel.ERROR,
+                message,
+                "GlobalExceptionHandler",
+                null,
+                request.getRemoteAddr(),
+                request.getRequestURI(),
+                request.getMethod(),
+                ex.toString(),
+                null
+        );
         return new ResponseEntity<>(apiError, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

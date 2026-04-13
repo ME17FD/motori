@@ -1,3 +1,9 @@
+/**
+ * Component Exports
+ * Centralizes exports for commonly used reusable components.
+ * Provides convenient import paths for components used across pages.
+ */
+
 export { default as Button        } from "./Button/Button";
 export { default as Navbar        } from "./Navbar/Navbar";
 export { default as ProductCard   } from "./ProductCard/ProductCard";

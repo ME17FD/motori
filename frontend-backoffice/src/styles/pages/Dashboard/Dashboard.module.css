@@ -3,10 +3,9 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-5);
 }
 
-/* ── Toolbar ── */
 .toolbar {
   display: flex;
   align-items: center;
@@ -15,7 +14,7 @@
 
 .periodTabs {
   display: flex;
-  gap: var(--space-2);
+  gap: 2px;
   background: var(--bo-card-bg);
   border-radius: 8px;
   padding: 4px;
@@ -34,10 +33,7 @@
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
-.periodBtn:hover {
-  background: var(--color-bg-light);
-  color: var(--color-black);
-}
+.periodBtn:hover { background: var(--color-bg-light); color: var(--color-black); }
 
 .periodBtnActive {
   background: var(--color-red);
@@ -45,45 +41,69 @@
   font-weight: var(--font-weight-medium);
 }
 
-.periodBtnActive:hover {
-  background: #a30f1a;
-  color: #fff;
-}
+.periodBtnActive:hover { background: #a30f1a; color: #fff; }
 
-/* ── KPI grid ── */
+/* ── KPI cards ── */
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
-/* ── Charts grid ── */
+@media (max-width: 768px) {
+  .kpiGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.kpiCard {
+  background: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+  box-shadow: var(--bo-card-shadow);
+  padding: var(--space-5);
+}
+
+.kpiLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray);
+  margin-bottom: var(--space-2);
+}
+
+.kpiValue {
+  font-size: 28px;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  line-height: 1;
+}
+
+/* ── Charts ── */
 .chartsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
-.chartSkeleton {
-  background: var(--bo-card-bg);
-  border-radius: var(--bo-card-radius);
-  height: 320px;
-  animation: shimmer 1.4s infinite;
-  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
-  background-size: 200% 100%;
-}
-
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* ── Responsive ── */
-@media (max-width: 1024px) {
-  .kpiGrid    { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 900px) {
   .chartsGrid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 600px) {
-  .kpiGrid { grid-template-columns: 1fr; }
+.chartCard {
+  background: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+  box-shadow: var(--bo-card-shadow);
+  padding: var(--space-5);
+}
+
+.chartTitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-black);
+  margin: 0 0 var(--space-4);
+}
+
+.chartEmpty {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-gray);
+  font-size: var(--font-size-sm);
 }

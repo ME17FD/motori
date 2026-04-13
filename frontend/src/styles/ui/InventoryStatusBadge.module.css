@@ -1,0 +1,17 @@
+@import '../variables.css';
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.available     { background: rgba(16,185,129,0.12);  color: #065f46; }
+.outofstock    { background: rgba(239,68,68,0.12);   color: #b91c1c; }
+.discontinued  { background: rgba(107,114,128,0.12); color: #374151; }
+.low           { background: rgba(245,158,11,0.12);  color: #b45309; }

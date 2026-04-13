@@ -1,45 +1,46 @@
-/**
- * Inventory status for a product.
- */
-export type InventoryStatus = 'AVAILABLE' | 'OUT_OF_STOCK' | 'DISCONTINUED';
+import type { Part, Equipement } from './product';
 
 /**
- * Inventory entry — maps to the inventory resource from product-service.
+ * Inventory item — maps to InventoryResponse from product-service.
+ *
+ * Each inventory item represents ONE physical unit.
+ * Exactly one of part or equipement will be populated — never both.
+ *
+ * paymentStatus tracks whether this unit has been paid for:
+ * - null / undefined = available for purchase
+ * - "PENDING"        = in an active order, payment pending
+ * - "PAID"           = sold and paid
  */
 export interface Inventory {
-  id: number;
-  productId: number;
-  productName?: string;
-  productType?: string;
-  brandName?: string;
-  quantity: number;
-  available: boolean;
-  status: InventoryStatus;
-  lowStockThreshold?: number;
+  id: string;
+  part?: Part;
+  equipement?: Equipement;
+  expiredAt?: string;       // ISO datetime — null means no expiry
+  soldAt?: string;          // ISO datetime — null means not yet sold
+  paymentStatus?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 /**
- * Request body for updating inventory.
+ * Request body for creating an inventory entry.
+ * Provide exactly one of partId or equipementId.
  */
-export interface UpdateInventoryRequest {
-  quantity?: number;
-  available?: boolean;
-  status?: InventoryStatus;
-  lowStockThreshold?: number;
+export interface InventoryRequest {
+  partId?: string;
+  equipementId?: string;
+  expiredAt?: string;       // ISO datetime
 }
 
 /**
- * Filters for inventory list queries.
+ * Filters for the inventory list endpoint.
+ * Index signature required for TanStack Query key compatibility.
  */
 export interface InventoryFilters {
   page?: number;
   size?: number;
-  productType?: string;
   available?: boolean;
-  status?: InventoryStatus;
-  search?: string;
-  lowStock?: boolean;
+  paymentStatus?: string;
+  type?: string;            // "PART" or "EQUIPMENT"
   [key: string]: unknown;
 }

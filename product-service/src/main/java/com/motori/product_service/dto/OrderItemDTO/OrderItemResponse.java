@@ -1,8 +1,6 @@
 package com.motori.product_service.dto.OrderItemDTO;
 
 import java.math.BigDecimal;
-import java.util.UUID;
-
 import com.motori.product_service.dto.InventoryDTO.InventoryResponse;
 
 /**
@@ -15,7 +13,7 @@ import com.motori.product_service.dto.InventoryDTO.InventoryResponse;
  * 
  * Field Descriptions:
  * <ul>
- *   <li>id: UUID - Unique identifier for the order line item</li>
+ *   <li>id: Long - Identifier for the order line item (surrogate key)</li>
  *   <li>inventory: InventoryResponse - Complete inventory details including linked part or equipment</li>
  *   <li>price: BigDecimal - Unit price snapshot at the time of order creation</li>
  * </ul>
@@ -42,7 +40,8 @@ import com.motori.product_service.dto.InventoryDTO.InventoryResponse;
  * @since 1.0
  */
 public record OrderItemResponse(
-    UUID id,
+    Long id,
     InventoryResponse inventory,
-    BigDecimal price
+    BigDecimal price,
+    int quantity
 ) {}

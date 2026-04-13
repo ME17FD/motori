@@ -1,0 +1,96 @@
+@import '../../variables.css';
+
+.wrapper {
+  background: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+  box-shadow: var(--bo-card-shadow);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.table th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: var(--color-bg-light);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-bg-light);
+  color: var(--color-black);
+  vertical-align: middle;
+}
+
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: var(--color-bg-light); }
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.editBtn,
+.deleteBtn {
+  padding: 4px var(--space-3);
+  border-radius: 6px;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-primary);
+  cursor: pointer;
+  border: 1px solid;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.editBtn {
+  border-color: var(--color-border);
+  background: none;
+  color: var(--color-black);
+}
+
+.editBtn:hover {
+  background: var(--color-black);
+  color: #fff;
+}
+
+.deleteBtn {
+  border-color: rgba(239,68,68,0.3);
+  background: none;
+  color: var(--bo-status-cancelled);
+}
+
+.deleteBtn:hover {
+  background: var(--bo-status-cancelled);
+  color: #fff;
+}
+
+.empty {
+  padding: var(--space-8);
+  text-align: center;
+  color: var(--color-gray);
+  font-size: var(--font-size-sm);
+  background: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+}
+
+.skeletonRow {
+  height: 52px;
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  margin-bottom: 1px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

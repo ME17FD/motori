@@ -1,7 +1,23 @@
+/**
+ * Product Card Component
+ * Displays a single product with image, title, dimensions, price, and "Add to Cart" button.
+ * Memoized for performance in lists.
+ * Includes image error handling with fallback placeholder.
+ */
+
 import React, { useCallback } from "react";
 import "../../styles/ProductCard/ProductCard.css";
 import type { ProductCardProps } from "../../types/ui/ProductCard.types";
 
+/**
+ * Product card with image, info, and add-to-cart action.
+ * @param id - Product unique identifier
+ * @param image - Product image URL
+ * @param title - Product name
+ * @param dimensions - Product specifications/dimensions
+ * @param price - Formatted price string
+ * @param onAddToCart - Callback when Add to Cart button is clicked
+ */
 const ProductCard: React.FC<ProductCardProps> = React.memo(
   ({ id, image, title, dimensions, price, onAddToCart }) => {
     const handleImageError = useCallback(

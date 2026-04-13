@@ -1,24 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  fetchOrders, searchOrders, fetchOrder,
-  fetchRecentOrders, updateOrderStatus, updateOrderTracking,
+  fetchOrders,
+  fetchOrder,
+  fetchRecentOrders,
+  updateOrderStatus,
+  updateOrderTracking,
 } from '../services/orderService';
 import { QUERY_KEYS } from '../constants/queryKeys';
 import type { OrderFilters } from '../services/orderService';
 import type { OrderStatus, UpdateTrackingRequest } from '../types/order';
 
 /**
- * Paginated orders list — uses search endpoint when filters are present.
+ * Paginated orders list from product-service.
  */
 export function useOrders(params: OrderFilters = {}) {
-  const hasFilters =
-    params.trackingNumber || params.status || params.userId ||
-    params.startDate || params.endDate;
-
   return useQuery({
     queryKey: QUERY_KEYS.ordersSearch(params),
-    queryFn: () =>
-      hasFilters ? searchOrders(params) : fetchOrders(params),
+    queryFn: () => fetchOrders(params),
   });
 }
 
@@ -34,7 +32,7 @@ export function useOrder(id: string) {
 }
 
 /**
- * Recent orders for dashboard widget.
+ * Recent orders for dashboard — fetches first page of orders.
  */
 export function useRecentOrders(limit = 10) {
   return useQuery({
@@ -44,9 +42,6 @@ export function useRecentOrders(limit = 10) {
   });
 }
 
-/**
- * Status and tracking mutations.
- */
 export function useOrderMutations() {
   const qc = useQueryClient();
 

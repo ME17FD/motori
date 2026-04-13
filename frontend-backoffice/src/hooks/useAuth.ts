@@ -1,26 +1,26 @@
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../services/authService';
+import { login, type KeycloakTokenResponse } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import { ROUTES } from '../constants/routes';
-import type { LoginRequest, AuthResponse } from '../types/auth';
 
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
 
 /**
  * Provides login/logout actions and current auth state.
- *
- * Usage:
- *   const { loginMutation, logout, isAdmin } = useAuth();
- *   loginMutation.mutate({ email, password });
+ * Login calls Keycloak directly — not through the gateway.
  */
 export function useAuth() {
   const navigate = useNavigate();
   const { setAuth, clearAuth, user, isAuthenticated, isAdmin } = useAuthStore();
 
-  const loginMutation = useMutation<AuthResponse, Error, LoginRequest>({
+  const loginMutation = useMutation<KeycloakTokenResponse, Error, LoginRequest>({
     mutationFn: login,
     onSuccess: (data) => {
-      setAuth(data.token, data.refreshToken);
+      setAuth(data.access_token, data.refresh_token);
       navigate(ROUTES.DASHBOARD);
     },
   });
@@ -30,11 +30,5 @@ export function useAuth() {
     navigate(ROUTES.LOGIN);
   };
 
-  return {
-    loginMutation,
-    logout,
-    user,
-    isAuthenticated,
-    isAdmin,
-  };
+  return { loginMutation, logout, user, isAuthenticated, isAdmin };
 }

@@ -1,190 +1,313 @@
-import { useCallback, useState} from 'react';
+import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import type { Product, CreateProductRequest, DynamicProperties } from '../../types/product';
-import { useAllBrands } from '../../hooks/useBrands';
-import { useAllCategories } from '../../hooks/useCategories';
+import type {
+  Part,
+  Equipement,
+  PartRequest,
+  EquipementRequest,
+  DynamicProperties,
+} from '../../types/product';
+import { usePartBrands } from '../../hooks/usePartBrands';
+import { usePartCategories } from '../../hooks/usePartCategories';
+import { useEquipementBrands } from '../../hooks/useEquipementBrands';
+import { useEquipementCategories } from '../../hooks/useEquipementCategories';
 import DynamicPropertiesEditor from '../Forms/DynamicPropertiesEditor';
 import ImageUploader from '../Forms/ImageUploader';
 import styles from '../../styles/Components/modals/FormModal.module.css';
 
+type ProductType = 'PART' | 'EQUIPMENT';
+
 interface ProductModalProps {
   open: boolean;
-  initial?: Product | null;
+  productType: ProductType;
+  initial?: Part | Equipement | null;
   loading?: boolean;
-  onSubmit: (data: CreateProductRequest, newImages: File[]) => void;
-  onDeleteImage?: (url: string) => void;
+  onSubmitPart?: (data: PartRequest, newImage: File | null) => void;
+  onSubmitEquipement?: (data: EquipementRequest, newImage: File | null) => void;
+  onDeleteImage?: () => void;
   onClose: () => void;
 }
 
 /**
- * Create / edit modal for products.
- * State derived from props is initialized via a key-based remount strategy —
- * when the modal opens or the target changes, the inner form remounts cleanly
- * instead of syncing state inside effects.
+ * Unified create/edit modal for both Parts and Equipment.
+ * Renders different fields depending on productType prop.
  */
 export default function ProductModal(props: ProductModalProps) {
   if (!props.open) return null;
   return <ProductModalInner {...props} />;
 }
 
-/**
- * Inner component — only mounted when the modal is open.
- * Using a separate inner component means we can rely on useState
- * initializers instead of useEffect syncing, avoiding cascading renders.
- */
 function ProductModalInner({
+  productType,
   initial,
   loading = false,
-  onSubmit,
+  onSubmitPart,
+  onSubmitEquipement,
   onDeleteImage,
   onClose,
 }: Omit<ProductModalProps, 'open'>) {
-  const { data: brands = [] }     = useAllBrands();
-  const { data: categories = [] } = useAllCategories();
+  const { data: partBrands }          = usePartBrands({ page: 0, size: 100 });
+  const { data: partCategories }      = usePartCategories({ page: 0, size: 100 });
+  const { data: equipBrands }         = useEquipementBrands({ page: 0, size: 100 });
+  const { data: equipCategories }     = useEquipementCategories({ page: 0, size: 100 });
 
-  /**
-   * Initialize directly from props — no useEffect needed.
-   * The component remounts every time the modal opens/closes,
-   * so these initializers always run with fresh values.
-   */
-  const [properties, setProperties] = useState<DynamicProperties>(
-    initial?.properties ?? {},
-  );
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [properties, setProperties]   = useState<DynamicProperties>(initial?.properties ?? {});
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CreateProductRequest>({
-    defaultValues: initial
+  const isPart = productType === 'PART';
+
+  /* ── Part form ── */
+  const partForm = useForm<PartRequest>({
+    defaultValues: isPart && initial
       ? {
-          name:                 initial.name,
-          description:          initial.description,
-          price:                initial.price,
-          productType:          initial.productType,
-          brandId:              initial.brandId,
-          categoryId:           initial.categoryId,
-          compatibleVehicleIds: initial.compatibleVehicleIds,
+          name:          (initial as Part).name,
+          ref:           (initial as Part).ref,
+          description:   (initial as Part).description,
+          price:         (initial as Part).price,
+          partBrandId:   (initial as Part).brand.id,
+          partCategoryId:(initial as Part).category.id,
         }
-      : { productType: 'PART', price: 0 },
+      : { name: '', ref: '', price: 0, partBrandId: '', partCategoryId: '' },
+  });
+
+  /* ── Equipment form ── */
+  const equipForm = useForm<EquipementRequest>({
+    defaultValues: !isPart && initial
+      ? {
+          name:                (initial as Equipement).name,
+          size:                (initial as Equipement).size,
+          color:               (initial as Equipement).color,
+          description:         (initial as Equipement).description,
+          price:               (initial as Equipement).price,
+          equipementBrandId:   (initial as Equipement).brand.id,
+          equipementCategoryId:(initial as Equipement).category.id,
+        }
+      : { name: '', size: 'M', color: '', price: 0, equipementBrandId: '', equipementCategoryId: '' },
   });
 
   const handlePropertiesChange = useCallback((p: DynamicProperties) => {
     setProperties(p);
   }, []);
 
-  const handleFormSubmit = (formData: CreateProductRequest) => {
-    onSubmit({ ...formData, properties }, pendingFiles);
+  const handlePartSubmit = (data: PartRequest) => {
+    onSubmitPart?.({ ...data, properties }, pendingImage);
   };
+
+  const handleEquipSubmit = (data: EquipementRequest) => {
+    onSubmitEquipement?.({ ...data, properties }, pendingImage);
+  };
+
+  const imageUrl = isPart
+    ? (initial as Part | null)?.imageUrl
+    : (initial as Equipement | null)?.imageUrl;
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
-      <div className={styles.modal} style={{ maxWidth: 680 }}>
+      <div className={styles.modal} style={{ maxWidth: 640 }}>
         <div className={styles.header}>
-          <h3 className={styles.title}>{initial ? 'Edit product' : 'New product'}</h3>
+          <h3 className={styles.title}>
+            {initial ? `Edit ${isPart ? 'part' : 'equipment'}` : `New ${isPart ? 'part' : 'equipment'}`}
+          </h3>
           <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Close">✕</button>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className={styles.form} noValidate>
-          {/* Name */}
-          <div className={styles.field}>
-            <label className={styles.label}>Name *</label>
-            <input
-              className={[styles.input, errors.name ? styles.inputError : ''].join(' ')}
-              placeholder="e.g. Front brake disc"
-              {...register('name', { required: 'Name is required' })}
-            />
-            {errors.name && <span className={styles.errorMsg}>{errors.name.message}</span>}
-          </div>
-
-          {/* Description */}
-          <div className={styles.field}>
-            <label className={styles.label}>Description</label>
-            <textarea
-              className={styles.input}
-              rows={3}
-              style={{ height: 'auto', padding: '8px 12px', resize: 'vertical' }}
-              placeholder="Product description…"
-              {...register('description')}
-            />
-          </div>
-
-          {/* Price + Type */}
-          <div className={styles.row}>
+        {/* ── Part form ── */}
+        {isPart && (
+          <form onSubmit={partForm.handleSubmit(handlePartSubmit)} className={styles.form} noValidate>
             <div className={styles.field}>
-              <label className={styles.label}>Price (MAD) *</label>
+              <label className={styles.label}>Name *</label>
               <input
-                type="number"
-                step="0.01"
-                className={[styles.input, errors.price ? styles.inputError : ''].join(' ')}
-                {...register('price', {
-                  required: 'Price is required',
-                  valueAsNumber: true,
-                  min: { value: 0, message: 'Price must be positive' },
-                })}
+                className={[styles.input, partForm.formState.errors.name ? styles.inputError : ''].join(' ')}
+                placeholder="e.g. Front brake disc"
+                {...partForm.register('name', { required: 'Name is required' })}
               />
-              {errors.price && <span className={styles.errorMsg}>{errors.price.message}</span>}
+              {partForm.formState.errors.name && (
+                <span className={styles.errorMsg}>{partForm.formState.errors.name.message}</span>
+              )}
+            </div>
+
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <label className={styles.label}>Reference *</label>
+                <input
+                  className={[styles.input, partForm.formState.errors.ref ? styles.inputError : ''].join(' ')}
+                  placeholder="e.g. BRK-001"
+                  {...partForm.register('ref', { required: 'Reference is required' })}
+                />
+                {partForm.formState.errors.ref && (
+                  <span className={styles.errorMsg}>{partForm.formState.errors.ref.message}</span>
+                )}
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Price (MAD) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className={styles.input}
+                  {...partForm.register('price', { required: true, valueAsNumber: true, min: 0 })}
+                />
+              </div>
+            </div>
+
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <label className={styles.label}>Brand *</label>
+                <select
+                  className={styles.input}
+                  {...partForm.register('partBrandId', { required: true })}
+                >
+                  <option value="">— Select brand —</option>
+                  {partBrands?.content.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Category *</label>
+                <select
+                  className={styles.input}
+                  {...partForm.register('partCategoryId', { required: true })}
+                >
+                  <option value="">— Select category —</option>
+                  {partCategories?.content.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>Type *</label>
-              <select
+              <label className={styles.label}>Description</label>
+              <textarea
                 className={styles.input}
-                {...register('productType', { required: true })}
-              >
-                <option value="PART">Part</option>
-                <option value="EQUIPMENT">Equipment</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Brand + Category */}
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label className={styles.label}>Brand</label>
-              <select className={styles.input} {...register('brandId', { valueAsNumber: true })}>
-                <option value="">— Select brand —</option>
-                {brands.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
+                rows={3}
+                style={{ height: 'auto', padding: '8px 12px', resize: 'vertical' }}
+                placeholder="Part description…"
+                {...partForm.register('description')}
+              />
             </div>
 
+            <DynamicPropertiesEditor
+              initialValue={initial?.properties}
+              onChange={handlePropertiesChange}
+            />
+
             <div className={styles.field}>
-              <label className={styles.label}>Category</label>
-              <select className={styles.input} {...register('categoryId', { valueAsNumber: true })}>
+              <label className={styles.label}>Image</label>
+              <ImageUploader
+                existingUrls={imageUrl ? [imageUrl] : []}
+                onFilesSelected={(files) => setPendingImage(files[0] ?? null)}
+                onDeleteExisting={onDeleteImage}
+              />
+            </div>
+
+            <div className={styles.footer}>
+              <button className={styles.cancelBtn} onClick={onClose} type="button">Cancel</button>
+              <button className={styles.submitBtn} type="submit" disabled={loading}>
+                {loading ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* ── Equipment form ── */}
+        {!isPart && (
+          <form onSubmit={equipForm.handleSubmit(handleEquipSubmit)} className={styles.form} noValidate>
+            <div className={styles.field}>
+              <label className={styles.label}>Name *</label>
+              <input
+                className={[styles.input, equipForm.formState.errors.name ? styles.inputError : ''].join(' ')}
+                placeholder="e.g. Racing helmet"
+                {...equipForm.register('name', { required: 'Name is required' })}
+              />
+              {equipForm.formState.errors.name && (
+                <span className={styles.errorMsg}>{equipForm.formState.errors.name.message}</span>
+              )}
+            </div>
+
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <label className={styles.label}>Size *</label>
+                <select className={styles.input} {...equipForm.register('size', { required: true })}>
+                  {(['XS', 'S', 'M', 'L', 'XL', 'XXL'] as const).map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Color *</label>
+                <input
+                  className={styles.input}
+                  placeholder="e.g. Black"
+                  {...equipForm.register('color', { required: 'Color is required' })}
+                />
+              </div>
+            </div>
+
+            <div className={styles.row}>
+              <div className={styles.field}>
+                <label className={styles.label}>Price (MAD) *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  className={styles.input}
+                  {...equipForm.register('price', { required: true, valueAsNumber: true, min: 0 })}
+                />
+              </div>
+              <div className={styles.field}>
+                <label className={styles.label}>Brand *</label>
+                <select className={styles.input} {...equipForm.register('equipementBrandId', { required: true })}>
+                  <option value="">— Select brand —</option>
+                  {equipBrands?.content.map((b) => (
+                    <option key={b.id} value={b.id}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.field}>
+              <label className={styles.label}>Category *</label>
+              <select className={styles.input} {...equipForm.register('equipementCategoryId', { required: true })}>
                 <option value="">— Select category —</option>
-                {categories.map((c) => (
+                {equipCategories?.content.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Dynamic properties */}
-          <DynamicPropertiesEditor
-            initialValue={initial?.properties}
-            onChange={handlePropertiesChange}
-          />
+            <div className={styles.field}>
+              <label className={styles.label}>Description</label>
+              <textarea
+                className={styles.input}
+                rows={3}
+                style={{ height: 'auto', padding: '8px 12px', resize: 'vertical' }}
+                placeholder="Equipment description…"
+                {...equipForm.register('description')}
+              />
+            </div>
 
-          {/* Image uploader */}
-          <div className={styles.field}>
-            <label className={styles.label}>Images</label>
-            <ImageUploader
-              existingUrls={initial?.imageUrls ?? []}
-              onFilesSelected={(files) => setPendingFiles(files)}
-              onDeleteExisting={onDeleteImage}
+            <DynamicPropertiesEditor
+              initialValue={initial?.properties}
+              onChange={handlePropertiesChange}
             />
-          </div>
 
-          <div className={styles.footer}>
-            <button className={styles.cancelBtn} onClick={onClose} type="button">Cancel</button>
-            <button className={styles.submitBtn} type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </form>
+            <div className={styles.field}>
+              <label className={styles.label}>Image</label>
+              <ImageUploader
+                existingUrls={imageUrl ? [imageUrl] : []}
+                onFilesSelected={(files) => setPendingImage(files[0] ?? null)}
+                onDeleteExisting={onDeleteImage}
+              />
+            </div>
+
+            <div className={styles.footer}>
+              <button className={styles.cancelBtn} onClick={onClose} type="button">Cancel</button>
+              <button className={styles.submitBtn} type="submit" disabled={loading}>
+                {loading ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

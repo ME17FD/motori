@@ -1,7 +1,23 @@
+/**
+ * Fetch-based API Client
+ * Provides a lightweight HTTP client with JWT token injection.
+ * Alternative to Axios - used for generic REST calls with Bearer token authentication.
+ */
+
 const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
+/**
+ * Retrieves the stored JWT token from localStorage.
+ */
 const getToken = (): string | null => localStorage.getItem("token");
 
+/**
+ * Generic fetch wrapper with automatic JWT injection.
+ * @template T - Response data type
+ * @param endpoint - API endpoint (e.g., '/api/products')
+ * @param options - RequestInit options (method, headers, body, etc.)
+ * @returns Promise resolving to typed response or null for 204 No Content
+ */
 export const apiFetch = async <T>(
   endpoint: string,
   options: RequestInit = {}

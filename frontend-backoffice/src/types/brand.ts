@@ -1,21 +1,34 @@
 /**
- * Brand entity — maps to the brand resource from product-service.
+ * Brand for parts (pièces moto) — maps to PartBrandResponse.
+ * ID is a UUID string from product-service.
  */
-export interface Brand {
-  id: number;
+export interface PartBrand {
+  id: string;
   name: string;
-  slug?: string;
-  logoUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface CreateBrandRequest {
+/**
+ * Brand for equipment (équipements moto) — maps to EquipementBrandResponse.
+ */
+export interface EquipementBrand {
+  id: string;
   name: string;
-  slug?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface UpdateBrandRequest {
-  name?: string;
-  slug?: string;
+/**
+ * Request body for creating or updating a part brand.
+ */
+export interface PartBrandRequest {
+  name: string;
+}
+
+/**
+ * Request body for creating or updating an equipment brand.
+ */
+export interface EquipementBrandRequest {
+  name: string;
 }

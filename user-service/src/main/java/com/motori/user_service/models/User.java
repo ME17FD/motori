@@ -3,7 +3,6 @@ package com.motori.user_service.models;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -12,6 +11,10 @@ import java.time.LocalDateTime;
 @Table(name = "users", indexes = {
         @Index(name = "idx_user_email", columnList = "email"),
         @Index(name = "idx_user_created", columnList = "created_at"),
+<<<<<<< HEAD
+=======
+        @Index(name = "idx_user_role", columnList = "role"),
+>>>>>>> backoffice-frontend
 })
 @Data
 @NoArgsConstructor
@@ -19,6 +22,11 @@ import java.time.LocalDateTime;
 @Builder
 @ToString
 public class User {
+
+    public enum Role {
+        ADMIN,
+        USER
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,11 +51,22 @@ public class User {
     @Column(name = "adress")
     private String adress;
 
+<<<<<<< HEAD
+=======
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    @Builder.Default
+    private Role role = Role.USER;
+
+>>>>>>> backoffice-frontend
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "keycloak_id")
     private String keycloakId;
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> backoffice-frontend
 }

@@ -7,15 +7,10 @@ interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  setAuth: (token: string, refreshToken?: string) => void;
+  setAuth: (accessToken: string, refreshToken?: string) => void;
   clearAuth: () => void;
 }
 
-/**
- * Global authentication store persisted across page reloads.
- * Derived flags (isAuthenticated, isAdmin) are recomputed on setAuth
- * and on store hydration from localStorage.
- */
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -23,22 +18,30 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isAdmin: false,
 
-      setAuth: (token, refreshToken) => {
-        const payload = decodeToken<JwtPayload>(token);
+      setAuth: (accessToken, refreshToken) => {
+        const payload = decodeToken<JwtPayload>(accessToken);
         if (!payload) return;
 
+        /**
+         * Keycloak realm roles for motori_realm are:
+         * "ADMIN", "USER", "SUPERADMIN" — no "ROLE_" prefix.
+         */
+        const roles = payload.realm_access?.roles ?? [];
+
         const user: AuthUser = {
-          email: payload.sub,
-          roles: payload.roles,
-          token,
+          username:    payload.preferred_username,
+          email:       payload.email,
+          roles,
+          token:       accessToken,
           refreshToken,
-          expiresAt: payload.exp * 1000,
+          expiresAt:   payload.exp * 1000,
         };
 
         set({
           user,
           isAuthenticated: true,
-          isAdmin: payload.roles.includes('ROLE_ADMIN'),
+          /** Admin check — matches "ADMIN" or "SUPERADMIN" role */
+          isAdmin: roles.includes('ADMIN') || roles.includes('SUPERADMIN'),
         });
       },
 
@@ -49,30 +52,21 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'motori-auth',
-
-      /**
-       * Only persist the raw user object.
-       * Derived flags are recomputed below on rehydration.
-       */
       partialize: (state) => ({ user: state.user }),
-
-      /**
-       * After localStorage is read, recompute isAuthenticated and isAdmin.
-       * onRehydrateStorage returns a callback that receives the rehydrated state.
-       */
       onRehydrateStorage: () => (state) => {
         if (!state?.user) return;
-
         const expired = state.user.expiresAt < Date.now();
-
         if (expired) {
           clearToken();
-          state.user = null;
+          state.user            = null;
           state.isAuthenticated = false;
-          state.isAdmin = false;
+          state.isAdmin         = false;
         } else {
           state.isAuthenticated = true;
-          state.isAdmin = state.user.roles.includes('ROLE_ADMIN');
+          state.isAdmin = (
+            state.user.roles.includes('ADMIN') ||
+            state.user.roles.includes('SUPERADMIN')
+          );
         }
       },
     },

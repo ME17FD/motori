@@ -34,6 +34,36 @@ export interface UserFilters {
 }
 
 /**
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD:frontend/src/types/user.ts
+=======
+ * Request body for creating a new user.
+ */
+export interface UserCreatePayload {
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone?: string;
+  adress?: string;
+  approved?: boolean;
+  activated?: boolean;
+}
+
+/**
+ * Request body for updating a user.
+ */
+export interface UserUpdatePayload {
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  phone?: string;
+  adress?: string;
+}
+
+/**
+>>>>>>> frontend:frontend-user/src/types/user.ts
+>>>>>>> backoffice-frontend
  * Request body for updating a user's status or roles.
  */
 export interface UpdateUserRequest {

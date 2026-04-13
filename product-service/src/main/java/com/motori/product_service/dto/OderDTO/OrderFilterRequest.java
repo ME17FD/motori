@@ -1,7 +1,5 @@
 package com.motori.product_service.dto.OderDTO;
 
-import java.util.UUID;
-
 /**
  * Filter criteria record for querying orders with JpaSpecifications.
  * <p>
@@ -26,7 +24,7 @@ import java.util.UUID;
  *         <li>false: Orders in progress states (PENDING or CONFIRMED)</li>
  *       </ul>
  *   </li>
- *   <li>userId: UUID (optional) - Filter orders for a specific customer user; can be overridden by X-User-Id header</li>
+ *   <li>userId: String (optional) - Filter orders for a specific customer (ex. sujet Keycloak)</li>
  * </ul>
  * 
  * Filter Combination Logic:
@@ -38,13 +36,13 @@ import java.util.UUID;
  * 
  * @param status optional order status filter (PENDING, CONFIRMED, DELIVERED, CANCELLED)
  * @param completed optional boolean to filter completed vs. in-progress orders
- * @param userId optional user UUID to scope orders to a specific customer
+ * @param userId optional user id to scope orders to a specific customer
  * 
  * @author Motori Team
  * @since 1.0
  */
 public record OrderFilterRequest(
-    String status,       // PENDING, CONFIRMED, DELIVERED, CANCELLED
-    Boolean completed,   // true = completed (DELIVERED/CANCELLED), false = in progress (PENDING/CONFIRMED)
-    UUID userId          
+    String status,
+    Boolean completed,
+    String userId
 ) {}

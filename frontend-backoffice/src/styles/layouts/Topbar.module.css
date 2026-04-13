@@ -13,6 +13,7 @@
   justify-content: space-between;
   padding: 0 var(--space-6);
   z-index: var(--bo-z-topbar);
+  transition: left var(--transition-normal);
 }
 
 .pageTitle {
@@ -88,7 +89,18 @@
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  .topbar { left: 0; }
-  .userLabel { display: none; }
+/* Tablet — topbar suit le rail collapsed */
+@media (max-width: 1023px) and (min-width: 768px) {
+  .topbar {
+    left: var(--bo-sidebar-collapsed);
+  }
+}
+
+/* Mobile — topbar pleine largeur, décale le titre pour le hamburger */
+@media (max-width: 767px) {
+  .topbar {
+    left: 0;
+    padding-left: var(--space-5);
+    padding-right: 60px; /* espace pour le hamburger à droite */
+  }
 }

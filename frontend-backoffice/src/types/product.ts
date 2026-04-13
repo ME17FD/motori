@@ -1,52 +1,94 @@
-/**
- * Dynamic property stored as JSONB in PostgreSQL.
- */
-export type DynamicProperties = Record<string, string | number | boolean>;
+import type { PartBrand, EquipementBrand } from './brand';
+import type { PartCategory, EquipementCategory } from './category';
 
 /**
- * Product type discriminator.
+ * Dynamic properties stored as JSONB in PostgreSQL.
+ * Keys and value types are arbitrary — defined per product category.
  */
-export type ProductType = 'PART' | 'EQUIPMENT';
+export type DynamicProperties = Record<string, unknown>;
 
 /**
- * Full product entity.
+ * Available sizes for equipment items.
  */
-export interface Product {
-  id: number;
+export type EquipementSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL';
+
+/**
+ * Moto part — maps to PartResponse from product-service.
+ * Soft-deletable — deleted items are hidden but not removed from DB.
+ */
+export interface Part {
+  id: string;
   name: string;
+  ref: string;           // unique part reference code
   description?: string;
   price: number;
-  productType: ProductType;
-  brandId?: number;
-  brandName?: string;
-  categoryId?: number;
-  categoryName?: string;
-  imageUrls: string[];
+  brand: PartBrand;
+  category: PartCategory;
+  imageUrl?: string;     // Minio URL
   properties?: DynamicProperties;
-  compatibleVehicleIds?: number[];
   createdAt?: string;
   updatedAt?: string;
 }
 
-export interface CreateProductRequest {
+/**
+ * Moto equipment — maps to EquipementResponse from product-service.
+ * Soft-deletable — deleted items are hidden but not removed from DB.
+ */
+export interface Equipement {
+  id: string;
   name: string;
+  size: EquipementSize;
+  color: string;
   description?: string;
   price: number;
-  productType: ProductType;
-  brandId?: number;
-  categoryId?: number;
+  brand: EquipementBrand;
+  category: EquipementCategory;
+  imageUrl?: string;     // Minio URL
   properties?: DynamicProperties;
-  compatibleVehicleIds?: number[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
- * Use type alias instead of empty interface extending another interface.
- * An interface with no additional members is identical to its supertype.
+ * Request body for creating a part.
+ * ref must be unique across all parts.
  */
-export type UpdateProductRequest = Partial<CreateProductRequest>;
+export interface PartRequest {
+  name: string;
+  ref: string;
+  description?: string;
+  price: number;
+  partBrandId: string;
+  partCategoryId: string;
+  properties?: DynamicProperties;
+}
 
 /**
- * A single dynamic property field used by the form builder.
+ * Request body for updating a part — all fields optional.
+ */
+export type PartUpdateRequest = Partial<PartRequest>;
+
+/**
+ * Request body for creating an equipment item.
+ */
+export interface EquipementRequest {
+  name: string;
+  size: EquipementSize;
+  color: string;
+  description?: string;
+  price: number;
+  equipementBrandId: string;
+  equipementCategoryId: string;
+  properties?: DynamicProperties;
+}
+
+/**
+ * Request body for updating an equipment item — all fields optional.
+ */
+export type EquipementUpdateRequest = Partial<EquipementRequest>;
+
+/**
+ * A single dynamic property field used by the form builder UI.
  */
 export interface PropertyField {
   key: string;

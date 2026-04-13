@@ -1,39 +1,45 @@
 /**
- * Credentials sent to the login endpoint via the API Gateway.
+ * Login credentials sent directly to Keycloak.
+ * Uses username (not email) for Resource Owner Password flow.
  */
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
-/**
- * Successful authentication response from the gateway.
- * The token is a signed JWT containing the user's roles.
- */
 export interface AuthResponse {
-  token: string;
-  refreshToken?: string;
-  expiresIn?: number;   // seconds
+  access_token: string;
+  refresh_token?: string;
+  expires_in: number;
 }
 
 /**
- * Decoded JWT payload (relevant fields only).
- * Roles are stored as Spring Security GrantedAuthority strings.
+ * Decoded Keycloak JWT payload.
+ * Roles are stored under realm_access.roles.
+ * Values in motori_realm: "ADMIN", "USER", "SUPERADMIN" — no "ROLE_" prefix.
  */
 export interface JwtPayload {
-  sub: string;          // email or username
-  roles: string[];      // e.g. ["ROLE_ADMIN", "ROLE_USER"]
+  sub: string;
+  email?: string;
+  preferred_username: string;
+  given_name?: string;
+  family_name?: string;
+  realm_access: {
+    roles: string[];
+  };
+  resource_access?: Record<string, { roles: string[] }>;
   iat: number;
   exp: number;
 }
 
 /**
- * The authenticated user stored in Zustand after login.
+ * Authenticated user stored in Zustand after successful login.
  */
 export interface AuthUser {
-  email: string;
+  username: string;
+  email?: string;
   roles: string[];
   token: string;
   refreshToken?: string;
-  expiresAt: number;    // Unix timestamp (ms)
+  expiresAt: number;    // Unix timestamp in ms
 }

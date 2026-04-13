@@ -1,3 +1,13 @@
+/**
+ * Product Carousel / Slider Component
+ * Responsive carousel displaying products with:
+ * - Auto-play with configurable delay
+ * - Touch/swipe gestures for navigation
+ * - Responsive item counts (1 on mobile, 2 on tablet, 3 on desktop)
+ * - Infinite loop with cloned endpoints
+ * - Pause on hover
+ */
+
 import React, {
   useState,
   useEffect,

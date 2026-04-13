@@ -1,3 +1,9 @@
+/**
+ * Statistics / Dashboard Hooks
+ * Provides TanStack Query hooks for dashboard analytics and KPI data.
+ * Includes today's summary with auto-refresh, period dashboards, and top products ranking.
+ */
+
 import { useQuery } from '@tanstack/react-query';
 import { fetchTodaySummary, fetchDashboard, fetchTopProducts } from '../services/statsService';
 import { QUERY_KEYS } from '../constants/queryKeys';
