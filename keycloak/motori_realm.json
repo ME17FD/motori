@@ -1059,7 +1059,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "LUIrleXt2J4j82rJm0nwGDjGw6kTGJPt",
+      "secret": "**********",
       "redirectUris": [
         "/*"
       ],
