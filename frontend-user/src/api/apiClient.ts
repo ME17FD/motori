@@ -55,7 +55,7 @@ const dispatchLogout = (): void => {
 // ─── Axios gateway instance ─────────────────────────────────────────────────
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: API_BASE_URL || "http://localhost:8080",
+  baseURL: API_BASE_URL,
   timeout: API_TIMEOUT_MS,
   withCredentials: true,
   headers: {

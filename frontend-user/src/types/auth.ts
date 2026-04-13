@@ -36,15 +36,3 @@ export interface SignupResponse {
   user: User;
   accessToken: string;
 }
-
-export interface UpdateProfileRequest {
-  firstName?: string;
-  lastName?: string;
-  phone?: string;
-  adress?: string;
-}
-
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-}

@@ -12,25 +12,6 @@ export const ROUTES = {
 
 <<<<<<< HEAD
   HOME:      '/',
-
-  // Products
-  PARTS:      '/products/parts',
-  PARTDETAILS: '/products/parts/:id',
-  EQUIPMENT:  '/products/equipment',
-  EQUIPDETAILS: '/products/equipment/:id',
-
-  //Cart
-  CART:       '/cart',
-
-  //checkout
-  CHECKOUT:   '/checkout',
-
-  // User
-  PROFILE:      '/profile',
-  
-=======
-  DASHBOARD: '/dashboard',
-
   // Catalog
   BRANDS:     '/catalog/brands',
   CATEGORIES: '/catalog/categories',
@@ -38,12 +19,18 @@ export const ROUTES = {
 
   // Products
   PARTS:      '/products/parts',
+  PARTDETAILS: '/products/parts/:id',
   EQUIPMENT:  '/products/equipment',
 
-  // Inventory
-  INVENTORY:  '/inventory',
+  //Cart
+  CART:       '/cart',
 
->>>>>>> backoffice-frontend
+  //checkout
+  CHECKOUT:   '/checkout',
+
+  // Compatibility
+  COMPATIBILITY: '/compatibility',
+
   // Orders
   ORDERS:          '/orders',
   ORDER_DETAIL:    '/orders/:id',
