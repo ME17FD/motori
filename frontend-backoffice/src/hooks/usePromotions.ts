@@ -1,59 +1,81 @@
 /**
- * Promotions Hook
- * Provides TanStack Query hooks for promotion/discount management.
- * Includes queries for paginated list and mutations for create, update, delete, and toggle.
+ * usePromotions — TanStack Query hooks for promotions.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   fetchPromotions,
   createPromotion,
   updatePromotion,
   deletePromotion,
-  togglePromotion,
 } from '../services/promotionService';
-import { QUERY_KEYS } from '../constants/queryKeys';
-import type { PromotionFilters, CreatePromotionRequest, UpdatePromotionRequest } from '../types/promotion';
+import type {
+  CreatePromotionRequest,
+  UpdatePromotionRequest,
+} from '../types/promotion';
 
-/**
- * Fetch promotions with pagination and filtering.
- * @param params - Promotion filters and pagination
- * @returns Query result with promotions array and metadata
- */
-export function usePromotions(params: PromotionFilters = {}) {
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const promotionKeys = {
+  all:   ['promotions'] as const,
+  lists: () => [...promotionKeys.all, 'list'] as const,
+  list:  (page: number) => [...promotionKeys.lists(), page] as const,
+};
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────
+
+/** Paginated promotions */
+export function usePromotions(page = 0) {
   return useQuery({
-    queryKey: QUERY_KEYS.promotions(params),
-    queryFn: () => fetchPromotions(params),
+    queryKey: promotionKeys.list(page),
+    queryFn:  () => fetchPromotions(page),
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }
 
-export function usePromotionMutations() {
-  const qc = useQueryClient();
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['promotions'] });
-  };
-
-  const create = useMutation({
+/** Create a promotion */
+export function useCreatePromotion() {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (payload: CreatePromotionRequest) => createPromotion(payload),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: promotionKeys.lists() });
+      toast.success('Promotion created.');
+    },
+    onError: () => toast.error('Failed to create promotion.'),
   });
+}
 
-  const update = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdatePromotionRequest }) =>
-      updatePromotion(id, payload),
-    onSuccess: invalidate,
+/** Update a promotion */
+export function useUpdatePromotion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: UpdatePromotionRequest;
+    }) => updatePromotion(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: promotionKeys.lists() });
+      toast.success('Promotion updated.');
+    },
+    onError: () => toast.error('Failed to update promotion.'),
   });
+}
 
-  const remove = useMutation({
+/** Delete a promotion */
+export function useDeletePromotion() {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (id: number) => deletePromotion(id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: promotionKeys.lists() });
+      toast.success('Promotion deleted.');
+    },
+    onError: () => toast.error('Failed to delete promotion.'),
   });
-
-  const toggle = useMutation({
-    mutationFn: (id: number) => togglePromotion(id),
-    onSuccess: invalidate,
-  });
-
-  return { create, update, remove, toggle };
 }

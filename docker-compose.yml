@@ -64,7 +64,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
       KEYCLOAK_SECRET_KEY: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      GATEWAY_SECURITY_JWT_VALIDATION_ENABLED: "true"
     networks:
       - motori-network
 
@@ -98,41 +100,42 @@ services:
       GATEWAY_SERVICE_URL: ${GATEWAY_URL}
       SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: DEBUG
+    ports:
+      - "8081:8081"
     networks:
       - motori-network
-
+        
   product-service:
-    build:
-      context: .
-      dockerfile: Dockerfile.spring
-      args:
-        SERVICE_DIR: product-service
-    container_name: motori-product-service
-    depends_on:
-      - discovery
-      - redis
-      - minio
-    extra_hosts:
-      - "localhost:host-gateway"
-    environment:
-      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_products
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8082/realms/${KEYCLOAK_REALM}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
-      # ⚠️ CRITICAL: Use the internal Docker service name for MinIO
-      MINIO_INTERNAL_URL: http://motori-minio:9000
-      # External URL for browser access (what the frontend will use)
-      MINIO_EXTERNAL_URL: http://localhost:9000
-      MINIO_URL: http://motori-minio:9000  # For backward compatibility
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
-      MINIO_BUCKET: ${MINIO_BUCKET}
-      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
-      SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
-    networks:
-      - motori-network
+      build:
+        context: .
+        dockerfile: Dockerfile.spring
+        args:
+          SERVICE_DIR: product-service
+      container_name: motori-product-service
+      depends_on:
+        - discovery
+        - redis
+        - minio
+      extra_hosts:
+        - "localhost:host-gateway"
+      environment:
+        DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_products
+        DB_USERNAME: ${DB_USERNAME}
+        DB_PASSWORD: ${DB_PASSWORD}
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+        MINIO_INTERNAL_URL: http://motori-minio:9000
+        MINIO_EXTERNAL_URL: http://localhost:9000
+        MINIO_URL: http://motori-minio:9000
+        MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+        MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+        MINIO_BUCKET: ${MINIO_BUCKET}
+        SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+        SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      networks:
+        - motori-network
 
   payment-service:
     build:
@@ -165,6 +168,8 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    ports:
+      - "${PORT_BACKOFFICE}:8084"
     networks:
       - motori-network
 

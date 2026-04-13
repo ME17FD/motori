@@ -1,133 +1,188 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import type { Inventory, UpdateInventoryRequest, InventoryStatus } from '../../types/inventory';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { X } from 'lucide-react';
+import { useAddStock } from '../../hooks/useInventory';
+import { useParts } from '../../hooks/useParts';
+import { useEquipements } from '../../hooks/useEquipements';
 import styles from '../../styles/Components/modals/FormModal.module.css';
 
-interface InventoryModalProps {
-  open: boolean;
-  item: Inventory | null;
-  loading?: boolean;
-  onSubmit: (payload: UpdateInventoryRequest) => void;
-  onClose: () => void;
+interface SelectableProduct {
+  id: string; // UUID string
+  name: string;
+  type: 'PART' | 'EQUIPEMENT';
 }
 
-const STATUS_OPTIONS: InventoryStatus[] = ['AVAILABLE', 'OUT_OF_STOCK', 'DISCONTINUED'];
+const schema = z.object({
+  productId: z.string().min(1, 'Please select a product'), // now string
+  quantity:  z.number().min(1, 'Quantity must be at least 1').max(1000),
+  expiresAt: z.string().optional(),
+});
 
-/**
- * Edit modal for a single inventory entry.
- * Remounts via conditional render to avoid effect-based state syncing.
- */
-export default function InventoryModal(props: InventoryModalProps) {
-  if (!props.open || !props.item) return null;
-  return <InventoryModalInner {...props} item={props.item} />;
-}
+type FormData = z.infer<typeof schema>;
 
-function InventoryModalInner({
-  item,
-  loading = false,
-  onSubmit,
-  onClose,
-}: Omit<InventoryModalProps, 'open'> & { item: Inventory }) {
-  const { register, handleSubmit, watch, formState: { errors } } =
-    useForm<UpdateInventoryRequest>({
-      defaultValues: {
-        quantity:          item.quantity,
-        available:         item.available,
-        status:            item.status,
-        lowStockThreshold: item.lowStockThreshold ?? 5,
-      },
-    });
+export function InventoryModal({ onClose }: { onClose: () => void }) {
+  const addStock = useAddStock();
 
-  const currentQty = watch('quantity') ?? 0;
+  const { data: partsData, isLoading: partsLoading } = useParts({ page: 0, size: 100 });
+  const { data: equipData, isLoading: equipLoading } = useEquipements({ page: 0, size: 100 });
+
+  const [products, setProducts] = useState<SelectableProduct[]>([]);
+  const [selectedProductType, setSelectedProductType] = useState<'PART' | 'EQUIPEMENT'>('PART');
+
+  useEffect(() => {
+    const partList: SelectableProduct[] = (partsData?.content || []).map(p => ({
+      id: p.id, // now p.id is string after updating types
+      name: `${p.name} (Ref: ${p.ref})`,
+      type: 'PART',
+    }));
+    const equipList: SelectableProduct[] = (equipData?.content || []).map(e => ({
+      id: e.id,
+      name: `${e.name} ${e.size ? `(${e.size})` : ''} ${e.color ? `- ${e.color}` : ''}`,
+      type: 'EQUIPEMENT',
+    }));
+    setProducts([...partList, ...equipList]);
+  }, [partsData, equipData]);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      productId: '',
+      quantity: 1,
+      expiresAt: '',
+    },
+  });
+
+  const selectedProductId = watch('productId');
+
+  useEffect(() => {
+    const product = products.find(p => p.id === selectedProductId);
+    if (product) {
+      setSelectedProductType(product.type);
+    }
+  }, [selectedProductId, products]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  const onSubmit = async (data: FormData) => {
+  const product = products.find(p => p.id === data.productId);
+  if (!product) return;
+
+  // Build payload with the correct ID field
+  const payload: any = {
+    quantity: data.quantity,
+    expiresAt: data.expiresAt || undefined,
+  };
+  if (product.type === 'PART') {
+    payload.partId = data.productId;
+  } else {
+    payload.equipementId = data.productId;
+  }
+
+  await addStock.mutateAsync(payload);
+  onClose();
+};
+
+  const isLoading = partsLoading || equipLoading;
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true">
+    <div
+      className={styles.overlay}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+    >
       <div className={styles.modal}>
         <div className={styles.header}>
-          <h3 className={styles.title}>Edit inventory</h3>
-          <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Close">✕</button>
+          <h2 className={styles.title}>Add Stock</h2>
+          <button className={styles.closeBtn} onClick={onClose}>
+            <X size={18} />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
-          {/* Product info (read-only) */}
           <div className={styles.field}>
-            <label className={styles.label}>Product</label>
-            <div style={{
-              padding: '8px 12px',
-              background: 'var(--color-bg-light)',
-              borderRadius: 8,
-              fontSize: 'var(--font-size-sm)',
-              color: 'var(--color-black)',
-            }}>
-              {item.productName ?? `Product #${item.productId}`}
-            </div>
-          </div>
-
-          {/* Quantity */}
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label className={styles.label}>Quantity *</label>
-              <input
-                type="number"
-                min={0}
-                className={[styles.input, errors.quantity ? styles.inputError : ''].join(' ')}
-                {...register('quantity', {
-                  required: 'Quantity is required',
-                  valueAsNumber: true,
-                  min: { value: 0, message: 'Must be 0 or more' },
-                })}
-              />
-              {errors.quantity && (
-                <span className={styles.errorMsg}>{errors.quantity.message}</span>
-              )}
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Low stock threshold</label>
-              <input
-                type="number"
-                min={0}
-                className={styles.input}
-                {...register('lowStockThreshold', {
-                  valueAsNumber: true,
-                  min: { value: 0, message: 'Must be 0 or more' },
-                })}
-              />
-              {currentQty <= (watch('lowStockThreshold') ?? 5) && currentQty > 0 && (
-                <span style={{ fontSize: '11px', color: '#b45309' }}>
-                  ⚠ Current quantity is at or below threshold
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Status */}
-          <div className={styles.field}>
-            <label className={styles.label}>Status</label>
-            <select className={styles.input} {...register('status')}>
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s.replace('_', ' ')}</option>
+            <label className={styles.label}>Product *</label>
+            <select
+              className={`${styles.select} ${errors.productId ? styles.inputError : ''}`}
+              {...register('productId')}
+              disabled={isLoading}
+            >
+              <option value="">-- Select a product --</option>
+              {products.map(p => (
+                <option key={p.id} value={p.id}>
+                  [{p.type === 'PART' ? 'Part' : 'Equip.'}] {p.name}
+                </option>
               ))}
             </select>
+            {isLoading && <span className={styles.fieldInfo}>Loading products…</span>}
+            {errors.productId && (
+              <span className={styles.fieldError}>{errors.productId.message}</span>
+            )}
           </div>
 
-          {/* Available toggle */}
           <div className={styles.field}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                style={{ width: 16, height: 16, accentColor: 'var(--color-red)' }}
-                {...register('available')}
-              />
-              <span className={styles.label} style={{ margin: 0 }}>
-                Available for purchase
-              </span>
-            </label>
+            <label className={styles.label}>Product Type</label>
+            <input
+              type="text"
+              className={styles.input}
+              value={selectedProductType === 'PART' ? 'Part' : 'Equipment'}
+              disabled
+            />
           </div>
 
-          <div className={styles.footer}>
-            <button className={styles.cancelBtn} onClick={onClose} type="button">Cancel</button>
-            <button className={styles.submitBtn} type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Save'}
+          <div className={styles.field}>
+            <label className={styles.label}>Quantity *</label>
+            <input
+              type="number"
+              className={`${styles.input} ${errors.quantity ? styles.inputError : ''}`}
+              placeholder="1"
+              {...register('quantity', { valueAsNumber: true })}
+            />
+            {errors.quantity && (
+              <span className={styles.fieldError}>{errors.quantity.message}</span>
+            )}
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Expiry date (optional)</label>
+            <input
+              type="date"
+              className={styles.input}
+              {...register('expiresAt')}
+            />
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.cancelBtn}
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={isSubmitting || isLoading}
+            >
+              {isSubmitting ? 'Adding…' : 'Add Stock'}
             </button>
           </div>
         </form>

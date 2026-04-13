@@ -1,42 +1,64 @@
 /**
- * Statistics / Dashboard Hooks
- * Provides TanStack Query hooks for dashboard analytics and KPI data.
- * Includes today's summary with auto-refresh, period dashboards, and top products ranking.
+ * useStats — TanStack Query hooks for all statistics endpoints.
+ *
+ * Hooks:
+ *   useTodaySummary()        — daily KPI cards
+ *   useDashboardStats()      — period-based charts and totals
+ *   useTopProducts()         — top-selling products table
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchTodaySummary, fetchDashboard, fetchTopProducts } from '../services/statsService';
-import { QUERY_KEYS } from '../constants/queryKeys';
-import type { DashboardParams, TopProductsParams } from '../types/stats';
+import {
+  fetchTodaySummary,
+  fetchDashboardStats,
+  fetchTopProducts,
+  type DashboardParams,
+  type TopProductsParams,
+} from '../services/statsService';
+
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const statsKeys = {
+  all:        ['stats'] as const,
+  today:      () => [...statsKeys.all, 'today'] as const,
+  dashboard:  (params: DashboardParams) => [...statsKeys.all, 'dashboard', params] as const,
+  topProducts:(params: TopProductsParams) => [...statsKeys.all, 'top-products', params] as const,
+};
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────
 
 /**
- * Fetches today's KPI summary.
- * Refreshes every 60 seconds to keep the dashboard live.
+ * Daily KPI summary — refreshes every 2 minutes automatically.
+ * Used by the KPI card row on the dashboard.
  */
 export function useTodaySummary() {
   return useQuery({
-    queryKey: QUERY_KEYS.todaySummary(),
-    queryFn: fetchTodaySummary,
-    refetchInterval: 60_000,
+    queryKey: statsKeys.today(),
+    queryFn:  fetchTodaySummary,
+    refetchInterval: 2 * 60 * 1000, // 2 min polling
+    staleTime: 60 * 1000,           // 1 min
   });
 }
 
 /**
- * Fetches full dashboard statistics for a given period.
+ * Dashboard statistics for a configurable period.
+ * Re-fetches whenever `params` changes (period selector).
  */
-export function useDashboard(params: DashboardParams = {}) {
+export function useDashboardStats(params: DashboardParams = { days: 30 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.dashboard(params),
-    queryFn: () => fetchDashboard(params),
+    queryKey: statsKeys.dashboard(params),
+    queryFn:  () => fetchDashboardStats(params),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
 /**
- * Fetches the top selling products over a period.
+ * Top-selling products for the given period.
  */
-export function useTopProducts(params: TopProductsParams = {}) {
+export function useTopProducts(params: TopProductsParams = { days: 30, limit: 10 }) {
   return useQuery({
-    queryKey: QUERY_KEYS.topProducts(params.days ?? 30, params.limit ?? 10),
-    queryFn: () => fetchTopProducts(params),
+    queryKey: statsKeys.topProducts(params),
+    queryFn:  () => fetchTopProducts(params),
+    staleTime: 5 * 60 * 1000,
   });
 }

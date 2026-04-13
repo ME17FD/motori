@@ -1,72 +1,91 @@
+/**
+ * useParts — TanStack Query hooks for part endpoints.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   fetchParts,
-  fetchPart,
+  fetchPartById,
   createPart,
   updatePart,
   deletePart,
-  uploadPartImage,
-  deletePartImage,
-  updatePartProperties,
-  type PartFilters,
 } from '../services/partService';
-import { QUERY_KEYS } from '../constants/queryKeys';
-import type { PartRequest, PartUpdateRequest, DynamicProperties } from '../types/product';
+import type {
+  ProductFilters,
+  CreatePartRequest,
+  UpdatePartRequest,
+} from '../types/product';
 
-export function useParts(params: PartFilters = {}) {
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const partKeys = {
+  all:     ['parts'] as const,
+  lists:   () => [...partKeys.all, 'list'] as const,
+  list:    (f: ProductFilters) => [...partKeys.lists(), f] as const,
+  details: () => [...partKeys.all, 'detail'] as const,
+  detail:  (id: number) => [...partKeys.details(), id] as const,
+};
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────
+
+/** Paginated + filtered parts list */
+export function useParts(filters: ProductFilters = {}) {
   return useQuery({
-    queryKey: QUERY_KEYS.parts(params),
-    queryFn: () => fetchParts(params),
+    queryKey: partKeys.list(filters),
+    queryFn:  () => fetchParts(filters),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }
 
-export function usePart(id: string) {
+/** Single part by ID */
+export function usePart(id: number | null) {
   return useQuery({
-    queryKey: QUERY_KEYS.part(id),
-    queryFn: () => fetchPart(id),
-    enabled: !!id,
+    queryKey: partKeys.detail(id ?? 0),
+    queryFn:  () => fetchPartById(id!),
+    enabled:  id !== null,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
-export function usePartMutations() {
-  const qc = useQueryClient();
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['parts'] });
-  };
-
-  const create = useMutation({
-    mutationFn: (payload: PartRequest) => createPart(payload),
-    onSuccess: invalidate,
+/** Create a part */
+export function useCreatePart() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreatePartRequest) => createPart(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: partKeys.lists() });
+      toast.success('Part created successfully.');
+    },
+    onError: () => toast.error('Failed to create part.'),
   });
+}
 
-  const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: PartUpdateRequest }) =>
+/** Update a part */
+export function useUpdatePart() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: UpdatePartRequest }) =>
       updatePart(id, payload),
-    onSuccess: invalidate,
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: partKeys.lists() });
+      queryClient.setQueryData(partKeys.detail(updated.id), updated);
+      toast.success('Part updated successfully.');
+    },
+    onError: () => toast.error('Failed to update part.'),
   });
+}
 
-  const remove = useMutation({
-    mutationFn: (id: string) => deletePart(id),
-    onSuccess: invalidate,
+/** Delete a part */
+export function useDeletePart() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deletePart(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: partKeys.lists() });
+      toast.success('Part deleted.');
+    },
+    onError: () => toast.error('Failed to delete part.'),
   });
-
-  const uploadImage = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      uploadPartImage(id, file),
-    onSuccess: invalidate,
-  });
-
-  const removeImage = useMutation({
-    mutationFn: (id: string) => deletePartImage(id),
-    onSuccess: invalidate,
-  });
-
-  const updateProperties = useMutation({
-    mutationFn: ({ id, properties }: { id: string; properties: DynamicProperties }) =>
-      updatePartProperties(id, properties),
-    onSuccess: invalidate,
-  });
-
-  return { create, update, remove, uploadImage, removeImage, updateProperties };
 }

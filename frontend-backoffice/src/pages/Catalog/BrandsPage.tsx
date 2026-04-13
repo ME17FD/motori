@@ -1,265 +1,202 @@
+/**
+ * BrandsPage — manage all three brand types in a tabbed interface.
+ *
+ * Tabs: Vehicle Brands | Part Brands | Equipment Brands
+ * Each tab: searchable list + create/edit/delete actions
+ */
+
 import { useState } from 'react';
-import { usePartBrands, usePartBrandMutations } from '../../hooks/usePartBrands';
-import { useEquipementBrands, useEquipementBrandMutations } from '../../hooks/useEquipementBrands';
-import CatalogTable from '../../components/Tables/CatalogTable';
-import type { CatalogColumn } from '../../components/Tables/CatalogTable';
-import ConfirmDialog from '../../components/Modals/ConfirmDialog';
-import Pagination from '../../components/ui/Pagination';
-import type { PartBrand, PartBrandRequest, EquipementBrand, EquipementBrandRequest } from '../../types/brand';
-import { formatDate } from '../../utils/formatters';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { useBrands, useDeleteBrand } from '../../hooks/useBrands';
+import { BrandModal } from '../../components/Modals/BrandModal';
+import { ConfirmDialog } from '../../components/Modals/ConfirmDialog';
+import type { BrandDto, BrandType } from '../../types/brand';
 import styles from '../../styles/pages/Catalog/CatalogPage.module.css';
 
-const PAGE_SIZE = 10;
+// ─── Tab config ────────────────────────────────────────────────────────────
 
-/**
- * Brands management page.
- * Split into two tabs: Part brands and Equipment brands.
- * Each tab has its own paginated table with CRUD operations.
- */
-export default function BrandsPage() {
-  const [activeTab, setActiveTab] = useState<'parts' | 'equipment'>('parts');
+const TABS: { label: string; type: BrandType }[] = [
+  { label: 'Vehicle Brands',   type: 'VehiculeBrand' },
+  { label: 'Part Brands',      type: 'PartBrand' },
+  { label: 'Equipment Brands', type: 'EquipementBrand' },
+];
 
-  // Part brands state
-  const [partPage, setPartPage]               = useState(0);
-  const [partModalOpen, setPartModalOpen]     = useState(false);
-  const [partEditTarget, setPartEditTarget]   = useState<PartBrand | null>(null);
-  const [partDeleteTarget, setPartDeleteTarget] = useState<PartBrand | null>(null);
-  const [partName, setPartName]               = useState('');
+// ─── Brand list for one tab ────────────────────────────────────────────────
 
-  // Equipment brands state
-  const [equipPage, setEquipPage]               = useState(0);
-  const [equipModalOpen, setEquipModalOpen]     = useState(false);
-  const [equipEditTarget, setEquipEditTarget]   = useState<EquipementBrand | null>(null);
-  const [equipDeleteTarget, setEquipDeleteTarget] = useState<EquipementBrand | null>(null);
-  const [equipName, setEquipName]               = useState('');
+interface BrandListProps {
+  brandType: BrandType;
+}
 
-  const { data: partData, isLoading: partLoading } = usePartBrands({ page: partPage, size: PAGE_SIZE });
-  const { create: createPart, update: updatePart, remove: removePart } = usePartBrandMutations();
+function BrandList({ brandType }: BrandListProps) {
+  const [search, setSearch]               = useState('');
+  const [showCreate, setShowCreate]       = useState(false);
+  const [editTarget, setEditTarget]       = useState<BrandDto | null>(null);
+  const [deleteTarget, setDeleteTarget]   = useState<BrandDto | null>(null);
 
-  const { data: equipData, isLoading: equipLoading } = useEquipementBrands({ page: equipPage, size: PAGE_SIZE });
-  const { create: createEquip, update: updateEquip, remove: removeEquip } = useEquipementBrandMutations();
+  const { data: brands = [], isLoading } = useBrands(brandType);
+  const deleteBrand = useDeleteBrand(brandType);
 
-  /* ── Part brand handlers ── */
-  const handlePartSubmit = () => {
-    if (!partName.trim()) return;
-    const payload: PartBrandRequest = { name: partName.trim() };
-    if (partEditTarget) {
-      updatePart.mutate(
-        { id: partEditTarget.id, payload },
-        { onSuccess: () => { setPartModalOpen(false); setPartName(''); } },
-      );
-    } else {
-      createPart.mutate(payload, {
-        onSuccess: () => { setPartModalOpen(false); setPartName(''); },
-      });
-    }
+  const filtered = brands.filter((b) =>
+    b.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteBrand.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
-
-  /* ── Equipment brand handlers ── */
-  const handleEquipSubmit = () => {
-    if (!equipName.trim()) return;
-    const payload: EquipementBrandRequest = { name: equipName.trim() };
-    if (equipEditTarget) {
-      updateEquip.mutate(
-        { id: equipEditTarget.id, payload },
-        { onSuccess: () => { setEquipModalOpen(false); setEquipName(''); } },
-      );
-    } else {
-      createEquip.mutate(payload, {
-        onSuccess: () => { setEquipModalOpen(false); setEquipName(''); },
-      });
-    }
-  };
-
-  const partColumns: CatalogColumn<PartBrand>[] = [
-    { key: 'name',      header: 'Name',    render: (b) => <strong>{b.name}</strong> },
-    { key: 'createdAt', header: 'Created', render: (b) => b.createdAt ? formatDate(b.createdAt) : '—' },
-  ];
-
-  const equipColumns: CatalogColumn<EquipementBrand>[] = [
-    { key: 'name',      header: 'Name',    render: (b) => <strong>{b.name}</strong> },
-    { key: 'createdAt', header: 'Created', render: (b) => b.createdAt ? formatDate(b.createdAt) : '—' },
-  ];
 
   return (
-    <div className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.title}>Brands</h2>
-          <p className={styles.subtitle}>Manage part and equipment brands</p>
+    <div className={styles.listSection}>
+      {/* Toolbar */}
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper}>
+          <Search size={14} className={styles.searchIcon} />
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Search brands…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <div className={styles.tabs}>
-          <button
-            className={[styles.tab, activeTab === 'parts' ? styles.tabActive : ''].join(' ')}
-            onClick={() => setActiveTab('parts')}
-            type="button"
-          >
-            Part brands ({partData?.page.totalElements ?? 0})
-          </button>
-          <button
-            className={[styles.tab, activeTab === 'equipment' ? styles.tabActive : ''].join(' ')}
-            onClick={() => setActiveTab('equipment')}
-            type="button"
-          >
-            Equipment brands ({equipData?.page.totalElements ?? 0})
-          </button>
-        </div>
+        <button
+          className={styles.addBtn}
+          onClick={() => setShowCreate(true)}
+        >
+          <Plus size={15} />
+          Add Brand
+        </button>
       </div>
 
-      {/* ── Part brands tab ── */}
-      {activeTab === 'parts' && (
-        <>
-          <div className={styles.tableHeader}>
-            <span className={styles.count}>
-              {partData?.page.totalElements ?? 0} part brands
-            </span>
-            <button
-              className={styles.addBtn}
-              onClick={() => { setPartEditTarget(null); setPartName(''); setPartModalOpen(true); }}
-              type="button"
-            >
-              + New brand
-            </button>
-          </div>
+      {/* Table */}
+      <div className={styles.tableWrapper}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.th}>ID</th>
+              <th className={styles.th}>Name</th>
+              <th className={styles.th}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i}>
+                  <td className={styles.td}><div className={styles.skeleton} /></td>
+                  <td className={styles.td}><div className={styles.skeleton} /></td>
+                  <td className={styles.td}><div className={styles.skeleton} style={{ width: 80 }} /></td>
+                </tr>
+              ))
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan={3} className={styles.emptyState}>
+                  {search ? 'No brands match your search.' : 'No brands yet.'}
+                </td>
+              </tr>
+            ) : (
+              filtered.map((brand) => (
+                <tr key={brand.id} className={styles.row}>
+                  <td className={styles.td}>
+                    <span className={styles.idChip}>#{brand.id}</span>
+                  </td>
+                  <td className={styles.td}>{brand.name}</td>
+                  <td className={styles.td}>
+                    <div className={styles.rowActions}>
+                      <button
+                        className={styles.iconBtn}
+                        onClick={() => setEditTarget(brand)}
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                        onClick={() => setDeleteTarget(brand)}
+                        title="Delete"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          <CatalogTable
-            columns={partColumns}
-            data={partData?.content ?? []}
-            loading={partLoading}
-            onEdit={(b) => { setPartEditTarget(b); setPartName(b.name); setPartModalOpen(true); }}
-            onDelete={(b) => setPartDeleteTarget(b)}
-          />
-
-          {partData && (
-            <Pagination
-              page={partPage}
-              totalPages={partData.page.totalPages}
-              totalElements={partData.page.totalElements}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPartPage}
-            />
-          )}
-
-          {/* Inline modal */}
-          {partModalOpen && (
-            <div className={styles.overlay}>
-              <div className={styles.inlineModal}>
-                <h3>{partEditTarget ? 'Edit part brand' : 'New part brand'}</h3>
-                <input
-                  className={styles.inlineInput}
-                  placeholder="Brand name"
-                  value={partName}
-                  onChange={(e) => setPartName(e.target.value)}
-                  autoFocus
-                />
-                <div className={styles.inlineActions}>
-                  <button className={styles.cancelBtn} onClick={() => setPartModalOpen(false)} type="button">Cancel</button>
-                  <button
-                    className={styles.addBtn}
-                    onClick={handlePartSubmit}
-                    disabled={createPart.isPending || updatePart.isPending}
-                    type="button"
-                  >
-                    {createPart.isPending || updatePart.isPending ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <ConfirmDialog
-            open={!!partDeleteTarget}
-            title="Delete part brand"
-            message={`Delete "${partDeleteTarget?.name}"? This cannot be undone.`}
-            confirmLabel="Delete"
-            danger
-            loading={removePart.isPending}
-            onConfirm={() => {
-              if (partDeleteTarget) {
-                removePart.mutate(partDeleteTarget.id, { onSuccess: () => setPartDeleteTarget(null) });
-              }
-            }}
-            onCancel={() => setPartDeleteTarget(null)}
-          />
-        </>
+      {/* Count */}
+      {!isLoading && (
+        <p className={styles.count}>
+          {filtered.length} brand{filtered.length !== 1 ? 's' : ''}
+          {search && ` matching "${search}"`}
+        </p>
       )}
 
-      {/* ── Equipment brands tab ── */}
-      {activeTab === 'equipment' && (
-        <>
-          <div className={styles.tableHeader}>
-            <span className={styles.count}>
-              {equipData?.page.totalElements ?? 0} equipment brands
-            </span>
-            <button
-              className={styles.addBtn}
-              onClick={() => { setEquipEditTarget(null); setEquipName(''); setEquipModalOpen(true); }}
-              type="button"
-            >
-              + New brand
-            </button>
-          </div>
+      {/* Create modal */}
+      {showCreate && (
+        <BrandModal
+          brandType={brandType}
+          onClose={() => setShowCreate(false)}
+        />
+      )}
 
-          <CatalogTable
-            columns={equipColumns}
-            data={equipData?.content ?? []}
-            loading={equipLoading}
-            onEdit={(b) => { setEquipEditTarget(b); setEquipName(b.name); setEquipModalOpen(true); }}
-            onDelete={(b) => setEquipDeleteTarget(b)}
-          />
+      {/* Edit modal */}
+      {editTarget && (
+        <BrandModal
+          brandType={brandType}
+          editBrand={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
 
-          {equipData && (
-            <Pagination
-              page={equipPage}
-              totalPages={equipData.page.totalPages}
-              totalElements={equipData.page.totalElements}
-              pageSize={PAGE_SIZE}
-              onPageChange={setEquipPage}
-            />
-          )}
-
-          {equipModalOpen && (
-            <div className={styles.overlay}>
-              <div className={styles.inlineModal}>
-                <h3>{equipEditTarget ? 'Edit equipment brand' : 'New equipment brand'}</h3>
-                <input
-                  className={styles.inlineInput}
-                  placeholder="Brand name"
-                  value={equipName}
-                  onChange={(e) => setEquipName(e.target.value)}
-                  autoFocus
-                />
-                <div className={styles.inlineActions}>
-                  <button className={styles.cancelBtn} onClick={() => setEquipModalOpen(false)} type="button">Cancel</button>
-                  <button
-                    className={styles.addBtn}
-                    onClick={handleEquipSubmit}
-                    disabled={createEquip.isPending || updateEquip.isPending}
-                    type="button"
-                  >
-                    {createEquip.isPending || updateEquip.isPending ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <ConfirmDialog
-            open={!!equipDeleteTarget}
-            title="Delete equipment brand"
-            message={`Delete "${equipDeleteTarget?.name}"? This cannot be undone.`}
-            confirmLabel="Delete"
-            danger
-            loading={removeEquip.isPending}
-            onConfirm={() => {
-              if (equipDeleteTarget) {
-                removeEquip.mutate(equipDeleteTarget.id, { onSuccess: () => setEquipDeleteTarget(null) });
-              }
-            }}
-            onCancel={() => setEquipDeleteTarget(null)}
-          />
-        </>
+      {/* Delete confirm */}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete Brand"
+          message={`Are you sure you want to delete "${deleteTarget.name}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          isLoading={deleteBrand.isPending}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );
-}   
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────
+
+export function BrandsPage() {
+  const [activeTab, setActiveTab] = useState(0);
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.pageHeader}>
+        <h2 className={styles.pageTitle}>Brands</h2>
+        <p className={styles.pageSubtitle}>
+          Manage vehicle, part, and equipment brands
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className={styles.tabs}>
+        {TABS.map((tab, i) => (
+          <button
+            key={tab.type}
+            className={`${styles.tab} ${activeTab === i ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab(i)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div className={styles.card}>
+        <BrandList brandType={TABS[activeTab].type} />
+      </div>
+    </div>
+  );
+}

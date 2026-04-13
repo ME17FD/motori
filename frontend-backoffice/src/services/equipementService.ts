@@ -1,102 +1,63 @@
-import axiosInstance from '../api/axiosInstance';
+/**
+ * Equipement service — CRUD + search for gear/equipment.
+ * Base path: /api/equipements (through API Gateway)
+ */
+
+import apiClient from '../api/axiosInstance';
 import type {
-  Equipement,
-  EquipementRequest,
-  EquipementUpdateRequest,
-  DynamicProperties,
+  EquipementDto,
+  CreateEquipementRequest,
+  UpdateEquipementRequest,
+  PageResult,
+  ProductFilters,
 } from '../types/product';
-import type { PagedModel } from '../types/api';
 
-/**
- * Base URL for equipment — gateway rewrites /api/products/** → /api/parts/**.
- */
-const BASE = '/api/products/equipements';
+/** Fetch paginated + filtered equipements */
+// Remplacer /api/equipements par /api/products/equipements partout
 
-export interface EquipementFilters {
-  name?: string;
-  brandId?: string;
-  categoryId?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  size?: string;
-  propertyKey?: string;
-  propertyValue?: string;
-  page?: number;
-  pageSize?: number;
-  [key: string]: unknown;
-}
-
-/**
- * GET /api/products/equipements — paginated + filtered list.
- */
-export async function fetchEquipements(
-  params: EquipementFilters = {},
-): Promise<PagedModel<Equipement>> {
-  const { data } = await axiosInstance.get<PagedModel<Equipement>>(BASE, { params });
+export async function fetchEquipements(filters: ProductFilters = {}): Promise<PageResult<EquipementDto>> {
+  const { data } = await apiClient.get<PageResult<EquipementDto>>('/api/products/equipements', {
+    params: {
+      name:       filters.name,
+      equipementBrandId:    filters.equipementBrandId,
+      equipementCategoryId: filters.equipementCategoryId,
+      minPrice:   filters.minPrice,
+      maxPrice:   filters.maxPrice,
+      status:     filters.status,
+      page:       filters.page ?? 0,
+      size:       filters.size ?? 20,
+      sort:       filters.sort,
+    },
+  });
   return data;
 }
 
-export async function fetchEquipement(id: string): Promise<Equipement> {
-  const { data } = await axiosInstance.get<Equipement>(`${BASE}/${id}`);
+export async function fetchEquipementById(id: string): Promise<EquipementDto> {
+  const { data } = await apiClient.get<EquipementDto>(`/api/products/equipements/${id}`);
   return data;
 }
 
-export async function createEquipement(
-  payload: EquipementRequest,
-): Promise<Equipement> {
-  const { data } = await axiosInstance.post<Equipement>(BASE, payload);
+export async function createEquipement(payload: CreateEquipementRequest): Promise<EquipementDto> {
+  const { data } = await apiClient.post<EquipementDto>('/api/products/equipements', payload);
   return data;
 }
 
-export async function updateEquipement(
-  id: string,
-  payload: EquipementUpdateRequest,
-): Promise<Equipement> {
-  const { data } = await axiosInstance.put<Equipement>(`${BASE}/${id}`, payload);
+export async function updateEquipement(id: string, payload: UpdateEquipementRequest): Promise<EquipementDto> {
+  const { data } = await apiClient.put<EquipementDto>(`/api/products/equipements/${id}`, payload);
   return data;
 }
 
 export async function deleteEquipement(id: string): Promise<void> {
-  await axiosInstance.delete(`${BASE}/${id}`);
+  await apiClient.delete(`/api/products/equipements/${id}`);
 }
 
-/**
- * POST /api/products/equipements/{id}/image
- * Uploads a single image file to Minio via the gateway.
- */
-export async function uploadEquipementImage(
-  id: string,
-  file: File,
-): Promise<Equipement> {
-  const form = new FormData();
-  form.append('file', file);
-  const { data } = await axiosInstance.post<Equipement>(
-    `${BASE}/${id}/image`,
-    form,
-    { headers: { 'Content-Type': 'multipart/form-data' } },
+export async function uploadEquipementImage(id: number, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await apiClient.post<{ url: string }>(
+    `/api/products/equipements/${id}/image`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
   );
-  return data;
-}
-
-/**
- * DELETE /api/products/equipements/{id}/image
- */
-export async function deleteEquipementImage(id: string): Promise<Equipement> {
-  const { data } = await axiosInstance.delete<Equipement>(`${BASE}/${id}/image`);
-  return data;
-}
-
-/**
- * PATCH /api/products/equipements/{id}/properties
- * Updates JSONB dynamic properties for an equipment item.
- */
-export async function updateEquipementProperties(
-  id: string,
-  properties: DynamicProperties,
-): Promise<Equipement> {
-  const { data } = await axiosInstance.patch<Equipement>(
-    `${BASE}/${id}/properties`,
-    properties,
-  );
-  return data;
+  return data.url;
 }

@@ -1,133 +1,295 @@
-import type { Order } from '../../types/order';
-import { formatCurrency, formatDateTime } from '../../utils/formatters';
-import { toPublicMinioUrl } from '../../utils/minioUrl';
-import styles from '../../styles/Components/modals/FormModal.module.css';
+/**
+ * OrderDetailModal — full order detail in a slide-over modal.
+ *
+ * Features:
+ *   - Order info: ID, date, status, tracking, address, total
+ *   - Line items table
+ *   - Status change dropdown (with allowed transitions)
+ *   - Tracking number input + save
+ *   - Loading and error states
+ *   - Closes on Escape key or backdrop click
+ */
 
-interface OrderDetailModalProps {
-  open: boolean;
-  order: Order | null;
+import { useEffect, useRef, useState } from 'react';
+import { X, Package, Truck, Save } from 'lucide-react';
+import { useOrder, useUpdateOrderStatus, useUpdateTracking } from '../../hooks/useOrders';
+import { OrderStatusBadge } from '../ui/OrderStatusBadge';
+import { formatDateTime, formatCurrency, shortId } from '../../utils/formatters';
+import type { OrderStatus } from '../../types/order';
+import styles from '../../styles/Components/modals/OrderDetailModal.module.css';
+
+// ─── Status transition rules ───────────────────────────────────────────────
+
+/**
+ * Defines which statuses are valid next states for each current status.
+ * Prevents invalid transitions (e.g. DELIVERED → PENDING).
+ */
+const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  PENDING:    ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED:  ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['SHIPPED', 'CANCELLED'],
+  SHIPPED:    ['DELIVERED', 'CANCELLED'],
+  DELIVERED:  [],
+  CANCELLED:  [],
+};
+
+// ─── Component ─────────────────────────────────────────────────────────────
+
+interface Props {
+  orderId: string;
   onClose: () => void;
 }
 
-export default function OrderDetailModal({ open, order, onClose }: OrderDetailModalProps) {
-  if (!open || !order) return null;
+export function OrderDetailModal({ orderId, onClose }: Props) {
+  const overlayRef = useRef<HTMLDivElement>(null);
 
-  const statusColors: Record<string, { bg: string; color: string }> = {
-    PENDING:    { bg: 'rgba(245,158,11,0.12)',  color: '#b45309' },
-    CONFIRMED:  { bg: 'rgba(59,130,246,0.12)',  color: '#1d4ed8' },
-    PROCESSING: { bg: 'rgba(139,92,246,0.12)',  color: '#6d28d9' },
-    SHIPPED:    { bg: 'rgba(20,184,166,0.12)',  color: '#0f766e' },
-    DELIVERED:  { bg: 'rgba(16,185,129,0.12)',  color: '#065f46' },
-    CANCELLED:  { bg: 'rgba(239,68,68,0.12)',   color: '#b91c1c' },
+  const { data: order, isLoading, isError } = useOrder(orderId);
+  const updateStatus   = useUpdateOrderStatus();
+  const updateTracking = useUpdateTracking();
+
+  // Local tracking input state
+  const [trackingInput, setTrackingInput] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | ''>('');
+
+  // Use useEffect to sync with order data - but this is actually appropriate here
+  // because we're syncing external data (from the API) with local form state
+  useEffect(() => {
+    if (order) {
+      // This is acceptable because we're initializing form state from API data
+      // React 19+ might still warn, but this is a legitimate use case
+      setTrackingInput(order.trackingNumber ?? '');
+      setSelectedStatus('');
+    }
+  }, [order]);
+
+  // Alternative: Use useMemo or derive values instead of useEffect if possible
+  // But since this is initialization of form state from API data, useEffect is appropriate
+
+  // ── Keyboard: close on Escape ────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // ── Prevent body scroll while modal is open ──────────────────────────
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  // ── Action handlers ──────────────────────────────────────────────────
+  const handleStatusChange = async () => {
+    if (!selectedStatus || !order) return;
+    await updateStatus.mutateAsync({ id: order.id, status: selectedStatus });
+    setSelectedStatus('');
   };
 
-  const s = order.status ?? (order.completed ? 'DELIVERED' : 'PENDING');
-  const c = statusColors[s] ?? { bg: '#f4f5f7', color: '#666' };
+  const handleTrackingSave = async () => {
+    if (!order) return;
+    await updateTracking.mutateAsync({
+      id: order.id,
+      trackingNumber: trackingInput,
+    });
+  };
 
+  const allowedTransitions = order
+    ? STATUS_TRANSITIONS[order.status]
+    : [];
+
+  // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true">
-      <div className={styles.modal} style={{ maxWidth: 600 }}>
-        <div className={styles.header}>
-          <div>
-            <h3 className={styles.title}>
-              Order #{order.id.slice(0, 8).toUpperCase()}
-            </h3>
-            <span style={{
-              fontSize:     11,
-              padding:      '2px 8px',
-              borderRadius: 12,
-              background:   c.bg,
-              color:        c.color,
-              fontWeight:   500,
-            }}>
-              {s}
-            </span>
+    <div
+      className={styles.overlay}
+      ref={overlayRef}
+      onClick={(e) => {
+        if (e.target === overlayRef.current) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Order details"
+    >
+      <div className={styles.panel}>
+
+        {/* ── Header ────────────────────────────────────────────── */}
+        <div className={styles.panelHeader}>
+          <div className={styles.panelHeaderLeft}>
+            <Package size={18} />
+            <h2 className={styles.panelTitle}>
+              {order ? `Order #${shortId(order.id)}` : 'Order Details'}
+            </h2>
+            {order && <OrderStatusBadge status={order.status} />}
           </div>
-          <button className={styles.closeBtn} onClick={onClose} type="button">✕</button>
+          <button
+            className={styles.closeBtn}
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
         </div>
 
-        <div className={styles.form} style={{ gap: 16 }}>
-          {/* Meta */}
-          <div style={{
-            display:             'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap:                 12,
-            background:          'var(--color-bg-light)',
-            borderRadius:        8,
-            padding:             12,
-          }}>
-            <div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>User ID</div>
-              <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                {order.userId?.toString().slice(0, 16)}…
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Date</div>
-              <div style={{ fontSize: 12 }}>{formatDateTime(order.createdAt)}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Completed</div>
-              <div style={{ fontSize: 12 }}>{order.completed ? '✅ Yes' : '⏳ No'}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 2 }}>Total</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-red)' }}>
-                {formatCurrency(order.totalPrice)}
-              </div>
-            </div>
-          </div>
+        {/* ── Body ──────────────────────────────────────────────── */}
+        <div className={styles.panelBody}>
 
-          {/* Items */}
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
-              Items ({order.items?.length ?? 0})
+          {/* Loading */}
+          {isLoading && (
+            <div className={styles.loadingState}>
+              <div className={styles.spinner} />
+              <span>Loading order…</span>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {(order.items ?? []).map((item) => {
-                const inv  = item.inventoryId;
-                const prod = inv?.part ?? inv?.equipement;
-                const img  = toPublicMinioUrl(prod?.imageUrl);
+          )}
 
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      display:      'flex',
-                      alignItems:   'center',
-                      gap:          12,
-                      padding:      10,
-                      background:   'var(--bo-card-bg)',
-                      borderRadius: 8,
-                      border:       '1px solid var(--color-border)',
-                    }}
-                  >
-                    {img
-                      ? <img src={img} alt={prod?.name} style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />
-                      : <div style={{ width: 40, height: 40, borderRadius: 6, background: '#f4f5f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
-                          {inv?.part ? '🔧' : '🛡️'}
-                        </div>
-                    }
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>
-                        {prod?.name ?? '—'}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#888' }}>
-                        {inv?.part ? 'Part' : 'Equipment'} · Qty: {item.quantity || 1}
-                      </div>
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 14 }}>
-                      {formatCurrency(item.price)}
-                    </div>
+          {/* Error */}
+          {isError && (
+            <div className={styles.errorState}>
+              Failed to load order details. Please try again.
+            </div>
+          )}
+
+          {/* Content */}
+          {order && (
+            <>
+              {/* ── Info grid ─────────────────────────────────── */}
+              <div className={styles.infoGrid}>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Order UUID</span>
+                  <span className={styles.infoValue}>
+                    <code className={styles.code}>{order.id}</code>
+                  </span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>User ID</span>
+                  <span className={styles.infoValue}>#{order.userId}</span>
+                </div>
+                <div className={styles.infoItem}>
+                  <span className={styles.infoLabel}>Created</span>
+                  <span className={styles.infoValue}>
+                    {formatDateTime(order.createdAt)}
+                  </span>
+                </div>
+                {order.updatedAt && (
+                  <div className={styles.infoItem}>
+                    <span className={styles.infoLabel}>Last updated</span>
+                    <span className={styles.infoValue}>
+                      {formatDateTime(order.updatedAt)}
+                    </span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
+                )}
+                {order.shippingAddress && (
+                  <div className={`${styles.infoItem} ${styles.infoItemFull}`}>
+                    <span className={styles.infoLabel}>Shipping address</span>
+                    <span className={styles.infoValue}>
+                      {order.shippingAddress}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-        <div className={styles.footer}>
-          <button className={styles.cancelBtn} onClick={onClose} type="button">Close</button>
+              {/* ── Line items ────────────────────────────────── */}
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  Items ({order.items.length})
+                </h3>
+                <table className={styles.itemsTable}>
+                  <thead>
+                    <tr>
+                      <th className={styles.itemTh}>Product</th>
+                      <th className={styles.itemTh}>Qty</th>
+                      <th className={styles.itemTh}>Unit price</th>
+                      <th className={styles.itemTh}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {order.items.map((item, idx) => (
+                      <tr key={idx} className={styles.itemRow}>
+                        <td className={styles.itemTd}>
+                          {item.productName ?? `Product #${item.productId}`}
+                        </td>
+                        <td className={styles.itemTd}>{item.quantity}</td>
+                        <td className={styles.itemTd}>
+                          {formatCurrency(item.unitPrice)}
+                        </td>
+                        <td className={styles.itemTd}>
+                          {formatCurrency(item.unitPrice * item.quantity)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3} className={styles.totalLabel}>
+                        Order total
+                      </td>
+                      <td className={styles.totalValue}>
+                        {formatCurrency(order.totalAmount)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* ── Status change ─────────────────────────────── */}
+              {allowedTransitions.length > 0 && (
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>Change Status</h3>
+                  <div className={styles.actionRow}>
+                    <select
+                      className={styles.select}
+                      value={selectedStatus}
+                      onChange={(e) =>
+                        setSelectedStatus(e.target.value as OrderStatus)
+                      }
+                    >
+                      <option value="">Select new status…</option>
+                      {allowedTransitions.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <button
+                      className={styles.actionBtn}
+                      onClick={handleStatusChange}
+                      disabled={
+                        !selectedStatus || updateStatus.isPending
+                      }
+                    >
+                      {updateStatus.isPending ? 'Updating…' : 'Update Status'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Tracking ───────────────────────────────────── */}
+              <div className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  <Truck size={15} />
+                  Tracking
+                </h3>
+                <div className={styles.actionRow}>
+                  <input
+                    type="text"
+                    className={styles.trackingInput}
+                    placeholder="Enter tracking number…"
+                    value={trackingInput}
+                    onChange={(e) => setTrackingInput(e.target.value)}
+                  />
+                  <button
+                    className={styles.actionBtn}
+                    onClick={handleTrackingSave}
+                    disabled={
+                      updateTracking.isPending ||
+                      trackingInput === (order.trackingNumber ?? '')
+                    }
+                  >
+                    <Save size={14} />
+                    {updateTracking.isPending ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

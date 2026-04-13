@@ -1,112 +1,150 @@
-import { useState, useEffect } from 'react';
-import type { DynamicProperties, PropertyField } from '../../types/product';
+/**
+ * DynamicPropertiesEditor — key/value editor for product JSON properties.
+ *
+ * Renders a list of editable rows (key, type, value).
+ * Controlled component — parent owns the properties state.
+ *
+ * Supported value types: string | number | boolean
+ */
+
+import { useState } from 'react';
+import { Plus, Trash2 } from 'lucide-react';
+import type { DynamicProperties } from '../../types/product';
 import styles from '../../styles/Components/forms/DynamicPropertiesEditor.module.css';
 
-interface DynamicPropertiesEditorProps {
-  initialValue?: DynamicProperties;
-  onChange: (properties: DynamicProperties) => void;
+type PropType = 'string' | 'number' | 'boolean';
+
+interface PropRow {
+  key: string;
+  type: PropType;
+  value: string; // always string in the UI, parsed on save
 }
 
-/**
- * Wrapper that remounts the inner editor when initialValue changes.
- * Uses the JSON stringified value as a key to force remount cleanly
- * instead of syncing state inside effects.
- */
-export default function DynamicPropertiesEditor({
-  initialValue,
-  onChange,
-}: DynamicPropertiesEditorProps) {
-  const stableKey = JSON.stringify(initialValue ?? {});
-  return (
-    <DynamicPropertiesEditorInner
-      key={stableKey}
-      initialValue={initialValue}
-      onChange={onChange}
-    />
-  );
+interface Props {
+  value: DynamicProperties;
+  onChange: (updated: DynamicProperties) => void;
 }
 
-/**
- * Inner editor — remounts whenever the key (initialValue) changes.
- * State is initialized once from props, no effects needed.
- */
-function DynamicPropertiesEditorInner({
-  initialValue,
-  onChange,
-}: DynamicPropertiesEditorProps) {
-  const [fields, setFields] = useState<PropertyField[]>(() => {
-    if (!initialValue) return [];
-    return Object.entries(initialValue).map(([key, value]) => ({
-      key,
-      value: String(value),
-    }));
-  });
+/** Convert DynamicProperties → editable rows */
+function toRows(props: DynamicProperties): PropRow[] {
+  return Object.entries(props).map(([key, val]) => ({
+    key,
+    type: typeof val as PropType,
+    value: String(val),
+  }));
+}
 
-  /**
-   * Notify parent whenever fields change.
-   * This effect only writes to an external callback — not to local state —
-   * so it does not cause cascading renders.
-   */
-  useEffect(() => {
-    const result: DynamicProperties = {};
-    fields.forEach(({ key, value }) => {
-      if (key.trim()) result[key.trim()] = value;
-    });
-    onChange(result);
-  }, [fields, onChange]);
+/** Convert editable rows → DynamicProperties */
+function fromRows(rows: PropRow[]): DynamicProperties {
+  const result: DynamicProperties = {};
+  for (const row of rows) {
+    if (!row.key.trim()) continue; // skip empty keys
+    if (row.type === 'number') {
+      result[row.key] = parseFloat(row.value) || 0;
+    } else if (row.type === 'boolean') {
+      result[row.key] = row.value === 'true';
+    } else {
+      result[row.key] = row.value;
+    }
+  }
+  return result;
+}
 
-  const addField = () => {
-    setFields((prev) => [...prev, { key: '', value: '' }]);
+export function DynamicPropertiesEditor({ value, onChange }: Props) {
+  const [rows, setRows] = useState<PropRow[]>(() => toRows(value));
+
+  /** Propagate changes to parent after every mutation */
+  const emit = (updated: PropRow[]) => {
+    setRows(updated);
+    onChange(fromRows(updated));
   };
 
-  const removeField = (index: number) => {
-    setFields((prev) => prev.filter((_, i) => i !== index));
+  const addRow = () => {
+    emit([...rows, { key: '', type: 'string', value: '' }]);
   };
 
-  const updateField = (index: number, field: Partial<PropertyField>) => {
-    setFields((prev) =>
-      prev.map((f, i) => (i === index ? { ...f, ...field } : f)),
-    );
+  const removeRow = (index: number) => {
+    emit(rows.filter((_, i) => i !== index));
+  };
+
+  const updateRow = (index: number, patch: Partial<PropRow>) => {
+    emit(rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   };
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.headerRow}>
-        <span className={styles.sectionLabel}>Dynamic properties (JSONB)</span>
-        <button type="button" className={styles.addBtn} onClick={addField}>
-          + Add field
-        </button>
-      </div>
-
-      {fields.length === 0 && (
-        <p className={styles.empty}>No properties defined. Click "Add field" to start.</p>
+    <div className={styles.editor}>
+      {rows.length > 0 && (
+        <div className={styles.header}>
+          <span className={styles.colLabel}>Key</span>
+          <span className={styles.colLabel}>Type</span>
+          <span className={styles.colLabel}>Value</span>
+          <span />
+        </div>
       )}
 
-      {fields.map((field, index) => (
-        <div key={index} className={styles.fieldRow}>
+      {rows.map((row, i) => (
+        <div key={i} className={styles.row}>
+          {/* Key */}
           <input
-            className={styles.keyInput}
-            placeholder="Key (e.g. material)"
-            value={field.key}
-            onChange={(e) => updateField(index, { key: e.target.value })}
+            type="text"
+            className={styles.input}
+            placeholder="property_key"
+            value={row.key}
+            onChange={(e) => updateRow(i, { key: e.target.value })}
           />
-          <span className={styles.separator}>:</span>
-          <input
-            className={styles.valueInput}
-            placeholder="Value (e.g. aluminum)"
-            value={field.value}
-            onChange={(e) => updateField(index, { value: e.target.value })}
-          />
+
+          {/* Type */}
+          <select
+            className={styles.select}
+            value={row.type}
+            onChange={(e) =>
+              updateRow(i, {
+                type:  e.target.value as PropType,
+                value: '',
+              })
+            }
+          >
+            <option value="string">string</option>
+            <option value="number">number</option>
+            <option value="boolean">boolean</option>
+          </select>
+
+          {/* Value */}
+          {row.type === 'boolean' ? (
+            <select
+              className={styles.select}
+              value={row.value}
+              onChange={(e) => updateRow(i, { value: e.target.value })}
+            >
+              <option value="true">true</option>
+              <option value="false">false</option>
+            </select>
+          ) : (
+            <input
+              type={row.type === 'number' ? 'number' : 'text'}
+              className={styles.input}
+              placeholder={row.type === 'number' ? '0' : 'value'}
+              value={row.value}
+              onChange={(e) => updateRow(i, { value: e.target.value })}
+            />
+          )}
+
+          {/* Remove */}
           <button
             type="button"
             className={styles.removeBtn}
-            onClick={() => removeField(index)}
-            aria-label="Remove field"
+            onClick={() => removeRow(i)}
+            title="Remove property"
           >
-            ✕
+            <Trash2 size={13} />
           </button>
         </div>
       ))}
+
+      <button type="button" className={styles.addBtn} onClick={addRow}>
+        <Plus size={13} />
+        Add property
+      </button>
     </div>
   );
 }

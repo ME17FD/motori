@@ -1,52 +1,58 @@
-@import '../variables.css';
-
 .card {
-  background: var(--bo-card-bg);
+  background-color: var(--bo-card-bg);
   border-radius: var(--bo-card-radius);
   box-shadow: var(--bo-card-shadow);
-  padding: var(--space-5) var(--space-6);
-  border-left: 4px solid var(--color-border);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  border-left: 4px solid transparent;
   transition: box-shadow var(--transition-fast);
 }
 
 .card:hover {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
-.label {
+.title {
   font-size: var(--font-size-sm);
-  color: var(--color-gray);
   font-weight: var(--font-weight-medium);
+  color: var(--color-gray);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.04em;
 }
 
 .value {
-  font-size: var(--font-size-xl);
+  font-size: 28px;
   font-weight: var(--font-weight-bold);
   color: var(--color-black);
   line-height: 1.1;
 }
 
-.sublabel {
-  font-size: var(--font-size-xs);
+.error {
+  font-size: 28px;
   color: var(--color-gray);
 }
 
+/* Skeleton loader */
 .skeleton {
-  display: block;
-  height: 36px;
-  width: 80px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  height: 32px;
+  width: 60%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
+  border-radius: 6px;
 }
 
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Accent colors ─────────────────────────────────────────────── */
+.accent_blue   { border-left-color: var(--bo-status-confirmed); }
+.accent_green  { border-left-color: var(--bo-status-delivered); }
+.accent_yellow { border-left-color: var(--bo-status-pending); }
+.accent_purple { border-left-color: var(--bo-status-processing); }
+.accent_red    { border-left-color: var(--bo-status-cancelled); }
+.accent_gray   { border-left-color: var(--color-border); }

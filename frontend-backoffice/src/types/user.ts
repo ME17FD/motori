@@ -1,30 +1,30 @@
-export type UserRole = 'ADMIN' | 'USER' | 'SUPERADMIN';
-
 /**
- * User entity — id is a string UUID.
+ * User types — mirrors user-service schemas.
  */
-export interface User {
-  id: string;          // ← string UUID
+
+export type UserRole = 'USER' | 'ADMIN' | 'SUPERADMIN';
+
+export interface UserDto {
+  id: number;
+  /** Keycloak UUID */
+  keycloakId?: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
+  fullName?: string;
   phone?: string;
   roles: UserRole[];
   enabled: boolean;
   createdAt: string;
-  updatedAt: string;
+  /** Total amount spent across all orders */
+  totalSpent?: number;
+  /** Total number of orders placed */
+  orderCount?: number;
 }
 
 export interface UserFilters {
+  email?: string;
+  name?: string;
   page?: number;
   size?: number;
-  search?: string;
-  role?: UserRole | '';
-  enabled?: boolean;
-  [key: string]: unknown;
 }
-
-export interface UpdateUserRequest {
-  enabled?: boolean;
-  roles?: UserRole[];
-} 

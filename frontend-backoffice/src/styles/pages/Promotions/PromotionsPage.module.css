@@ -1,10 +1,4 @@
-@import '../../variables.css';
-
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
+.page { display: flex; flex-direction: column; gap: var(--space-5); }
 
 .header {
   display: flex;
@@ -14,75 +8,133 @@
   gap: var(--space-4);
 }
 
-.title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-black);
-  margin: 0;
-}
-
-.subtitle {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray);
-  margin: var(--space-1) 0 0;
-}
-
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-}
-
-.filterTabs {
-  display: flex;
-  gap: 2px;
-  background: var(--bo-card-bg);
-  border-radius: 8px;
-  padding: 4px;
-  box-shadow: var(--bo-card-shadow);
-}
-
-.filterTab {
-  padding: var(--space-2) var(--space-4);
-  border: none;
-  background: none;
-  border-radius: 6px;
-  font-size: var(--font-size-sm);
-  font-family: var(--font-primary);
-  color: var(--color-gray);
-  cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.filterTab:hover {
-  background: var(--color-bg-light);
-  color: var(--color-black);
-}
-
-.filterTabActive {
-  background: var(--color-red);
-  color: #fff;
-  font-weight: var(--font-weight-medium);
-}
-
-.filterTabActive:hover {
-  background: #a30f1a;
-  color: #fff;
-}
+.title { font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-black); margin: 0 0 var(--space-1); }
+.subtitle { font-size: var(--font-size-sm); color: var(--color-gray); margin: 0; }
 
 .addBtn {
-  padding: var(--space-2) var(--space-5);
-  background: var(--color-red);
-  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-black);
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
   font-family: var(--font-primary);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  white-space: nowrap;
-  transition: background var(--transition-fast);
+  transition: opacity var(--transition-fast);
 }
 
-.addBtn:hover { background: #a30f1a; }
+.addBtn:hover { opacity: 0.85; }
+
+/* Form helpers used inside PromoModal */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+
+.codeRow { display: flex; gap: var(--space-2); }
+
+.generateBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-gray);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.generateBtn:hover { border-color: var(--color-black); color: var(--color-black); }
+
+/* Table */
+.tableCard { background-color: var(--bo-card-bg); border-radius: var(--bo-card-radius); box-shadow: var(--bo-card-shadow); overflow: hidden; }
+.tableWrapper { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+
+.th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background-color: var(--color-bg-light);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.row { transition: background-color var(--transition-fast); }
+.row:hover { background-color: var(--color-bg-light); }
+
+.td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-black);
+  vertical-align: middle;
+}
+
+.promoName { display: block; font-weight: var(--font-weight-medium); }
+.promoDesc { display: block; font-size: var(--font-size-xs); color: var(--color-gray); margin-top: 2px; }
+
+.typePercent { display: inline-flex; padding: 2px 8px; border-radius: 4px; font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); background-color: #ede9fe; color: #5b21b6; }
+.typeFixed   { display: inline-flex; padding: 2px 8px; border-radius: 4px; font-size: var(--font-size-xs); font-weight: var(--font-weight-bold); background-color: #dbeafe; color: #1e40af; }
+
+.value { font-weight: var(--font-weight-bold); }
+
+.code {
+  font-family: monospace;
+  font-size: var(--font-size-xs);
+  background-color: var(--color-bg-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.1em;
+}
+
+.period { font-size: var(--font-size-xs); color: var(--color-gray); }
+.na { color: var(--color-border); }
+
+.statusActive   { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--bo-status-delivered); }
+.statusExpired  { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--bo-status-cancelled); }
+.statusInactive { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); color: var(--bo-status-pending); }
+
+.rowActions { display: flex; align-items: center; gap: var(--space-1); }
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-gray);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.iconBtn:hover { background-color: var(--color-bg-light); color: var(--color-black); border-color: var(--color-black); }
+.iconBtnDanger:hover { background-color: #fee2e2; color: var(--bo-status-cancelled); border-color: var(--bo-status-cancelled); }
+
+.paginationWrapper { padding: var(--space-4); border-top: 1px solid var(--color-border); display: flex; justify-content: center; }
+.errorState { padding: var(--space-8); text-align: center; color: var(--bo-status-cancelled); font-size: var(--font-size-sm); }
+.emptyState { text-align: center; padding: var(--space-8); color: var(--color-gray); font-size: var(--font-size-sm); }
+
+.skeletonCell {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

@@ -1,49 +1,35 @@
 /**
- * Discount calculation method.
+ * Promotion types — mirrors product-service promotion schemas.
  */
-export type DiscountType = 'PERCENTAGE' | 'FIXED';
 
-/**
- * Promotion entity — to be wired when promotion endpoints are available.
- */
-export interface Promotion {
+export type PromotionType = 'PERCENTAGE' | 'FIXED_AMOUNT';
+
+export interface PromotionDto {
   id: number;
-  code: string;
+  name: string;
   description?: string;
-  discountType: DiscountType;
-  discountValue: number;
-  minOrderAmount?: number;
-  maxUses?: number;
-  usedCount: number;
+  type: PromotionType;
+  /** Percentage (0–100) or fixed MAD amount */
+  value: number;
+  code?: string;
+  /** ISO date string */
+  startDate: string;
+  /** ISO date string */
+  endDate: string;
   active: boolean;
-  startDate?: string;
-  endDate?: string;
-  createdAt: string;
-  updatedAt: string;
+  /** IDs of products this promotion applies to */
+  productIds?: number[];
 }
 
 export interface CreatePromotionRequest {
-  code: string;
+  name: string;
   description?: string;
-  discountType: DiscountType;
-  discountValue: number;
-  minOrderAmount?: number;
-  maxUses?: number;
-  active?: boolean;
-  startDate?: string;
-  endDate?: string;
+  type: PromotionType;
+  value: number;
+  code?: string;
+  startDate: string;
+  endDate: string;
+  productIds?: number[];
 }
 
-export type UpdatePromotionRequest = Partial<CreatePromotionRequest>;
-
-/**
- * Filters for the promotions list.
- * Index signature required for TanStack Query key compatibility.
- */
-export interface PromotionFilters {
-  page?: number;
-  size?: number;
-  active?: boolean;
-  search?: string;
-  [key: string]: unknown;
-}
+export interface UpdatePromotionRequest extends Partial<CreatePromotionRequest> {}

@@ -1,72 +1,96 @@
+/**
+ * useEquipements — TanStack Query hooks for equipement endpoints.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   fetchEquipements,
-  fetchEquipement,
+  fetchEquipementById,
   createEquipement,
   updateEquipement,
   deleteEquipement,
-  uploadEquipementImage,
-  deleteEquipementImage,
-  updateEquipementProperties,
-  type EquipementFilters,
 } from '../services/equipementService';
-import { QUERY_KEYS } from '../constants/queryKeys';
-import type { EquipementRequest, EquipementUpdateRequest, DynamicProperties } from '../types/product';
+import type {
+  ProductFilters,
+  CreateEquipementRequest,
+  UpdateEquipementRequest,
+} from '../types/product';
 
-export function useEquipements(params: EquipementFilters = {}) {
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const equipementKeys = {
+  all:     ['equipements'] as const,
+  lists:   () => [...equipementKeys.all, 'list'] as const,
+  list:    (f: ProductFilters) => [...equipementKeys.lists(), f] as const,
+  details: () => [...equipementKeys.all, 'detail'] as const,
+  detail:  (id: number) => [...equipementKeys.details(), id] as const,
+};
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────
+
+/** Paginated + filtered equipements list */
+export function useEquipements(filters: ProductFilters = {}) {
   return useQuery({
-    queryKey: QUERY_KEYS.equipements(params),
-    queryFn: () => fetchEquipements(params),
+    queryKey: equipementKeys.list(filters),
+    queryFn:  () => fetchEquipements(filters),
+    staleTime: 2 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
 }
 
-export function useEquipement(id: string) {
+/** Single equipement by ID */
+export function useEquipement(id: number | null) {
   return useQuery({
-    queryKey: QUERY_KEYS.equipement(id),
-    queryFn: () => fetchEquipement(id),
-    enabled: !!id,
+    queryKey: equipementKeys.detail(id ?? 0),
+    queryFn:  () => fetchEquipementById(id!),
+    enabled:  id !== null,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
-export function useEquipementMutations() {
-  const qc = useQueryClient();
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['equipements'] });
-  };
-
-  const create = useMutation({
-    mutationFn: (payload: EquipementRequest) => createEquipement(payload),
-    onSuccess: invalidate,
+/** Create an equipement */
+export function useCreateEquipement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateEquipementRequest) => createEquipement(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: equipementKeys.lists() });
+      toast.success('Equipment created successfully.');
+    },
+    onError: () => toast.error('Failed to create equipment.'),
   });
+}
 
-  const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: EquipementUpdateRequest }) =>
-      updateEquipement(id, payload),
-    onSuccess: invalidate,
+/** Update an equipement */
+export function useUpdateEquipement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: UpdateEquipementRequest;
+    }) => updateEquipement(id, payload),
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: equipementKeys.lists() });
+      queryClient.setQueryData(equipementKeys.detail(updated.id), updated);
+      toast.success('Equipment updated successfully.');
+    },
+    onError: () => toast.error('Failed to update equipment.'),
   });
+}
 
-  const remove = useMutation({
-    mutationFn: (id: string) => deleteEquipement(id),
-    onSuccess: invalidate,
+/** Delete an equipement */
+export function useDeleteEquipement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteEquipement(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: equipementKeys.lists() });
+      toast.success('Equipment deleted.');
+    },
+    onError: () => toast.error('Failed to delete equipment.'),
   });
-
-  const uploadImage = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      uploadEquipementImage(id, file),
-    onSuccess: invalidate,
-  });
-
-  const removeImage = useMutation({
-    mutationFn: (id: string) => deleteEquipementImage(id),
-    onSuccess: invalidate,
-  });
-
-  const updateProperties = useMutation({
-    mutationFn: ({ id, properties }: { id: string; properties: DynamicProperties }) =>
-      updateEquipementProperties(id, properties),
-    onSuccess: invalidate,
-  });
-
-  return { create, update, remove, uploadImage, removeImage, updateProperties };
 }

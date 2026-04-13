@@ -1,71 +1,126 @@
-import axios from 'axios';
-import { TOKEN_KEY } from '../api/axiosInstance';
-
 /**
- * The frontend calls Keycloak on localhost:8082 (Docker mapped port).
- * After this change, Keycloak will sign tokens with issuer = motori-keycloak:8080
- * which matches what the Spring services expect.
+ * Auth service
+ *
+ * All routes go through the API Gateway → user-service:
+ *   POST /api/auth/login   → /auth/login   (JSON body: { email, password })
+ *   POST /api/auth/refresh → /auth/refresh (form: refresh_token)
+ *   POST /api/auth/logout  → /auth/logout  (form: refresh_token)
  */
-const KEYCLOAK_URL   = import.meta.env.VITE_KEYCLOAK_URL   ?? 'http://localhost:8082';
-const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM ?? 'motori_realm';
-const CLIENT_ID      = import.meta.env.VITE_KEYCLOAK_CLIENT_ID ?? 'motori-backoffice';
 
-const TOKEN_URL = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
+import axios, { isAxiosError } from 'axios';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  KeycloakErrorResponse,
+} from '../types/auth';
+// ─── Configuration ───────────────────────────────────────────────────────────
 
-export interface KeycloakTokenResponse {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  token_type: string;
+const GATEWAY_BASE = import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8080';
+
+const LOGIN_URL   = `${GATEWAY_BASE}/api/auth/login`;
+const REFRESH_URL = `${GATEWAY_BASE}/api/auth/refresh`;
+const LOGOUT_URL  = `${GATEWAY_BASE}/api/auth/logout`;
+
+// ─── Axios client ────────────────────────────────────────────────────────────
+
+const gatewayAuthClient = axios.create({
+  baseURL: GATEWAY_BASE,
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  timeout: 10_000,
+});
+
+// ─── AuthError ───────────────────────────────────────────────────────────────
+
+export interface AuthError {
+  name: 'AuthError';
+  message: string;
+  code: string;
+  status?: number;
 }
 
-/**
- * Authenticates via Keycloak Resource Owner Password flow.
- * Keycloak is accessible on localhost:8082 (mapped from motori-keycloak:8080).
- */
-export async function login(credentials: {
-  username: string;
-  password: string;
-}): Promise<KeycloakTokenResponse> {
-  const params = new URLSearchParams({
-    grant_type: 'password',
-    client_id:  CLIENT_ID,
-    username:   credentials.username,
-    password:   credentials.password,
-  });
+export function isAuthError(error: unknown): error is AuthError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as AuthError).name === 'AuthError'
+  );
+}
 
-  const { data } = await axios.post<KeycloakTokenResponse>(TOKEN_URL, params, {
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  });
+function createAuthError(message: string, code: string, status?: number): AuthError {
+  return { name: 'AuthError', message, code, status };
+}
 
-  localStorage.setItem(TOKEN_KEY, data.access_token);
-  if (data.refresh_token) {
-    localStorage.setItem('motori_refresh_token', data.refresh_token);
+// ─── Error normalization ─────────────────────────────────────────────────────
+
+function mapKeycloakError(error: unknown): AuthError {
+  if (!isAxiosError(error)) {
+    return createAuthError('An unexpected error occurred.', 'UNKNOWN');
   }
 
-  return data;
+  const status = error.response?.status;
+  const data   = error.response?.data as KeycloakErrorResponse | undefined;
+  const code   = data?.error ?? 'UNKNOWN';
+
+  const messages: Record<string, string> = {
+    invalid_grant:       'Invalid username or password.',
+    unauthorized_client: 'Authentication client is not configured properly.',
+    invalid_client:      'Invalid client configuration.',
+    account_disabled:    'This account has been disabled.',
+    invalid_request:     'The authentication request was malformed.',
+  };
+
+  const message =
+    messages[code] ??
+    data?.error_description ??
+    'Authentication failed. Please try again.';
+
+  return createAuthError(message, code, status);
 }
 
-export function logout(): void {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem('motori_refresh_token');
-}
+// ─── Service functions ────────────────────────────────────────────────────────
 
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-/**
- * Decodes a JWT payload without verifying the signature.
- */
-export function decodeToken<T>(token: string): T | null {
+// login
+export async function login(
+  credentials: LoginCredentials
+): Promise<AuthResponse> {
   try {
-    const payloadB64 = token.split('.')[1];
-    const padding    = 4 - (payloadB64.length % 4);
-    const padded     = payloadB64 + (padding !== 4 ? '='.repeat(padding) : '');
-    const decoded    = atob(padded.replace(/-/g, '+').replace(/_/g, '/'));
-    return JSON.parse(decoded) as T;
+    const { data } = await gatewayAuthClient.post<AuthResponse>(
+      LOGIN_URL,
+      { email: credentials.username, password: credentials.password },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    return data;
+  } catch (error) {
+    throw mapKeycloakError(error);
+  }
+}
+
+// refreshTokens
+export async function refreshTokens(
+  refreshToken: string,
+  email: string,          // ← add this
+): Promise<AuthResponse> {
+  try {
+    const { data } = await gatewayAuthClient.post<AuthResponse>(
+      REFRESH_URL,
+      { refreshToken, email },                               // ← add email
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+    return data;
+  } catch (error) {
+    throw mapKeycloakError(error);
+  }
+}
+
+export async function logout(refreshToken: string): Promise<void> {
+  try {
+    const params = new URLSearchParams({
+      refresh_token: refreshToken,
+    });
+    await gatewayAuthClient.post(LOGOUT_URL, params);
   } catch {
-    return null;
+    console.warn(
+      '[authService] Back-channel logout failed — local session cleared anyway.'
+    );
   }
 }

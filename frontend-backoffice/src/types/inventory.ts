@@ -1,46 +1,54 @@
-import type { Part, Equipement } from './product';
-
 /**
- * Inventory item — maps to InventoryResponse from product-service.
+ * Inventory types — mirrors product-service inventory schemas.
  *
- * Each inventory item represents ONE physical unit.
- * Exactly one of part or equipement will be populated — never both.
- *
- * paymentStatus tracks whether this unit has been paid for:
- * - null / undefined = available for purchase
- * - "PENDING"        = in an active order, payment pending
- * - "PAID"           = sold and paid
+ * An inventory item represents a single stock unit of a product.
+ * Items can be sold (soldAt populated) or available (soldAt null).
  */
-export interface Inventory {
-  id: string;
-  part?: Part;
-  equipement?: Equipement;
-  expiredAt?: string;       // ISO datetime — null means no expiry
-  soldAt?: string;          // ISO datetime — null means not yet sold
-  paymentStatus?: string;
-  createdAt?: string;
-  updatedAt?: string;
+
+export type PaymentStatus = 'PENDING' | 'PAID' | 'CANCELLED';
+export type InventoryItemType = 'PART' | 'EQUIPEMENT';
+
+export interface InventoryItemDto {
+  id: number;
+  productId: string;
+  productName?: string;
+  type: InventoryItemType;
+  paymentStatus: PaymentStatus;
+  /** ISO date — null means item is still available */
+  soldAt?: string | null;
+  /** ISO date — expiry date for perishable parts */
+  expiresAt?: string | null;
+  createdAt: string;
 }
 
-/**
- * Request body for creating an inventory entry.
- * Provide exactly one of partId or equipementId.
- */
-export interface InventoryRequest {
-  partId?: string;
+export interface CreateInventoryRequest {
+  partId?: string;       // for PART type
   equipementId?: string;
-  expiredAt?: string;       // ISO datetime
+  type: InventoryItemType;
+  quantity: number;
+  expiresAt?: string;
 }
 
-/**
- * Filters for the inventory list endpoint.
- * Index signature required for TanStack Query key compatibility.
- */
+export interface UpdatePaymentStatusRequest {
+  paymentStatus: PaymentStatus;
+}
+
 export interface InventoryFilters {
+  type?: InventoryItemType;
+  paymentStatus?: PaymentStatus;
+  /** true = only available (soldAt null), false = only sold */
+  available?: boolean;
+  productName?: string;
   page?: number;
   size?: number;
-  available?: boolean;
-  paymentStatus?: string;
-  type?: string;            // "PART" or "EQUIPMENT"
-  [key: string]: unknown;
+}
+
+/** Aggregated stock summary per product */
+export interface StockSummary {
+  productId: number;
+  productName: string;
+  type: InventoryItemType;
+  totalStock: number;
+  availableStock: number;
+  soldStock: number;
 }

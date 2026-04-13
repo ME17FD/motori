@@ -1,99 +1,116 @@
-import { useRef, useState } from 'react';
+/**
+ * ImageUploader — drag-and-drop image upload component.
+ *
+ * Uses react-dropzone for drag/drop handling.
+ * Shows a preview of the selected image.
+ * Calls onFileSelect when a file is chosen — actual upload
+ * is handled by the parent after form submission.
+ *
+ * Install: npm install react-dropzone
+ */
+
+import { useCallback, useState } from 'react';
+import { useDropzone, type FileRejection } from 'react-dropzone';
+import { Upload, X } from 'lucide-react';
 import styles from '../../styles/Components/forms/ImageUploader.module.css';
 
-interface ImageUploaderProps {
-  /** Existing image URLs from Minio (when editing a product). */
-  existingUrls?: string[];
-  onFilesSelected: (files: File[]) => void;
-  onDeleteExisting?: (url: string) => void;
+interface Props {
+  /** Current image URL (from existing product) */
+  currentImageUrl?: string;
+  /** Called when the user selects a new file */
+  onFileSelect: (file: File | null) => void;
 }
 
-/**
- * Drag-and-drop + click image uploader.
- * Previews selected files locally before upload.
- * Displays existing Minio URLs with a delete option.
- */
-export default function ImageUploader({
-  existingUrls = [],
-  onFilesSelected,
-  onDeleteExisting,
-}: ImageUploaderProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [dragging, setDragging] = useState(false);
+const ACCEPTED = { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] };
+const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
-  const handleFiles = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    const fileArray = Array.from(files);
-    const urls = fileArray.map((f) => URL.createObjectURL(f));
-    setPreviews((prev) => [...prev, ...urls]);
-    onFilesSelected(fileArray);
+export function ImageUploader({ currentImageUrl, onFileSelect }: Props) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
+
+  const onDrop = useCallback(
+    (accepted: File[], fileRejections: FileRejection[]) => {
+      setError(null);
+
+      if (fileRejections.length > 0) {
+        const rejection = fileRejections[0];
+        const errorCode = rejection.errors[0]?.code;
+        
+        if (errorCode === 'file-too-large') {
+          setError('Image must be under 5 MB.');
+        } else if (errorCode === 'file-invalid-type') {
+          setError('Please upload a valid image file (JPG, PNG, WebP).');
+        } else {
+          setError('Please upload a valid image file (JPG, PNG, WebP).');
+        }
+        return;
+      }
+
+      if (accepted.length === 0) return;
+
+      const file = accepted[0];
+      const objectUrl = URL.createObjectURL(file);
+      setPreview(objectUrl);
+      onFileSelect(file);
+    },
+    [onFileSelect]
+  );
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept:   ACCEPTED,
+    maxSize:  MAX_SIZE,
+    multiple: false,
+  });
+
+  const clearImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setPreview(null);
+    onFileSelect(null);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragging(false);
-    handleFiles(e.dataTransfer.files);
-  };
+  const displayUrl = preview ?? currentImageUrl;
 
   return (
     <div className={styles.wrapper}>
-      {/* Drop zone */}
       <div
-        className={[styles.dropZone, dragging ? styles.dragging : ''].join(' ')}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
-        aria-label="Upload images"
+        {...getRootProps()}
+        className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ''}`}
       >
-        <span className={styles.dropIcon}>📎</span>
-        <span className={styles.dropText}>
-          Drop images here or <u>click to browse</u>
-        </span>
-        <span className={styles.dropHint}>PNG, JPG, WEBP — max 5MB each</span>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className={styles.hiddenInput}
-          onChange={(e) => handleFiles(e.target.files)}
-        />
+        <input {...getInputProps()} />
+
+        {displayUrl ? (
+          /* Image preview */
+          <div className={styles.preview}>
+            <img
+              src={displayUrl}
+              alt="Product preview"
+              className={styles.previewImg}
+            />
+            <button
+              type="button"
+              className={styles.clearBtn}
+              onClick={clearImage}
+              title="Remove image"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          /* Upload prompt */
+          <div className={styles.prompt}>
+            <Upload size={24} className={styles.promptIcon} />
+            <p className={styles.promptText}>
+              {isDragActive
+                ? 'Drop the image here…'
+                : 'Drag & drop or click to upload'}
+            </p>
+            <p className={styles.promptHint}>JPG, PNG, WebP — max 5 MB</p>
+          </div>
+        )}
       </div>
 
-      {/* Preview grid */}
-      {(existingUrls.length > 0 || previews.length > 0) && (
-        <div className={styles.previewGrid}>
-          {/* Existing images from Minio */}
-          {existingUrls.map((url) => (
-            <div key={url} className={styles.previewItem}>
-              <img src={url} alt="Product" className={styles.previewImg} />
-              {onDeleteExisting && (
-                <button
-                  type="button"
-                  className={styles.deleteBtn}
-                  onClick={() => onDeleteExisting(url)}
-                  aria-label="Remove image"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-
-          {/* Local previews (not yet uploaded) */}
-          {previews.map((url) => (
-            <div key={url} className={`${styles.previewItem} ${styles.pending}`}>
-              <img src={url} alt="Preview" className={styles.previewImg} />
-              <span className={styles.pendingBadge}>Pending</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {error && <p className={styles.error}>{error}</p>}
     </div>
   );
 }

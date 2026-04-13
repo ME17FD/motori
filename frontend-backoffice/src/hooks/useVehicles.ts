@@ -1,89 +1,73 @@
+/**
+ * useVehicles — TanStack Query hooks for vehicle endpoints.
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
-  fetchVehicules,
-  fetchVehicule,
-  createVehicule,
-  updateVehicule,
-  deleteVehicule,
-  fetchVehiculeBrands,
-  createVehiculeBrand,
-  updateVehiculeBrand,
-  deleteVehiculeBrand,
-} from '../services/vehicleService';
-import { QUERY_KEYS } from '../constants/queryKeys';
-import type { VehiculeRequest, VehiculeBrandRequest } from '../types/vehicle';
-import type { PageableParams } from '../types/api';
+  fetchVehicles,
+  createVehicle,
+  updateVehicle,
+  deleteVehicle,
+} from '../services/catalogService';
+import type { CreateVehicleRequest, UpdateVehicleRequest } from '../types/vehicle';
 
-export function useVehicules(params: PageableParams = {}) {
+// ─── Query keys ────────────────────────────────────────────────────────────
+
+export const vehicleKeys = {
+  all:          ['vehicles'] as const,
+  // vehiculeBrandId is now a string (UUID)
+  list:         (vehiculeBrandId?: string) => ['vehicles', 'list', vehiculeBrandId] as const,
+};
+
+// ─── Hooks ─────────────────────────────────────────────────────────────────
+
+/** Fetch all vehicles, optionally filtered by brand */
+export function useVehicles(vehiculeBrandId?: string) {
   return useQuery({
-    queryKey: QUERY_KEYS.vehicules(params),
-    queryFn: () => fetchVehicules(params),
+    queryKey: vehicleKeys.list(vehiculeBrandId),
+    queryFn:  () => fetchVehicles(vehiculeBrandId),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useVehicule(id: string) {
-  return useQuery({
-    queryKey: QUERY_KEYS.vehicule(id),
-    queryFn: () => fetchVehicule(id),
-    enabled: !!id,
+/** Create a vehicle */
+export function useCreateVehicle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateVehicleRequest) => createVehicle(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.all });
+      toast.success('Vehicle created.');
+    },
+    onError: () => toast.error('Failed to create vehicle.'),
   });
 }
 
-export function useVehiculeBrands(params: PageableParams = {}) {
-  return useQuery({
-    queryKey: QUERY_KEYS.vehiculeBrands(params),
-    queryFn: () => fetchVehiculeBrands(params),
+/** Update a vehicle */
+export function useUpdateVehicle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    // id is now string (UUID)
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateVehicleRequest }) =>
+      updateVehicle(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.all });
+      toast.success('Vehicle updated.');
+    },
+    onError: () => toast.error('Failed to update vehicle.'),
   });
 }
 
-export function useVehiculeMutations() {
-  const qc = useQueryClient();
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['vehicules'] });
-  };
-
-  const create = useMutation({
-    mutationFn: (payload: VehiculeRequest) => createVehicule(payload),
-    onSuccess: invalidate,
+/** Delete a vehicle */
+export function useDeleteVehicle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteVehicle(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vehicleKeys.all });
+      toast.success('Vehicle deleted.');
+    },
+    onError: () => toast.error('Failed to delete vehicle.'),
   });
-
-  const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: VehiculeRequest }) =>
-      updateVehicule(id, payload),
-    onSuccess: invalidate,
-  });
-
-  const remove = useMutation({
-    mutationFn: (id: string) => deleteVehicule(id),
-    onSuccess: invalidate,
-  });
-
-  return { create, update, remove };
-}
-
-export function useVehiculeBrandMutations() {
-  const qc = useQueryClient();
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['vehicule-brands'] });
-  };
-
-  const create = useMutation({
-    mutationFn: (payload: VehiculeBrandRequest) => createVehiculeBrand(payload),
-    onSuccess: invalidate,
-  });
-
-  const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: VehiculeBrandRequest }) =>
-      updateVehiculeBrand(id, payload),
-    onSuccess: invalidate,
-  });
-
-  const remove = useMutation({
-    mutationFn: (id: string) => deleteVehiculeBrand(id),
-    onSuccess: invalidate,
-  });
-
-  return { create, update, remove };
 }

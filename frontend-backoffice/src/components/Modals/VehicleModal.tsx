@@ -1,82 +1,172 @@
-import { useForm } from 'react-hook-form';
-import type { Vehicule, VehiculeRequest } from '../../types/vehicle';
-import styles from './FormModal.module.css';
+/**
+ * VehicleModal — create / edit vehicle with brand selector.
+ */
 
-interface VehicleModalProps {
-  open: boolean;
-  initial?: Vehicule | null;
-  loading?: boolean;
-  onSubmit: (data: VehiculeRequest) => void;
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { X } from 'lucide-react';
+import { useCreateVehicle, useUpdateVehicle } from '../../hooks/useVehicles';
+import { useBrands } from '../../hooks/useBrands';
+import type { VehicleDto } from '../../types/vehicle';
+import styles from '../../styles/Components/modals/FormModal.module.css';
+
+// ─── Validation ────────────────────────────────────────────────────────────
+
+// ✅ brandId is now a string (UUID), no parseInt later
+const vehicleSchema = z.object({
+  name:           z.string().min(1, 'Name is required').max(100),
+  model:          z.string().min(1, 'Model is required').max(100),
+  vehiculeBrandId: z.string().min(1, 'Brand is required'),
+});
+
+type VehicleFormData = z.infer<typeof vehicleSchema>;
+
+// ─── Component ─────────────────────────────────────────────────────────────
+
+interface Props {
+  editVehicle?: VehicleDto | null;
   onClose: () => void;
 }
 
-export default function VehicleModal(props: VehicleModalProps) {
-  if (!props.open) return null;
-  return <VehicleModalInner {...props} />;
-}
+export function VehicleModal({ editVehicle, onClose }: Props) {
+  const isEdit = !!editVehicle;
 
-function VehicleModalInner({
-  initial,
-  loading = false,
-  onSubmit,
-  onClose,
-}: Omit<VehicleModalProps, 'open'>) {
-  const { register, handleSubmit, formState: { errors } } =
-    useForm<VehiculeRequest>({
-      defaultValues: initial
-        ? {
-            name:            initial.name,
-            model:           initial.model,
-            vehiculeBrandId: initial.brand.id,
-          }
-        : { name: '', model: '', vehiculeBrandId: '' },
+  const { data: vehicleBrands = [] } = useBrands('VehiculeBrand');
+  const createVehicle = useCreateVehicle();
+  const updateVehicle = useUpdateVehicle();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<VehicleFormData>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: {
+      name:            editVehicle?.name    ?? '',
+      model:           editVehicle?.model   ?? '',
+      vehiculeBrandId: editVehicle?.vehiculeBrandId ?? '',
+    },
+  });
+
+  useEffect(() => {
+    reset({
+      name:            editVehicle?.name    ?? '',
+      model:           editVehicle?.model   ?? '',
+      vehiculeBrandId: editVehicle?.vehiculeBrandId ?? '',
     });
+  }, [editVehicle, reset]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
+  const onSubmit = async (data: VehicleFormData) => {
+    // ✅ Send the correct field name 'vehiculeBrandId' as a string (UUID)
+    const payload = {
+      name:            data.name,
+      model:           data.model,
+      vehiculeBrandId: data.vehiculeBrandId,   // already a string, no parseInt
+    };
+
+    if (isEdit && editVehicle) {
+      await updateVehicle.mutateAsync({ id: editVehicle.id, payload });
+    } else {
+      await createVehicle.mutateAsync(payload);
+    }
+    onClose();
+  };
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true">
+    <div
+      className={styles.overlay}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+    >
       <div className={styles.modal}>
         <div className={styles.header}>
-          <h3 className={styles.title}>{initial ? 'Edit vehicle' : 'New vehicle'}</h3>
-          <button className={styles.closeBtn} onClick={onClose} type="button" aria-label="Close">✕</button>
+          <h2 className={styles.title}>
+            {isEdit ? 'Edit Vehicle' : 'New Vehicle'}
+          </h2>
+          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
+            <X size={18} />
+          </button>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className={styles.form} noValidate>
+          {/* Name */}
           <div className={styles.field}>
-            <label className={styles.label}>Name *</label>
+            <label className={styles.label}>Vehicle name *</label>
             <input
-              className={[styles.input, errors.name ? styles.inputError : ''].join(' ')}
+              type="text"
+              className={`${styles.input} ${errors.name ? styles.inputError : ''}`}
               placeholder="e.g. CBR 600"
-              {...register('name', { required: 'Name is required' })}
+              autoFocus
+              {...register('name')}
             />
-            {errors.name && <span className={styles.errorMsg}>{errors.name.message}</span>}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Model *</label>
-            <input
-              className={[styles.input, errors.model ? styles.inputError : ''].join(' ')}
-              placeholder="e.g. Sport"
-              {...register('model', { required: 'Model is required' })}
-            />
-            {errors.model && <span className={styles.errorMsg}>{errors.model.message}</span>}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Brand ID *</label>
-            <input
-              className={[styles.input, errors.vehiculeBrandId ? styles.inputError : ''].join(' ')}
-              placeholder="Vehicle brand UUID"
-              {...register('vehiculeBrandId', { required: 'Brand is required' })}
-            />
-            {errors.vehiculeBrandId && (
-              <span className={styles.errorMsg}>{errors.vehiculeBrandId.message}</span>
+            {errors.name && (
+              <span className={styles.fieldError}>{errors.name.message}</span>
             )}
           </div>
 
-          <div className={styles.footer}>
-            <button className={styles.cancelBtn} onClick={onClose} type="button">Cancel</button>
-            <button className={styles.submitBtn} type="submit" disabled={loading}>
-              {loading ? 'Saving…' : 'Save'}
+          {/* Model */}
+          <div className={styles.field}>
+            <label className={styles.label}>Model *</label>
+            <input
+              type="text"
+              className={`${styles.input} ${errors.model ? styles.inputError : ''}`}
+              placeholder="e.g. CBR600RR"
+              {...register('model')}
+            />
+            {errors.model && (
+              <span className={styles.fieldError}>{errors.model.message}</span>
+            )}
+          </div>
+
+          {/* Brand – value is the brand UUID string */}
+          <div className={styles.field}>
+            <label className={styles.label}>Brand *</label>
+            <select
+              className={`${styles.select} ${errors.vehiculeBrandId ? styles.inputError : ''}`}
+              {...register('vehiculeBrandId')}
+            >
+              <option value="">Select a brand…</option>
+              {vehicleBrands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+            {errors.vehiculeBrandId && (
+              <span className={styles.fieldError}>{errors.vehiculeBrandId.message}</span>
+            )}
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.cancelBtn}
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={isSubmitting}
+            >
+              {isSubmitting
+                ? isEdit ? 'Saving…' : 'Creating…'
+                : isEdit ? 'Save Changes' : 'Create Vehicle'}
             </button>
           </div>
         </form>

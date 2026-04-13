@@ -1,109 +1,146 @@
-@import '../../variables.css';
-
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-6);
 }
 
-.toolbar {
+/* ── Header ───────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-black);
+  margin: 0 0 var(--space-1);
+}
+
+.subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray);
+  margin: 0;
+}
+
+.controls {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
-.periodTabs {
+/* ── Period selector ──────────────────────────────────────────── */
+
+.periodSelector {
   display: flex;
-  gap: 2px;
-  background: var(--bo-card-bg);
+  background-color: var(--color-bg-light);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
-  padding: 4px;
-  box-shadow: var(--bo-card-shadow);
+  overflow: hidden;
 }
 
 .periodBtn {
   padding: var(--space-2) var(--space-4);
-  border: none;
   background: none;
-  border-radius: 6px;
+  border: none;
   font-size: var(--font-size-sm);
   font-family: var(--font-primary);
   color: var(--color-gray);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  white-space: nowrap;
 }
 
-.periodBtn:hover { background: var(--color-bg-light); color: var(--color-black); }
+.periodBtn:hover {
+  background-color: var(--color-border);
+  color: var(--color-black);
+}
 
 .periodBtnActive {
-  background: var(--color-red);
-  color: #fff;
-  font-weight: var(--font-weight-medium);
+  background-color: var(--color-black);
+  color: #ffffff;
 }
 
-.periodBtnActive:hover { background: #a30f1a; color: #fff; }
+/* ── Refresh button ───────────────────────────────────────────── */
 
-/* ── KPI cards ── */
+.refreshBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-primary);
+  color: var(--color-gray);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.refreshBtn:hover {
+  border-color: var(--color-black);
+  color: var(--color-black);
+}
+
+/* ── KPI grid ─────────────────────────────────────────────────── */
+
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .kpiGrid { grid-template-columns: repeat(2, 1fr); }
 }
 
-.kpiCard {
-  background: var(--bo-card-bg);
+@media (max-width: 600px) {
+  .kpiGrid { grid-template-columns: 1fr; }
+}
+
+/* ── Cards ────────────────────────────────────────────────────── */
+
+.card {
+  background-color: var(--bo-card-bg);
   border-radius: var(--bo-card-radius);
   box-shadow: var(--bo-card-shadow);
   padding: var(--space-5);
 }
 
-.kpiLabel {
-  font-size: var(--font-size-sm);
-  color: var(--color-gray);
-  margin-bottom: var(--space-2);
-}
-
-.kpiValue {
-  font-size: 28px;
-  font-weight: var(--font-weight-bold);
-  color: var(--color-black);
-  line-height: 1;
-}
-
-/* ── Charts ── */
-.chartsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-}
-
-@media (max-width: 900px) {
-  .chartsGrid { grid-template-columns: 1fr; }
-}
-
-.chartCard {
-  background: var(--bo-card-bg);
-  border-radius: var(--bo-card-radius);
-  box-shadow: var(--bo-card-shadow);
-  padding: var(--space-5);
-}
-
-.chartTitle {
+.cardTitle {
   font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   color: var(--color-black);
   margin: 0 0 var(--space-4);
 }
 
-.chartEmpty {
-  height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-gray);
-  font-size: var(--font-size-sm);
+/* ── Charts row ───────────────────────────────────────────────── */
+
+.chartsRow {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: var(--space-4);
+}
+
+.chartCard {
+  background-color: var(--bo-card-bg);
+  border-radius: var(--bo-card-radius);
+  box-shadow: var(--bo-card-shadow);
+  padding: var(--space-5);
+}
+
+.chartCardSmall {
+  /* Pie chart column */
+}
+
+@media (max-width: 1024px) {
+  .chartsRow {
+    grid-template-columns: 1fr;
+  }
 }

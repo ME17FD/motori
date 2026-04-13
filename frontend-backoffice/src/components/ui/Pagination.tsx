@@ -1,74 +1,83 @@
+/**
+ * Pagination — page navigation component.
+ *
+ * Shows: Prev | 1 2 … 5 6 7 … 12 13 | Next
+ * Always shows first, last, and a window of 2 around current page.
+ */
+
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import styles from '../../styles/ui/Pagination.module.css';
 
-interface PaginationProps {
-  page: number;           // 0-based (Spring Boot convention)
+interface Props {
+  currentPage: number;    // 0-indexed
   totalPages: number;
-  totalElements: number;
-  pageSize: number;
   onPageChange: (page: number) => void;
 }
 
-/**
- * Pagination controls compatible with Spring Boot's 0-based page index.
- */
-export default function Pagination({
-  page,
-  totalPages,
-  totalElements,
-  pageSize,
-  onPageChange,
-}: PaginationProps) {
+export function Pagination({ currentPage, totalPages, onPageChange }: Props) {
   if (totalPages <= 1) return null;
 
-  const from = page * pageSize + 1;
-  const to = Math.min((page + 1) * pageSize, totalElements);
+  /** Build the page number list with ellipsis markers (-1) */
+  function buildPages(): (number | -1)[] {
+    const pages: (number | -1)[] = [];
+    const delta = 2;
+
+    for (let i = 0; i < totalPages; i++) {
+      if (
+        i === 0 ||
+        i === totalPages - 1 ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        pages.push(i);
+      } else if (
+        pages[pages.length - 1] !== -1
+      ) {
+        pages.push(-1); // ellipsis marker
+      }
+    }
+    return pages;
+  }
+
+  const pages = buildPages();
 
   return (
-    <div className={styles.wrapper}>
-      <span className={styles.info}>
-        {from}–{to} of {totalElements}
-      </span>
-      <div className={styles.controls}>
-        <button
-          className={styles.btn}
-          onClick={() => onPageChange(0)}
-          disabled={page === 0}
-          type="button"
-          aria-label="First page"
-        >
-          «
-        </button>
-        <button
-          className={styles.btn}
-          onClick={() => onPageChange(page - 1)}
-          disabled={page === 0}
-          type="button"
-          aria-label="Previous page"
-        >
-          ‹
-        </button>
-        <span className={styles.current}>
-          {page + 1} / {totalPages}
-        </span>
-        <button
-          className={styles.btn}
-          onClick={() => onPageChange(page + 1)}
-          disabled={page >= totalPages - 1}
-          type="button"
-          aria-label="Next page"
-        >
-          ›
-        </button>
-        <button
-          className={styles.btn}
-          onClick={() => onPageChange(totalPages - 1)}
-          disabled={page >= totalPages - 1}
-          type="button"
-          aria-label="Last page"
-        >
-          »
-        </button>
-      </div>
-    </div>
+    <nav className={styles.pagination} aria-label="Pagination">
+      {/* Previous */}
+      <button
+        className={styles.navBtn}
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 0}
+        aria-label="Previous page"
+      >
+        <ChevronLeft size={16} />
+      </button>
+
+      {/* Page numbers */}
+      {pages.map((p, i) =>
+        p === -1 ? (
+          <span key={`ellipsis-${i}`} className={styles.ellipsis}>…</span>
+        ) : (
+          <button
+            key={p}
+            className={`${styles.pageBtn} ${p === currentPage ? styles.pageBtnActive : ''}`}
+            onClick={() => onPageChange(p)}
+            aria-label={`Page ${p + 1}`}
+            aria-current={p === currentPage ? 'page' : undefined}
+          >
+            {p + 1}
+          </button>
+        )
+      )}
+
+      {/* Next */}
+      <button
+        className={styles.navBtn}
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages - 1}
+        aria-label="Next page"
+      >
+        <ChevronRight size={16} />
+      </button>
+    </nav>
   );
 }

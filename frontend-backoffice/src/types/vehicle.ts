@@ -1,39 +1,26 @@
 /**
- * Vehicle brand — maps to VehiculeBrandResponse from product-service.
+ * Vehicle types — mirrors product-service vehicle schemas.
  */
-export interface VehiculeBrand {
+import type { BrandDto } from './brand';
+export interface VehicleDto {
   id: string;
   name: string;
-  createdAt?: string;
-  updatedAt?: string;
+  model: string;
+  brand: BrandDto;  // Nested brand object for easy access to brand name/type
+  /** Brand ID — references a VehiculeBrand */
+  vehiculeBrandId: string;
+  /** Brand name (denormalized for display) */
+  brandName?: string;
 }
 
-/**
- * Vehicle — maps to VehiculeResponse from product-service.
- * Each vehicle belongs to a VehiculeBrand.
- */
-export interface Vehicule {
-  id: string;
-  model: string;
+export interface CreateVehicleRequest {
   name: string;
-  brand: VehiculeBrand;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-/**
- * Request body for creating or updating a vehicle.
- * vehiculeBrandId must be a valid VehiculeBrand UUID.
- */
-export interface VehiculeRequest {
   model: string;
-  name: string;
   vehiculeBrandId: string;
 }
 
-/**
- * Request body for creating or updating a vehicle brand.
- */
-export interface VehiculeBrandRequest {
+export interface UpdateVehicleRequest {
   name: string;
+  model: string;
+  vehiculeBrandId: string;
 }

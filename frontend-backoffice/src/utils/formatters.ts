@@ -1,57 +1,37 @@
 /**
- * Utility Formatters
- * Provides localized formatting functions for currency, dates, and relative times.
- * Defaults to Moroccan locale (fr-MA) and Moroccan Dirham (MAD).
+ * Shared formatters for dates, currency, and order data.
  */
 
-/**
- * Formats a number as a currency string (MAD by default).
- */
-export function formatCurrency(
-  value: number,
-  currency = 'MAD',
-  locale = 'fr-MA',
-): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(value);
-}
-
-/**
- * Formats an ISO datetime string to a readable locale date.
- */
-export function formatDate(iso: string, locale = 'fr-MA'): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
+/** Format ISO datetime to readable short format: "Mar 15, 2024" */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
     month: 'short',
+    day: 'numeric',
     year: 'numeric',
-  }).format(new Date(iso));
+  });
 }
 
-/**
- * Formats an ISO datetime string to date + time.
- */
-export function formatDateTime(iso: string, locale = 'fr-MA'): string {
-  return new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
+/** Format ISO datetime including time: "Mar 15, 2024, 14:32" */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('en-US', {
     month: 'short',
+    day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(new Date(iso));
+  });
 }
 
-/**
- * Returns a short relative label like "2h ago" or "3d ago".
- */
-export function formatRelative(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+/** Format number as MAD currency */
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('fr-MA', {
+    style: 'currency',
+    currency: 'MAD',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+/** Truncate a UUID to a readable short form: "A1B2C3D4" */
+export function shortId(uuid: string): string {
+  return uuid.slice(0, 8).toUpperCase();
 }

@@ -1,40 +1,31 @@
 /**
- * Category for parts — maps to PartCategoryResponse.
- * Supports parent/child hierarchy via parentCategoryId.
+ * Category types — mirrors product-service category schemas.
+ *
+ * Two category types:
+ *   PartCategory       — categories for spare parts
+ *   EquipementCategory — categories for gear/equipment
  */
-export interface PartCategory {
+
+export type CategoryType = 'PartCategory' | 'EquipementCategory';
+
+export interface CategoryDto {
   id: string;
   name: string;
-  parentCategoryId?: string;
-  parentCategoryName?: string;
+  type?: CategoryType;
+  parentCategoryId?: string | null;
+  parentCategoryName?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  children?: CategoryDto[];
 }
 
-/**
- * Category for equipment — maps to EquipementCategoryResponse.
- */
-export interface EquipementCategory {
-  id: string;
+export interface CreateCategoryRequest {
   name: string;
-  parentCategoryId?: string;
-  parentCategoryName?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  type: CategoryType;
+  parentCategoryId?: string | null;
 }
 
-/**
- * Request body for creating or updating a part category.
- */
-export interface PartCategoryRequest {
+export interface UpdateCategoryRequest {
   name: string;
-  parentCategoryId?: string;
-}
-
-/**
- * Request body for creating or updating an equipment category.
- */
-export interface EquipementCategoryRequest {
-  name: string;
-  parentCategoryId?: string;
+  parentCategoryId?: string | null;
 }

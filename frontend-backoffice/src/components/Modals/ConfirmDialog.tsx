@@ -1,53 +1,88 @@
+/**
+ * ConfirmDialog — reusable confirmation modal.
+ *
+ * Used before destructive actions (delete, cancel order, etc.).
+ * Renders a centered dialog with a title, message, and confirm/cancel buttons.
+ */
+
+import { useEffect, useRef } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import styles from '../../styles/Components/modals/ConfirmDialog.module.css';
 
-interface ConfirmDialogProps {
-  open: boolean;
+interface Props {
   title: string;
   message: string;
   confirmLabel?: string;
-  danger?: boolean;
-  loading?: boolean;
+  cancelLabel?: string;
+  isDangerous?: boolean;
+  isLoading?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-/**
- * Reusable confirmation dialog for destructive actions (delete, cancel order…).
- * Uses a faux-viewport wrapper to avoid position:fixed inside the iframe.
- */
-export default function ConfirmDialog({
-  open,
+export function ConfirmDialog({
   title,
   message,
   confirmLabel = 'Confirm',
-  danger = false,
-  loading = false,
+  cancelLabel  = 'Cancel',
+  isDangerous  = true,
+  isLoading    = false,
   onConfirm,
   onCancel,
-}: ConfirmDialogProps) {
-  if (!open) return null;
+}: Props) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onCancel]);
+
+  // Lock body scroll
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
 
   return (
-    <div className={styles.overlay} role="dialog" aria-modal="true">
+    <div
+      className={styles.overlay}
+      ref={overlayRef}
+      onClick={(e) => { if (e.target === overlayRef.current) onCancel(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-title"
+    >
       <div className={styles.dialog}>
-        <h3 className={styles.title}>{title}</h3>
+        {/* Icon */}
+        {isDangerous && (
+          <div className={styles.iconWrapper}>
+            <AlertTriangle size={24} className={styles.icon} />
+          </div>
+        )}
+
+        {/* Text */}
+        <h2 id="confirm-title" className={styles.title}>{title}</h2>
         <p className={styles.message}>{message}</p>
+
+        {/* Actions */}
         <div className={styles.actions}>
           <button
             className={styles.cancelBtn}
             onClick={onCancel}
-            type="button"
-            disabled={loading}
+            disabled={isLoading}
           >
-            Cancel
+            {cancelLabel}
           </button>
           <button
-            className={[styles.confirmBtn, danger ? styles.danger : ''].join(' ')}
+            className={`${styles.confirmBtn} ${isDangerous ? styles.confirmBtnDanger : ''}`}
             onClick={onConfirm}
-            type="button"
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? 'Loading…' : confirmLabel}
+            {isLoading ? 'Please wait…' : confirmLabel}
           </button>
         </div>
       </div>

@@ -1,34 +1,29 @@
 /**
- * Brand for parts (pièces moto) — maps to PartBrandResponse.
- * ID is a UUID string from product-service.
+ * Brand types — mirrors product-service brand schemas.
+ *
+ * Three brand types exist in the system:
+ *   VehiculeBrand  — motorcycle manufacturers (Honda, Yamaha…)
+ *   PartBrand      — spare parts brands (NGK, Bosch…)
+ *   EquipementBrand — equipment/gear brands (Alpinestars, Shoei…)
  */
-export interface PartBrand {
+
+export type BrandType = 'VehiculeBrand' | 'PartBrand' | 'EquipementBrand';
+
+export interface BrandDto {
   id: string;
   name: string;
-  createdAt?: string;
-  updatedAt?: string;
+  type: BrandType;
+  /** Soft-delete flag — true means brand is active */
+  active?: boolean;
+  /** True when data is served from Redis cache */
+  cached?: boolean;
 }
 
-/**
- * Brand for equipment (équipements moto) — maps to EquipementBrandResponse.
- */
-export interface EquipementBrand {
-  id: string;
+export interface CreateBrandRequest {
   name: string;
-  createdAt?: string;
-  updatedAt?: string;
+  type: BrandType;
 }
 
-/**
- * Request body for creating or updating a part brand.
- */
-export interface PartBrandRequest {
-  name: string;
-}
-
-/**
- * Request body for creating or updating an equipment brand.
- */
-export interface EquipementBrandRequest {
+export interface UpdateBrandRequest {
   name: string;
 }

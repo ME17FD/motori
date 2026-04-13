@@ -1,71 +1,66 @@
 /**
- * Promotion Service
- * API client for promotion/discount campaign management.
- * Endpoints hit the /api/promotions gateway endpoint.
+ * Promotion service — CRUD for promotions.
+ * Base path: /api/promotions (through API Gateway)
  */
 
-import axiosInstance from '../api/axiosInstance';
+import apiClient from '../api/axiosInstance';
 import type {
-  Promotion,
-  PromotionFilters,
+  PromotionDto,
   CreatePromotionRequest,
   UpdatePromotionRequest,
 } from '../types/promotion';
-import type { PageResponse } from '../types/api';
+import type { PageResult } from '../types/product';
 
-const BASE = '/api/promotions';
-
-/**
- * GET /api/promotions — paginated list.
- */
+/** Fetch paginated promotions */
 export async function fetchPromotions(
-  params: PromotionFilters = {},
-): Promise<PageResponse<Promotion>> {
-  const { data } = await axiosInstance.get<PageResponse<Promotion>>(BASE, { params });
+  page = 0,
+  size = 20
+): Promise<PageResult<PromotionDto>> {
+  const { data } = await apiClient.get<PageResult<PromotionDto>>(
+    '/api/promotions',
+    { params: { page, size } }
+  );
   return data;
 }
 
-/**
- * GET /api/promotions/:id
- */
-export async function fetchPromotion(id: number): Promise<Promotion> {
-  const { data } = await axiosInstance.get<Promotion>(`${BASE}/${id}`);
+/** Fetch a single promotion by ID */
+export async function fetchPromotionById(id: number): Promise<PromotionDto> {
+  const { data } = await apiClient.get<PromotionDto>(`/api/promotions/${id}`);
   return data;
 }
 
-/**
- * POST /api/promotions
- */
+/** Create a promotion */
 export async function createPromotion(
-  payload: CreatePromotionRequest,
-): Promise<Promotion> {
-  const { data } = await axiosInstance.post<Promotion>(BASE, payload);
+  payload: CreatePromotionRequest
+): Promise<PromotionDto> {
+  const { data } = await apiClient.post<PromotionDto>(
+    '/api/promotions',
+    payload
+  );
   return data;
 }
 
-/**
- * PUT /api/promotions/:id
- */
+/** Update a promotion */
 export async function updatePromotion(
   id: number,
-  payload: UpdatePromotionRequest,
-): Promise<Promotion> {
-  const { data } = await axiosInstance.put<Promotion>(`${BASE}/${id}`, payload);
+  payload: UpdatePromotionRequest
+): Promise<PromotionDto> {
+  const { data } = await apiClient.put<PromotionDto>(
+    `/api/promotions/${id}`,
+    payload
+  );
   return data;
 }
 
-/**
- * DELETE /api/promotions/:id
- */
+/** Delete a promotion */
 export async function deletePromotion(id: number): Promise<void> {
-  await axiosInstance.delete(`${BASE}/${id}`);
+  await apiClient.delete(`/api/promotions/${id}`);
 }
 
-/**
- * PATCH /api/promotions/:id/toggle
- * Toggles the active state of a promotion.
- */
-export async function togglePromotion(id: number): Promise<Promotion> {
-  const { data } = await axiosInstance.patch<Promotion>(`${BASE}/${id}/toggle`);
-  return data;
+/** Generate a random promo code */
+export function generatePromoCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  return Array.from({ length: 8 })
+    .map(() => chars[Math.floor(Math.random() * chars.length)])
+    .join('');
 }
