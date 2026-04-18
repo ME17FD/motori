@@ -5,7 +5,7 @@ import type { CompatibilityResponse, CompatibilityQueryParams } from "../types/c
 import type { PartResponse } from "../types/part.types";
 import type { UUID } from "../types/common.types";
 
-const BASE = "/api/compatibilities" as const;
+const BASE = "/compatibilities" as const;
 
 const COMPATIBILITY_DEFAULTS: Required<Pick<CompatibilityQueryParams, "page" | "size">> = {
   page: 0,

@@ -9,7 +9,7 @@ import type {
 } from "../types/equipement.types";
 import type { UUID } from "../types/common.types";
 
-const BASE = "/api/equipements" as const;
+const BASE = "/equipements" as const;
 
 // ── GET /api/equipements ──────────────────────────────────────────────────────
 

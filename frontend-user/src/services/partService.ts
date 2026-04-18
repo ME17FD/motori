@@ -15,7 +15,7 @@ const PART_DEFAULTS: Required<Pick<PartQueryParams, "page" | "size">> = {
   size: 20,
 };
 
-const BASE = "/api/parts" as const;
+const BASE = "/parts" as const;
 
 /**
  * Maps catalog / UI filter objects to `PartQueryParams` expected by GET `/api/parts`.

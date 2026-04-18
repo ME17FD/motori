@@ -10,7 +10,7 @@ import type { UUID } from "../types/common.types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const BASE = "/api/inventories" as const;
+const BASE = "/inventories" as const;
 
 const INVENTORY_DEFAULTS: Required<Pick<InventoryQueryParams, "page" | "size">> = {
   page: 0,

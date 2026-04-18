@@ -5,8 +5,8 @@ import type { PagedModel, UUID } from "../types/common.types";
 import type { VehiculeBrandResponse, VehiculeResponse } from "../types/vehicule.types";
 import type { SelectedVehicle } from "../types/vehicle.types";
 
-const BRANDS_BASE = "/api/vehicule-brands" as const;
-const VEHICULES_BASE = "/api/vehicules" as const;
+const BRANDS_BASE = "/vehicule-brands" as const;
+const VEHICULES_BASE = "/vehicules" as const;
 
 const PAGE_SIZE = 100;
 

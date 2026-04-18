@@ -3,7 +3,7 @@ import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { buildCleanParams } from "../utils/buildParams";
 import type { UUID, ISODateString, PagedModel } from "../types/common.types";
 
-const BASE = "/api/part-categories" as const;
+const BASE = "/part-categories" as const;
 
 /** Subset of product-service `PartCategoryResponse` for list/detail calls. */
 export interface PartCategoryResponse {

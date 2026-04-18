@@ -2,7 +2,7 @@ import apiClient from "../api/apiClient";
 import type { OrderResponse, OrderRequest } from "../types/order.types";
 import type { UUID } from "../types/common.types";
 
-const BASE = "/api/orders" as const;
+const BASE = "/orders" as const;
 
 // X-User-ID header factory — avoids repeating the header object shape
 // and makes it easy to add more per-request headers later
