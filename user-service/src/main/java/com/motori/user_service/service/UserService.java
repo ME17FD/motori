@@ -36,10 +36,6 @@ public class UserService {
     }
 
     public List<UserIdNameDto> getUsersByRoleOrAll(String role) {
-<<<<<<< HEAD
-        return userRepository.findAll().stream()
-                .map(u -> new UserIdNameDto(u.getId(), u.getFirstname(), u.getLastname()))
-=======
         if (role != null && !role.isBlank() && !"ALL".equalsIgnoreCase(role)) {
             try {
                 User.Role r = User.Role.valueOf(role.toUpperCase());
@@ -52,7 +48,6 @@ public class UserService {
         }
         return userRepository.findAll().stream()
                 .map(u -> new UserIdNameDto(u.getId(), u.getFirstname(), u.getLastname(), u.getRole() != null ? u.getRole().name() : null))
->>>>>>> backoffice-frontend
                 .toList();
     }
 
@@ -66,11 +61,6 @@ public class UserService {
 
     public UserDto createUser(CreateUserRequest request) {
         if (userRepository.existsByEmail(request.email()))
-<<<<<<< HEAD
-            throw new UserNotFoundException("User with email " + request.email() + " already exists");
-        RegisterRequest registerRequest = new RegisterRequest(request.firstname(), request.lastname(), request.email(), request.phone(), request.adress(), request.password(), null);
-        keycloakService.register(registerRequest, "USER");
-=======
             throw new UserAlreadyExistsException("User with email " + request.email() + " already exists");
         String roleName = "ADMIN".equalsIgnoreCase(request.role()) ? "ADMIN" : "USER";
         RegisterRequest registerRequest = new RegisterRequest(
@@ -83,7 +73,6 @@ public class UserService {
                 null
         );
         keycloakService.register(registerRequest, roleName);
->>>>>>> backoffice-frontend
         User savedUser = userRepository.findByEmail(request.email()).orElseThrow(() -> new UserNotFoundException("User not found after registration"));
         return UserDto.fromEntity(savedUser);
     }
@@ -95,9 +84,6 @@ public class UserService {
         }).orElse(false);
     }
 
-<<<<<<< HEAD
-
-=======
     /**
      * Vérifie si l'utilisateur connecté (keycloakId) est le propriétaire du compte userId ou un ADMIN.
      */
@@ -118,5 +104,4 @@ public class UserService {
             return Optional.of(auth.getName());
         return Optional.empty();
     }
->>>>>>> backoffice-frontend
 }

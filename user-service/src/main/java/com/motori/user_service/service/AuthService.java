@@ -21,11 +21,7 @@ public class AuthService {
 
     /** Inscription publique : rôle USER par défaut */
     public AuthResponse register(RegisterRequest request) {
-<<<<<<< HEAD
-        AuthResponse response = keycloakService.register(request, "USER");
-=======
         AuthResponse response = keycloakService.register(request, User.Role.USER.name());
->>>>>>> backoffice-frontend
         User savedUser = userRepository.findByEmail(request.email()).orElseThrow(() -> new UserNotFoundException("User not found after registration"));
         logService.log(CentralizedLogService.LogLevel.INFO, "User registered: " + savedUser.getEmail(), CentralizedLogService.createLoggerName("AuthService", "register"), savedUser.getEmail(), null, "/auth/register", "register", null, null);
         return response;
@@ -42,36 +38,11 @@ public class AuthService {
             logService.authWarn("User creation failed: User already exists - " + request.email(), "AuthService", request.email());
             throw new UserAlreadyExistsException("User with email " + request.email() + " already exists");
         }
-<<<<<<< HEAD
-        RegisterRequest registerRequest = new RegisterRequest(
-                request.firstname(),
-                request.lastname(),
-                request.email(),
-                request.phone(),
-                request.adress(),
-                request.password(),
-                null
-        );
-        keycloakService.register(registerRequest, "USER");
-        return userRepository.findByEmail(request.email()).orElseThrow(() -> new UserNotFoundException("User not found after creation"));
-    }
-
-    public void verifyEmailAndActivate(String token, String email) {
-        VerificationToken verificationToken = verificationTokenService.getTokenByToken(token).orElseThrow(() -> new IllegalArgumentException("Invalid verification token"));
-        User user = verificationToken.getUser();
-        if (!user.getEmail().equals(email)) throw new IllegalArgumentException("Email does not match the verification token");
-        if (verificationToken.getUsed()) throw new IllegalStateException("ALREADY_USED");
-        if (verificationToken.isExpired()) throw new IllegalArgumentException("Verification token has expired");
-        verificationTokenService.markTokenAsUsed(token);
-        keycloakService.verifyUserEmail(email);
-        logService.log(CentralizedLogService.LogLevel.INFO, "Email verified: " + user.getEmail(), CentralizedLogService.createLoggerName("AuthService", "verifyEmailAndActivate"), user.getEmail(), null, "/auth/verify-email", "verifyEmailAndActivate", null, null);
-=======
         String roleName = "ADMIN".equalsIgnoreCase(request.role()) ? "ADMIN" : "USER";
         keycloakService.register(
                 new RegisterRequest(request.firstname(), request.lastname(), request.email(), request.phone(), request.adress(), request.password(), null),
                 roleName
         );
         return userRepository.findByEmail(request.email()).orElseThrow(() -> new UserNotFoundException("User not found after creation"));
->>>>>>> backoffice-frontend
     }
 }

@@ -11,11 +11,11 @@ import { calcSubtotal, calcTax, calcShipping, calcTotal } from "../../services/c
 import { CART_CONSTANTS } from "../../constants/cart.constants";
 import type { CartItemDisplay } from "../../types/cart.types";
 import type { OrderResponse } from "../../types/order.types";
-import Navbar from "../../components/Navbar/Navbar";
-import Footer from "../../components/Footer/Footer";
-import Button from "../../components/Button/Button";
-import Loading from "../../components/common/Loading";
-import Error from "../../components/common/Error";
+import Navbar from "../../components/layout/Navbar/Navbar";
+import Footer from "../../components/layout/Footer/Footer";
+import Button from "../../components/ui/Button/Button";
+import Loading from "../../components/ui/Loading/Loading";
+import Error from "../../components/ui/Error/Error";
 import { MOCK_CATEGORIES } from "../../mocks/categories.mock";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

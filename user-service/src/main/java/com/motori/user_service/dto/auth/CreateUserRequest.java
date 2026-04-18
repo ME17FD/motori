@@ -22,13 +22,8 @@ public record CreateUserRequest(
         String adress,
 
         @NotBlank(message = "Password is required")
-        String password
+        String password,
 
-<<<<<<< HEAD
-
-) {
-
-=======
         @NotBlank(message = "Role is required (ADMIN or USER)")
         String role
 ) {
@@ -40,5 +35,4 @@ public record CreateUserRequest(
         }
         if (role == null || role.isBlank()) role = "USER";
     }
->>>>>>> backoffice-frontend
 }

@@ -1,21 +1,5 @@
 package com.motori.user_service.service;
 
-<<<<<<< HEAD
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-=======
 import com.motori.user_service.dto.auth.AuthRequest;
 import com.motori.user_service.dto.auth.AuthResponse;
 import com.motori.user_service.dto.auth.RegisterRequest;
@@ -30,7 +14,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
->>>>>>> backoffice-frontend
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -42,20 +25,18 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.motori.user_service.dto.auth.AuthRequest;
-import com.motori.user_service.dto.auth.AuthResponse;
-import com.motori.user_service.dto.auth.RegisterRequest;
-import com.motori.user_service.dto.auth.TokenResponse;
-import com.motori.user_service.exception.AuthenticationException;
-import com.motori.user_service.exception.UserAlreadyExistsException;
-import com.motori.user_service.exception.UserNotFoundException;
-import com.motori.user_service.models.User;
-import com.motori.user_service.repository.UserRepository;
-
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 @Service
 @RequiredArgsConstructor
@@ -181,11 +162,7 @@ public class KeycloakService {
                 .email(request.email())
                 .phone(request.phone())
                 .adress(request.adress())
-<<<<<<< HEAD
-                .createdAt(LocalDateTime.now())
-=======
                 .role(User.Role.valueOf(roleName.toUpperCase()))
->>>>>>> backoffice-frontend
                 .build();
         User savedUser = userRepository.save(user);
         System.out.println("User saved in DB" + savedUser);
@@ -205,38 +182,29 @@ public class KeycloakService {
                 cred.setTemporary(false);
                 ur.setCredentials(Collections.singletonList(cred));
                 var response = usersResource.create(ur);
-                if (response.getLocation() != null) {
-                    String path = response.getLocation().getPath();
-                    return path.substring(path.lastIndexOf('/') + 1);
+
+                int status = response.getStatus();
+                log.info("Keycloak create user response status: {}", status);
+
+                if (status != 201) {
+                    String body = response.readEntity(String.class);
+                    log.error("Keycloak user creation failed: {}", body);
+                    throw new RuntimeException("Keycloak user creation failed: " + body);
                 }
-                List<UserRepresentation> found = usersResource.search(request.email(), true);
-                if (found.isEmpty()) throw new IllegalStateException("User created but could not be found by email");
-                return found.get(0).getId();
+
+                String path = response.getLocation().getPath();
+                return path.substring(path.lastIndexOf('/') + 1);
             }, "createUser");
             savedUser.setKeycloakId(userId);
             userRepository.save(savedUser);
-            try {
-                assignRoleToUser(userId, roleName);
-            } catch (Exception roleEx) {
-                log.warn("Could not assign realm role '{}' to user (create succeeded): {}. Create the role in Keycloak if needed.", roleName, roleEx.getMessage());
-                logService.warn("Keycloak role assignment failed for " + request.email() + ": " + roleEx.getMessage(), "KeycloakService");
-            }
+            assignRoleToUser(userId, roleName);
             logService.log(CentralizedLogService.LogLevel.INFO, "User registered in Keycloak: " + request.email(), CentralizedLogService.createLoggerName("KeycloakService", "register"), request.email(), null, "/auth/register", "register", null, null);
             return AuthResponse.fromUser(savedUser, null);
         } catch (Exception e) {
             userRepository.delete(savedUser);
-<<<<<<< HEAD
-            String cause = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
-            logService.externalServiceError("Failed to create user in Keycloak: " + cause, "KeycloakService", "keycloak", e.toString());
-            if (cause.contains("403") || cause.contains("Forbidden")) {
-                throw new AuthenticationException("Keycloak refused the request (403). Configure the client 'user-service' with Service account enabled and assign realm role 'manage-users' (realm-management).");
-            }
-            throw new AuthenticationException("Failed to create user in authentication system: " + cause);
-=======
             String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             logService.externalServiceError("Failed to create user in Keycloak: " + msg, "KeycloakService", "keycloak", e.toString());
             throw new RegistrationException("Registration failed: " + msg, e);
->>>>>>> backoffice-frontend
         }
     }
 

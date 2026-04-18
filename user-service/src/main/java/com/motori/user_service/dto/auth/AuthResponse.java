@@ -8,12 +8,8 @@ public record AuthResponse(
         String refreshToken,
         String email,
         String firstname,
-<<<<<<< HEAD
-        String lastname
-=======
         String lastname,
         String role
->>>>>>> backoffice-frontend
 ) {
     public static AuthResponse fromUser(User user, String token, String refreshToken) {
         return new AuthResponse(
@@ -22,12 +18,8 @@ public record AuthResponse(
                 refreshToken,
                 user.getEmail(),
                 user.getFirstname(),
-<<<<<<< HEAD
-                user.getLastname()
-=======
                 user.getLastname(),
                 user.getRole() != null ? user.getRole().name() : "USER"
->>>>>>> backoffice-frontend
         );
     }
 

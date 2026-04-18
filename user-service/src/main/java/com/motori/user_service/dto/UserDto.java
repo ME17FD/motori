@@ -11,10 +11,7 @@ public record UserDto(
     String email,
     String phone,
     String adress,
-<<<<<<< HEAD
-=======
     User.Role role,
->>>>>>> backoffice-frontend
     LocalDateTime createdAt,
     String keycloakId
 ) {
@@ -26,10 +23,7 @@ public record UserDto(
             user.getEmail(),
             user.getPhone(),
             user.getAdress(),
-<<<<<<< HEAD
-=======
             user.getRole(),
->>>>>>> backoffice-frontend
             user.getCreatedAt(),
             user.getKeycloakId()
         );

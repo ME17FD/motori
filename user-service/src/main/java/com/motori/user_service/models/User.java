@@ -11,10 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "users", indexes = {
         @Index(name = "idx_user_email", columnList = "email"),
         @Index(name = "idx_user_created", columnList = "created_at"),
-<<<<<<< HEAD
-=======
         @Index(name = "idx_user_role", columnList = "role"),
->>>>>>> backoffice-frontend
 })
 @Data
 @NoArgsConstructor
@@ -51,22 +48,14 @@ public class User {
     @Column(name = "adress")
     private String adress;
 
-<<<<<<< HEAD
-=======
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
     @Builder.Default
     private Role role = Role.USER;
 
->>>>>>> backoffice-frontend
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "keycloak_id")
     private String keycloakId;
-<<<<<<< HEAD
-
-
-=======
->>>>>>> backoffice-frontend
 }
