@@ -1,0 +1,184 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.1
+    container_name: motori-keycloak
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_keycloak
+      KC_DB_USERNAME: ${DB_USERNAME}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_LOG_LEVEL: error
+      KC_HEALTH_ENABLED: true
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8082
+      KC_HOSTNAME_STRICT: "false"
+    volumes:
+      - ./keycloak/motori_realm.json:/opt/keycloak/data/import/motori_realm.json
+    ports:
+      - "${PORT_KEYCLOAK}:8080"
+    command:
+      - start
+      - --http-enabled=true
+      - --import-realm
+    healthcheck:
+      test: ["CMD-SHELL", "{ printf 'HEAD /health/ready HTTP/1.0\\r\\n\\r\\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 50
+    networks:
+      - motori-network
+
+  discovery:
+    image: ${REGISTRY}/motori-discovery:${TAG}
+    container_name: motori-discovery
+    ports:
+      - "${PORT_DISCOVERY}:8761"
+    networks:
+      - motori-network
+
+  gateway:
+    container_name: motori-gateway
+    image: ${REGISTRY}/motori-gateway:${TAG}
+    ports:
+      - "${PORT_GATEWAY}:8080"
+    depends_on:
+      - discovery
+      - keycloak
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_gateway
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      KEYCLOAK_SECRET_KEY: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      GATEWAY_SECURITY_JWT_VALIDATION_ENABLED: "true"
+    networks:
+      - motori-network
+
+  user-service:
+    container_name: motori-user-service
+    image: ${REGISTRY}/motori-user-service:${TAG}
+    depends_on:
+      discovery:
+        condition: service_started
+      keycloak:
+        condition: service_healthy
+    extra_hosts:
+      - "localhost:host-gateway"
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_users
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+      KEYCLOAK_ADMIN_SERVER_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_ADMIN_CLIENT_ID: ${KEYCLOAK_ADMIN_CLIENT_ID}
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      KEYCLOAK_CREDENTIALS_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+      GATEWAY_SERVICE_URL: ${GATEWAY_URL}
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB: DEBUG
+    ports:
+      - "8081:8081"
+    networks:
+      - motori-network
+        
+  product-service:
+      container_name: motori-product-service
+      image: ${REGISTRY}/motori-product-service:${TAG}
+      depends_on:
+        - discovery
+        - redis
+        - minio
+      extra_hosts:
+        - "localhost:host-gateway"
+      environment:
+        DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_products
+        DB_USERNAME: ${DB_USERNAME}
+        DB_PASSWORD: ${DB_PASSWORD}
+        EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}
+        SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://motori-keycloak:8080/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+        MINIO_INTERNAL_URL: http://motori-minio:9000
+        MINIO_EXTERNAL_URL: http://localhost:9000
+        MINIO_URL: http://motori-minio:9000
+        MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+        MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+        MINIO_BUCKET: ${MINIO_BUCKET}
+        SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+        SPRING_DATA_REDIS_PORT: ${REDIS_PORT}
+      networks:
+        - motori-network
+
+  payment-service:
+    container_name: motori-payment-service
+    image: ${REGISTRY}/motori-payment-service:${TAG}
+    depends_on:
+      - discovery
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_payments
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    networks:
+      - motori-network
+
+  backoffice-service:
+    container_name: motori-backoffice-service
+    image: ${REGISTRY}/motori-backoffice-service:${TAG}
+    depends_on:
+      - discovery
+    environment:
+      DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/motori_backoffice
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: ${EUREKA_URL}
+    ports:
+      - "${PORT_BACKOFFICE}:8084"
+    networks:
+      - motori-network
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: motori-minio
+    ports:
+      - "${PORT_MINIO}:9000"
+      - "${PORT_MINIO_CONSOLE}:9090"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9090"
+    volumes:
+      - minio_data:/data
+    networks:
+      - motori-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: motori-redis
+    ports:
+      - "${PORT_REDIS}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - motori-network
+
+volumes:
+  minio_data:
+  redis_data:
+
+networks:
+  motori-network:
+    driver: bridge
