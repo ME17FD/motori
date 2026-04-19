@@ -35,7 +35,10 @@ spring:
           globalcors:
             cors-configurations:
               '[/**]':
-                allowed-origins: "http://localhost:5173"
+                allowed-origins: 
+                      - "http://localhost:5173"
+                      - "https://motori.me-fd.com"
+                      - "https://backoffice.motori.me-fd.com"
                 allowed-methods: GET, POST, PUT, DELETE, OPTIONS, PATCH
                 allowed-headers: "*"
                 allow-credentials: true

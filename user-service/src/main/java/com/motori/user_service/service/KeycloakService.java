@@ -1,19 +1,18 @@
 package com.motori.user_service.service;
 
-import com.motori.user_service.dto.auth.AuthRequest;
-import com.motori.user_service.dto.auth.AuthResponse;
-import com.motori.user_service.dto.auth.RegisterRequest;
-import com.motori.user_service.dto.auth.TokenResponse;
-import com.motori.user_service.exception.AuthenticationException;
-import com.motori.user_service.exception.RegistrationException;
-import com.motori.user_service.exception.UserAlreadyExistsException;
-import com.motori.user_service.exception.UserNotFoundException;
-import com.motori.user_service.models.User;
-import com.motori.user_service.repository.UserRepository;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -25,18 +24,21 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import com.motori.user_service.dto.auth.AuthRequest;
+import com.motori.user_service.dto.auth.AuthResponse;
+import com.motori.user_service.dto.auth.RegisterRequest;
+import com.motori.user_service.dto.auth.TokenResponse;
+import com.motori.user_service.exception.AuthenticationException;
+import com.motori.user_service.exception.RegistrationException;
+import com.motori.user_service.exception.UserAlreadyExistsException;
+import com.motori.user_service.exception.UserNotFoundException;
+import com.motori.user_service.models.User;
+import com.motori.user_service.repository.UserRepository;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -80,6 +82,7 @@ public class KeycloakService {
                 .build();
         try {
             this.adminKeycloak = createKeycloakAdminClient();
+            log.info("Keycloak admin client created with serverUrl={}", serverUrl);
             testKeycloakConnection();
             log.info("Keycloak admin client initialized successfully");
         } catch (Exception e) {
