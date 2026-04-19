@@ -43,7 +43,7 @@ public final class GatewayConstants {
             "/api/users/reset-password"
     );
 
-    public static final Set<String> ALLOWED_ORIGINS = Set.of("http://localhost:5173","https://motori.me-fd.com","https://backoffice.motori.me-fd.com");
+    public static final Set<String> ALLOWED_ORIGINS = Set.of("http://localhost:5173","https://motori.me-fd.com","https://backofficemotori.me-fd.com");
     public static final Set<String> ALLOWED_METHODS = Set.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH");
 
     public static final int JWT_FILTER_ORDER = -100;
