@@ -38,6 +38,7 @@ services:
       dockerfile: Dockerfile.spring
       args:
         SERVICE_DIR: discovery
+    image: ${REGISTRY}/motori-discovery:${TAG}
     container_name: motori-discovery
     ports:
       - "${PORT_DISCOVERY}:8761"
@@ -51,6 +52,7 @@ services:
       args:
         SERVICE_DIR: gateway
     container_name: motori-gateway
+    image: ${REGISTRY}/motori-gateway:${TAG}
     ports:
       - "${PORT_GATEWAY}:8080"
     depends_on:
@@ -77,6 +79,7 @@ services:
       args:
         SERVICE_DIR: user-service
     container_name: motori-user-service
+    image: ${REGISTRY}/motori-user-service:${TAG}
     depends_on:
       discovery:
         condition: service_started
@@ -114,6 +117,7 @@ services:
         args:
           SERVICE_DIR: product-service
       container_name: motori-product-service
+      image: ${REGISTRY}/motori-product-service:${TAG}
       depends_on:
         - discovery
         - redis
@@ -145,6 +149,7 @@ services:
       args:
         SERVICE_DIR: payment-service
     container_name: motori-payment-service
+    image: ${REGISTRY}/motori-payment-service:${TAG}
     depends_on:
       - discovery
     environment:
@@ -162,6 +167,7 @@ services:
       args:
         SERVICE_DIR: backoffice-service
     container_name: motori-backoffice-service
+    image: ${REGISTRY}/motori-backoffice-service:${TAG}
     depends_on:
       - discovery
     environment:
