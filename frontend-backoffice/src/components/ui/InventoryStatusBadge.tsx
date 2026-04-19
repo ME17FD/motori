@@ -1,13 +1,13 @@
-import type { InventoryStatus } from '../../types/inventory';
+import type { ProductStatus } from '../../types/product';
 import styles from '../../styles/ui/InventoryStatusBadge.module.css';
 
 interface InventoryStatusBadgeProps {
-  status: InventoryStatus;
+  status: ProductStatus;
   quantity?: number;
   threshold?: number;
 }
 
-const STATUS_LABELS: Record<InventoryStatus, string> = {
+const STATUS_LABELS: Record<ProductStatus, string> = {
   AVAILABLE:    'Available',
   OUT_OF_STOCK: 'Out of stock',
   DISCONTINUED: 'Discontinued',

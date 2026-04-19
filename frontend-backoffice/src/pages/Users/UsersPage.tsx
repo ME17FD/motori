@@ -7,7 +7,7 @@ import { Search, X, UserCheck, UserX } from 'lucide-react';
 import { useUsers, useSetUserEnabled } from '../../hooks/useUsers';
 import { ConfirmDialog } from '../../components/Modals/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
-import { formatDate, formatCurrency } from '../../utils/formatters';
+import { formatDate } from '../../utils/formatters';
 import type { UserDto } from '../../types/user';
 import styles from '../../styles/pages/Users/UsersPage.module.css';
 

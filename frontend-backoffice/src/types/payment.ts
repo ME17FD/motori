@@ -13,7 +13,7 @@ export type PaymentStatus = 'PENDING' | 'VALIDATED' | 'REJECTED' | 'REFUNDED';
  * Payment entity — to be wired when payment-service is ready.
  */
 export interface Payment {
-  id: number;
+  id: string;
   orderId: string;
   userId: number;
   amount: number;

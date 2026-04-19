@@ -92,7 +92,7 @@ Start in this order so discovery and gateway are up before the others:
 | Order | Service         | Port | Command (from module dir)     |
 |-------|-----------------|------|-------------------------------|
 | 1     | **discovery**   | 8761 | `./mvnw spring-boot:run`      |
-| 2     | **gateway**     | 8080 | `./mvnw spring-boot:run`      |
+| 2     | **gateway**     | 8085 | `./mvnw spring-boot:run`      |
 | 3     | **user-service** | 8081 | `./mvnw spring-boot:run`    |
 | 4     | product-service | 8083 | `./mvnw spring-boot:run`      |
 | 5     | backoffice-service | 8084 | `./mvnw spring-boot:run`  |
@@ -101,7 +101,7 @@ Start in this order so discovery and gateway are up before the others:
 **Windows (PowerShell):** use `.\mvnw.cmd` instead of `./mvnw`.
 
 - **Eureka dashboard:** http://localhost:8761  
-- **Gateway (API entry):** http://localhost:8080 (routes use `lb://service-name`)
+- **Gateway (API entry):** http://localhost:8085 (routes use `lb://service-name`)
 
 ---
 
@@ -109,9 +109,9 @@ Start in this order so discovery and gateway are up before the others:
 
 | Port  | Service / app           |
 |-------|-------------------------|
-| 8080  | gateway                 |
+| 8085  | gateway                 |
 | 8081  | user-service            |
-| 8082  | Keycloak                |
+| 8086  | Keycloak                |
 | 8083  | product-service         |
 | 8084  | backoffice-service      |
 | 8085  | payment-service         |

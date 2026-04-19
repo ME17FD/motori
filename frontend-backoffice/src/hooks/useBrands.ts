@@ -50,7 +50,7 @@ export function useCreateBrand() {
 export function useUpdateBrand() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, type, payload }: { id: number; type: BrandType; payload: UpdateBrandRequest }) =>
+    mutationFn: ({ id, type, payload }: { id: string; type: BrandType; payload: UpdateBrandRequest }) =>
       updateBrand(id, type, payload),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: brandKeys.byType(updated.type) });
@@ -66,7 +66,7 @@ export function useDeleteBrand(type: BrandType) {
   const queryClient = useQueryClient();
   return useMutation({
     // ✅ Passe le type au service
-    mutationFn: (id: number) => deleteBrand(id, type),
+    mutationFn: (id: string) => deleteBrand(id, type),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: brandKeys.byType(type) });
       toast.success('Brand deleted.');

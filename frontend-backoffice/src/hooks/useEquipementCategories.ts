@@ -1,18 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  fetchEquipementCategories,
-  createEquipementCategory,
-  updateEquipementCategory,
-  deleteEquipementCategory,
-} from '../services/equipementCategoryService';
+  fetchCategoriesByType,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from '../services/catalogService';
 import { QUERY_KEYS } from '../constants/queryKeys';
-import type { EquipementCategoryRequest } from '../types/category';
+import type { CreateCategoryRequest, UpdateCategoryRequest } from '../types/category';
 import type { PageableParams } from '../types/api';
 
 export function useEquipementCategories(params: PageableParams = {}) {
   return useQuery({
     queryKey: QUERY_KEYS.equipementCategories(params),
-    queryFn: () => fetchEquipementCategories(params),
+    queryFn: () => fetchCategoriesByType('EquipementCategory'),
   });
 }
 
@@ -24,18 +24,18 @@ export function useEquipementCategoryMutations() {
   };
 
   const create = useMutation({
-    mutationFn: (payload: EquipementCategoryRequest) => createEquipementCategory(payload),
+    mutationFn: (payload: CreateCategoryRequest) => createCategory(payload),
     onSuccess: invalidate,
   });
 
   const update = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: EquipementCategoryRequest }) =>
-      updateEquipementCategory(id, payload),
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateCategoryRequest }) =>
+      updateCategory(id, 'EquipementCategory', payload),
     onSuccess: invalidate,
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => deleteEquipementCategory(id),
+    mutationFn: (id: string) => deleteCategory(id, 'EquipementCategory'),
     onSuccess: invalidate,
   });
 

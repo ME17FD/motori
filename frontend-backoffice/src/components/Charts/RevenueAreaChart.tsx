@@ -52,10 +52,12 @@ export function RevenueAreaChart({ data, isLoading }: Props) {
           tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
         />
         <Tooltip
-          formatter={(value: number) =>
-            new Intl.NumberFormat('fr-MA', {
-              style: 'currency', currency: 'MAD', maximumFractionDigits: 0,
-            }).format(value)
+          formatter={(value: any) =>
+            value !== undefined
+              ? new Intl.NumberFormat('fr-MA', {
+                  style: 'currency', currency: 'MAD', maximumFractionDigits: 0,
+                }).format(Number(value))
+              : 'N/A'
           }
           contentStyle={{
             borderRadius: 8,

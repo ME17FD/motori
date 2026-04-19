@@ -1,7 +1,7 @@
 /**
  * Order service — all backoffice-service order endpoints.
  *
- * Base path: /api/orders (through API Gateway on port 8080)
+ * Base path: /api/orders (through API Gateway on port 8085)
  *
  * Endpoints covered:
  *   GET  /api/orders                    — paginated list

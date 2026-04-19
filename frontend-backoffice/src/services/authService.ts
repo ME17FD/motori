@@ -15,7 +15,7 @@ import type {
 } from '../types/auth';
 // ─── Configuration ───────────────────────────────────────────────────────────
 
-const GATEWAY_BASE = import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8080';
+const GATEWAY_BASE = import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8085';
 
 const LOGIN_URL   = `${GATEWAY_BASE}/api/auth/login`;
 const REFRESH_URL = `${GATEWAY_BASE}/api/auth/refresh`;

@@ -23,11 +23,11 @@ export function usePayments(params: PaymentFilters = {}) {
 /**
  * Single payment by id.
  */
-export function usePayment(id: number) {
+export function usePayment(id: string) {
   return useQuery({
     queryKey: QUERY_KEYS.payment(id),
     queryFn: () => fetchPayment(id),
-    enabled: id > 0,
+    enabled: !!id,
   });
 }
 
@@ -60,19 +60,19 @@ export function usePendingPayments() {
 export function usePaymentMutations() {
   const qc = useQueryClient();
 
-  const invalidate = (id?: number) => {
+  const invalidate = (id?: string) => {
     qc.invalidateQueries({ queryKey: ['payments'] });
     if (id) qc.invalidateQueries({ queryKey: QUERY_KEYS.payment(id) });
   };
 
   const validate = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: ValidatePaymentRequest }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: ValidatePaymentRequest }) =>
       validatePayment(id, payload),
     onSuccess: (_, { id }) => invalidate(id),
   });
 
   const reject = useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: RejectPaymentRequest }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: RejectPaymentRequest }) =>
       rejectPayment(id, payload),
     onSuccess: (_, { id }) => invalidate(id),
   });

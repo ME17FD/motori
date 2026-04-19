@@ -5,7 +5,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchTodaySummary, fetchDashboard, fetchTopProducts } from '../services/statsService';
+import { fetchTodaySummary, fetchDashboardStats, fetchTopProducts } from '../services/statsService';
 import type { ReportParams, ReportData } from '../types/report';
 
 /**
@@ -26,11 +26,11 @@ export function useReport(params: ReportParams) {
     queryFn: async () => {
       const [todaySummary, stats, topProducts] = await Promise.all([
         fetchTodaySummary(),
-        fetchDashboard({
+        fetchDashboardStats({
           days,
-          startDate: params.startDate,
-          endDate:   params.endDate,
-          topLimit:  params.topLimit ?? 10,
+          from: params.startDate,
+          to:   params.endDate,
+          topProductsLimit:  params.topLimit ?? 10,
         }),
         fetchTopProducts({
           days,

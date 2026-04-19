@@ -4,7 +4,7 @@
  * Alternative to Axios - used for generic REST calls with Bearer token authentication.
  */
 
-const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8085";
 
 /**
  * Retrieves the stored JWT token from localStorage.

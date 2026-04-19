@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, RefreshCw } from 'lucide-react';
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { X } from 'lucide-react';
@@ -19,7 +19,7 @@ import { ConfirmDialog } from '../../components/Modals/ConfirmDialog';
 import { Pagination } from '../../components/ui/Pagination';
 import { generatePromoCode } from '../../services/promotionService';
 import { formatDate } from '../../utils/formatters';
-import type { PromotionDto, PromotionType } from '../../types/promotion';
+import type { PromotionDto } from '../../types/promotion';
 import fStyles from '../../styles/Components/modals/FormModal.module.css';
 import styles from '../../styles/pages/Promotions/PromotionsPage.module.css';
 
@@ -29,7 +29,7 @@ const promoSchema = z.object({
   name:        z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   type:        z.enum(['PERCENTAGE', 'FIXED_AMOUNT']),
-  value:       z.coerce.number().min(0, 'Value must be positive'),
+  value:       z.number().min(0, 'Value must be positive'),
   code:        z.string().optional(),
   startDate:   z.string().min(1, 'Start date is required'),
   endDate:     z.string().min(1, 'End date is required'),
@@ -73,7 +73,7 @@ function PromoModal({ editItem, onClose }: PromoModalProps) {
 
   const promoType = watch('type');
 
-  const onSubmit = async (data: PromoFormData) => {
+  const onSubmit: SubmitHandler<PromoFormData> = async (data) => {
     if (isEdit && editItem) {
       await update.mutateAsync({ id: editItem.id, payload: data });
     } else {
@@ -140,7 +140,7 @@ function PromoModal({ editItem, onClose }: PromoModalProps) {
                 step="0.01"
                 className={`${fStyles.input} ${errors.value ? fStyles.inputError : ''}`}
                 placeholder={promoType === 'PERCENTAGE' ? '20' : '50'}
-                {...register('value')}
+                {...register('value', { valueAsNumber: true })}
               />
               {errors.value && (
                 <span className={fStyles.fieldError}>{errors.value.message}</span>

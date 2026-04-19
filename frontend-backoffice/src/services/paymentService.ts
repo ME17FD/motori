@@ -28,7 +28,7 @@ export async function fetchPayments(
 /**
  * GET /api/payments/:id
  */
-export async function fetchPayment(id: number): Promise<Payment> {
+export async function fetchPayment(id: string): Promise<Payment> {
   const { data } = await axiosInstance.get<Payment>(`${BASE}/${id}`);
   return data;
 }
@@ -56,7 +56,7 @@ export async function fetchPendingPayments(): Promise<Payment[]> {
  * Manually validates a cash payment.
  */
 export async function validatePayment(
-  id: number,
+  id: string,
   payload: ValidatePaymentRequest,
 ): Promise<Payment> {
   const { data } = await axiosInstance.patch<Payment>(
@@ -71,7 +71,7 @@ export async function validatePayment(
  * Rejects a payment with a mandatory reason.
  */
 export async function rejectPayment(
-  id: number,
+  id: string,
   payload: RejectPaymentRequest,
 ): Promise<Payment> {
   const { data } = await axiosInstance.patch<Payment>(

@@ -73,7 +73,7 @@ export async function createBrand(payload: CreateBrandRequest): Promise<BrandDto
 
 /** Update an existing brand */
 export async function updateBrand(
-  id: number,
+  id: string,
   type: BrandType,
   payload: UpdateBrandRequest
 ): Promise<BrandDto> {
@@ -83,9 +83,13 @@ export async function updateBrand(
   );
   return data;
 }
-
+/** Fetch a single brand by ID and type */
+export async function fetchBrandById(id: string, type: BrandType): Promise<BrandDto> {
+  const { data } = await apiClient.get<BrandDto>(`${BRAND_PATHS[type]}/${id}`);
+  return data;
+}
 /** Soft-delete a brand */
-export async function deleteBrand(id: number, type: BrandType): Promise<void> {
+export async function deleteBrand(id: string, type: BrandType): Promise<void> {
   await apiClient.delete(`${BRAND_PATHS[type]}/${id}`);
 }
 
@@ -110,7 +114,7 @@ export async function fetchCategoryTree(
 }
 
 /** Fetch a single category by ID */
-export async function fetchCategoryById(id: number): Promise<CategoryDto> {
+export async function fetchCategoryById(id: string): Promise<CategoryDto> {
   const { data } = await apiClient.get<CategoryDto>(`/api/products/part-categories/${id}`);
   return data;
 }

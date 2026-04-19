@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form';
-import type { Promotion, CreatePromotionRequest, DiscountType } from '../../types/promotion';
+import type { PromotionDto, CreatePromotionRequest, PromotionType } from '../../types/promotion';
 import styles from '../../styles/Components/modals/FormModal.module.css';
 
 interface PromotionModalProps {
   open: boolean;
-  initial?: Promotion | null;
+  initial?: PromotionDto | null;
   loading?: boolean;
   onSubmit: (data: CreatePromotionRequest) => void;
   onClose: () => void;
@@ -33,23 +33,21 @@ function PromotionModalInner({
   } = useForm<CreatePromotionRequest>({
     defaultValues: initial
       ? {
-          code:           initial.code,
-          description:    initial.description,
-          discountType:   initial.discountType,
-          discountValue:  initial.discountValue,
-          minOrderAmount: initial.minOrderAmount,
-          maxUses:        initial.maxUses,
-          active:         initial.active,
-          startDate:      initial.startDate,
-          endDate:        initial.endDate,
+          name:        initial.name,
+          description: initial.description,
+          type:        initial.type,
+          value:       initial.value,
+          code:        initial.code,
+          startDate:   initial.startDate,
+          endDate:     initial.endDate,
+          productIds:  initial.productIds,
         }
       : {
-          discountType: 'PERCENTAGE',
-          active: true,
+          type: 'PERCENTAGE',
         },
   });
 
-  const discountType = watch('discountType') as DiscountType;
+  const discountType = watch('type') as PromotionType;
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
@@ -97,9 +95,9 @@ function PromotionModalInner({
           <div className={styles.row}>
             <div className={styles.field}>
               <label className={styles.label}>Discount type *</label>
-              <select className={styles.input} {...register('discountType')}>
+              <select className={styles.input} {...register('type')}>
                 <option value="PERCENTAGE">Percentage (%)</option>
-                <option value="FIXED">Fixed amount (MAD)</option>
+                <option value="FIXED_AMOUNT">Fixed amount (MAD)</option>
               </select>
             </div>
 
@@ -112,8 +110,8 @@ function PromotionModalInner({
                 step="0.01"
                 min={0}
                 max={discountType === 'PERCENTAGE' ? 100 : undefined}
-                className={[styles.input, errors.discountValue ? styles.inputError : ''].join(' ')}
-                {...register('discountValue', {
+                className={[styles.input, errors.value ? styles.inputError : ''].join(' ')}
+                {...register('value', {
                   required: 'Value is required',
                   valueAsNumber: true,
                   min: { value: 0, message: 'Must be positive' },
@@ -122,35 +120,9 @@ function PromotionModalInner({
                     : undefined,
                 })}
               />
-              {errors.discountValue && (
-                <span className={styles.errorMsg}>{errors.discountValue.message}</span>
+              {errors.value && (
+                <span className={styles.errorMsg}>{errors.value.message}</span>
               )}
-            </div>
-          </div>
-
-          {/* Min order + max uses */}
-          <div className={styles.row}>
-            <div className={styles.field}>
-              <label className={styles.label}>Min order amount (MAD)</label>
-              <input
-                type="number"
-                step="0.01"
-                min={0}
-                className={styles.input}
-                placeholder="e.g. 200"
-                {...register('minOrderAmount', { valueAsNumber: true })}
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Max uses (blank = unlimited)</label>
-              <input
-                type="number"
-                min={1}
-                className={styles.input}
-                placeholder="e.g. 100"
-                {...register('maxUses', { valueAsNumber: true })}
-              />
             </div>
           </div>
 
@@ -173,20 +145,6 @@ function PromotionModalInner({
                 {...register('endDate')}
               />
             </div>
-          </div>
-
-          {/* Active toggle */}
-          <div className={styles.field}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                style={{ width: 16, height: 16, accentColor: 'var(--color-red)' }}
-                {...register('active')}
-              />
-              <span className={styles.label} style={{ margin: 0 }}>
-                Active (available for use)
-              </span>
-            </label>
           </div>
 
           <div className={styles.footer}>

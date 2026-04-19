@@ -24,7 +24,7 @@ export const equipementKeys = {
   lists:   () => [...equipementKeys.all, 'list'] as const,
   list:    (f: ProductFilters) => [...equipementKeys.lists(), f] as const,
   details: () => [...equipementKeys.all, 'detail'] as const,
-  detail:  (id: number) => [...equipementKeys.details(), id] as const,
+  detail:  (id: string) => [...equipementKeys.details(), id] as const,
 };
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────
@@ -40,9 +40,9 @@ export function useEquipements(filters: ProductFilters = {}) {
 }
 
 /** Single equipement by ID */
-export function useEquipement(id: number | null) {
+export function useEquipement(id: string | null) {
   return useQuery({
-    queryKey: equipementKeys.detail(id ?? 0),
+    queryKey: equipementKeys.detail(id ?? ''),
     queryFn:  () => fetchEquipementById(id!),
     enabled:  id !== null,
     staleTime: 2 * 60 * 1000,
@@ -70,7 +70,7 @@ export function useUpdateEquipement() {
       id,
       payload,
     }: {
-      id: number;
+      id: string;
       payload: UpdateEquipementRequest;
     }) => updateEquipement(id, payload),
     onSuccess: (updated) => {
@@ -86,7 +86,7 @@ export function useUpdateEquipement() {
 export function useDeleteEquipement() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deleteEquipement(id),
+    mutationFn: (id: string) => deleteEquipement(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: equipementKeys.lists() });
       toast.success('Equipment deleted.');

@@ -27,7 +27,7 @@ import {
 // ─── Instance ───────────────────────────────────────────────────────────────
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_GATEWAY_URL ?? 'http://localhost:8085',
   timeout: 30_000,
   headers: {
     'Content-Type': 'application/json',

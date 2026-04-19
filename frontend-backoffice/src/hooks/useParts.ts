@@ -24,7 +24,7 @@ export const partKeys = {
   lists:   () => [...partKeys.all, 'list'] as const,
   list:    (f: ProductFilters) => [...partKeys.lists(), f] as const,
   details: () => [...partKeys.all, 'detail'] as const,
-  detail:  (id: number) => [...partKeys.details(), id] as const,
+  detail:  (id: string) => [...partKeys.details(), id] as const,
 };
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────
@@ -40,9 +40,9 @@ export function useParts(filters: ProductFilters = {}) {
 }
 
 /** Single part by ID */
-export function usePart(id: number | null) {
+export function usePart(id: string | null) {
   return useQuery({
-    queryKey: partKeys.detail(id ?? 0),
+    queryKey: partKeys.detail(id ?? ''),
     queryFn:  () => fetchPartById(id!),
     enabled:  id !== null,
     staleTime: 2 * 60 * 1000,
@@ -66,7 +66,7 @@ export function useCreatePart() {
 export function useUpdatePart() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: UpdatePartRequest }) =>
+    mutationFn: ({ id, payload }: { id: string; payload: UpdatePartRequest }) =>
       updatePart(id, payload),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: partKeys.lists() });
@@ -81,7 +81,7 @@ export function useUpdatePart() {
 export function useDeletePart() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) => deletePart(id),
+    mutationFn: (id: string) => deletePart(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: partKeys.lists() });
       toast.success('Part deleted.');

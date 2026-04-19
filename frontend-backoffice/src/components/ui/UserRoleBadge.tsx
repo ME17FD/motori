@@ -6,8 +6,9 @@ interface UserRoleBadgeProps {
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
-  ROLE_USER:  'User',
-  ROLE_ADMIN: 'Admin',
+  USER:  'User',
+  ADMIN: 'Admin',
+  SUPERADMIN: 'Super Admin',
 };
 
 /**
@@ -15,7 +16,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
  */
 export default function UserRoleBadge({ role }: UserRoleBadgeProps) {
   return (
-    <span className={`${styles.badge} ${role === 'ROLE_ADMIN' ? styles.admin : styles.user}`}>
+    <span className={`${styles.badge} ${role === 'ADMIN' ? styles.admin : styles.user}`}>
       {ROLE_LABELS[role]}
     </span>
   );

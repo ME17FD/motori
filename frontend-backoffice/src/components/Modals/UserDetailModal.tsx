@@ -1,8 +1,7 @@
-import { useUser, useUserStats, useUserMutations } from '../../hooks/useUsers';
+import { useUser } from '../../hooks/useUsers';
 import { useOrders } from '../../hooks/useOrders';
 import UserRoleBadge from '../ui/UserRoleBadge';
-import OrderStatusBadge from '../ui/OrderStatusBadge';
-import type { UserRole } from '../../types/user';
+import { OrderStatusBadge } from '../ui/OrderStatusBadge';
 import { formatCurrency, formatDateTime, formatDate } from '../../utils/formatters';
 import styles from '../../styles/Components/modals/UserDetailModal.module.css';
 
@@ -26,27 +25,27 @@ function UserDetailModalInner({
   onClose,
 }: Omit<UserDetailModalProps, 'open'> & { userId: number }) {
   const { data: user,   isLoading: loadingUser  } = useUser(userId);
-  const { data: stats,  isLoading: loadingStats } = useUserStats(userId);
+  // const { data: stats,  isLoading: loadingStats } = useUserStats(userId); // TODO: Implement user stats endpoint
   const { data: orders, isLoading: loadingOrders } = useOrders({
     userId,
     page: 0,
     size: 5,
   });
-  const { update } = useUserMutations();
+  // const { update } = useUserMutations(); // TODO: Implement user mutations hook
 
-  const toggleEnabled = () => {
-    if (!user) return;
-    update.mutate({ id: userId, payload: { enabled: !user.enabled } });
-  };
+  // const toggleEnabled = () => {
+  //   if (!user) return;
+  //   update.mutate({ id: userId, payload: { enabled: !user.enabled } });
+  // };
 
-  const toggleAdmin = () => {
-    if (!user) return;
-    const isAdmin = user.roles.includes('ROLE_ADMIN');
-    const newRoles: UserRole[] = isAdmin
-      ? ['ROLE_USER']
-      : ['ROLE_USER', 'ROLE_ADMIN'];
-    update.mutate({ id: userId, payload: { roles: newRoles } });
-  };
+  // const toggleAdmin = () => {
+  //   if (!user) return;
+  //   const isAdmin = user.roles.includes('ADMIN');
+  //   const newRoles: UserRole[] = isAdmin
+  //     ? ['USER']
+  //     : ['USER', 'ADMIN'];
+  //   update.mutate({ id: userId, payload: { roles: newRoles } });
+  // };
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
@@ -98,14 +97,11 @@ function UserDetailModalInner({
                 <span className={styles.metaItem}>
                   Member since {formatDate(user.createdAt)}
                 </span>
-                <span className={styles.metaItem}>
-                  Last updated {formatDate(user.updatedAt)}
-                </span>
               </div>
             </section>
 
-            {/* Stats */}
-            <section className={styles.section}>
+            {/* Stats - TODO: Implement user stats endpoint */}
+            {/* <section className={styles.section}>
               <h4 className={styles.sectionTitle}>Activity</h4>
               {loadingStats || !stats ? (
                 <div className={styles.statsGrid}>
@@ -133,7 +129,7 @@ function UserDetailModalInner({
                   </div>
                 </div>
               )}
-            </section>
+            </section> */}
 
             {/* Recent orders */}
             <section className={styles.section}>
@@ -170,8 +166,8 @@ function UserDetailModalInner({
               )}
             </section>
 
-            {/* Account actions */}
-            <section className={styles.section}>
+            {/* Account actions - TODO: Implement user management hooks */}
+            {/* <section className={styles.section}>
               <h4 className={styles.sectionTitle}>Account actions</h4>
               <div className={styles.actionButtons}>
                 <button
@@ -189,7 +185,7 @@ function UserDetailModalInner({
                 <button
                   className={[
                     styles.actionBtn,
-                    user.roles.includes('ROLE_ADMIN')
+                    user.roles.includes('ADMIN')
                       ? styles.actionBtnWarning
                       : styles.actionBtnDefault,
                   ].join(' ')}
@@ -197,12 +193,12 @@ function UserDetailModalInner({
                   onClick={toggleAdmin}
                   disabled={update.isPending}
                 >
-                  {user.roles.includes('ROLE_ADMIN')
+                  {user.roles.includes('ADMIN')
                     ? 'Remove admin role'
                     : 'Grant admin role'}
                 </button>
               </div>
-            </section>
+            </section> */}
           </div>
         )}
       </div>

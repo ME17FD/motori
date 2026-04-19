@@ -1,31 +1,38 @@
 /**
- * Report types — period selector and generated report data.
+ * Report types used by the backoffice report builder and report hook.
  */
 
-export type ReportPeriod = '7' | '30' | '90' | 'custom';
+export type ReportPeriod = '7d' | '30d' | '90d' | 'custom';
 
-export interface ReportFilters {
+export interface ReportParams {
   period: ReportPeriod;
-  from?: string;
-  to?: string;
+  startDate?: string;
+  endDate?: string;
+  topLimit?: number;
 }
 
-export interface DailySalesPoint {
-  date: string;
-  orders: number;
-  revenue: number;
+export interface ReportStats {
+  ordersByStatus: Record<string, number>;
+  ordersInPeriod: number;
+  revenueInPeriod: number;
 }
 
-export interface CategorySales {
-  categoryName: string;
-  totalSold: number;
-  totalRevenue: number;
+export interface ReportTodaySummary {
+  ordersToday: number;
+  revenueToday: number;
+}
+
+export interface ReportTopProduct {
+  productId: number;
+  productName: string;
+  quantitySold: number;
+  totalAmount: number;
 }
 
 export interface ReportData {
-  totalOrders: number;
-  totalRevenue: number;
-  averageOrderValue: number;
-  dailySales: DailySalesPoint[];
-  topCategories: CategorySales[];
+  generatedAt: string;
+  params: ReportParams;
+  todaySummary: ReportTodaySummary;
+  stats: ReportStats;
+  topProducts: ReportTopProduct[];
 }

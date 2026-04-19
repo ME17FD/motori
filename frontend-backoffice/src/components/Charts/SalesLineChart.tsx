@@ -7,19 +7,19 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import type { DashboardStats } from '../../types/stats';
+import type { StatisticsDto } from '../../types/stats';
 import { formatCurrency } from '../../utils/formatters';
 import styles from '../../styles/Components/charts/Chart.module.css';
 
 interface SalesLineChartProps {
-  data: DashboardStats;
+  data: StatisticsDto;
 }
 
 /**
  * Builds a simple daily series from the ordersByStatus map for the line chart.
  * In production this would use a richer time-series endpoint.
  */
-function buildChartData(stats: DashboardStats) {
+function buildChartData(stats: StatisticsDto) {
   return Object.entries(stats.ordersByStatus).map(([status, count]) => ({
     name: status,
     orders: count,

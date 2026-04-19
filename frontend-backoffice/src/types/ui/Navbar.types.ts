@@ -10,9 +10,11 @@ import type { NavCategory } from "../../types";
  * @param categories - Hierarchical category tree
  * @param onSearchSubmit - Callback fired when user submits search
  */
+export interface NavbarProps {
   categories: NavCategory[];
   onSearchSubmit?: (query: string) => void;
 }
+
 
 export interface CategoryItemProps {
   category: NavCategory;
