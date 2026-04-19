@@ -19,8 +19,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: http://keycloak:8080/realms/motori_realm/protocol/openid-connect/certs
-        audiences: 
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://keycloak:8080/realms/motori_realm/protocol/openid-connect/certs}
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://keycloak:8080/realms/motori_realm}
+        audiences:
             - account
             - motori-backoffice
 
