@@ -1,4 +1,4 @@
-import apiClient from "../api/apiClient";
+import apiClient from "../api/axiosInstance";
 import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { buildCleanParams } from "../utils/buildParams";
 import type { CompatibilityResponse, CompatibilityQueryParams } from "../types/compatibility.types";

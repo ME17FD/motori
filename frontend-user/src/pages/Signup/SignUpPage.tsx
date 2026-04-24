@@ -31,10 +31,12 @@ const CATEGORIES: NavCategory[] = [
  */
 const SignupPage: React.FC = () => {
   const [form, setForm] = useState({
-    lastname:  "",
-    firstname: "",
+    lastName:  "",
+    firstName: "",
     email:     "",
     password:  "",
+    phone:     "",
+    address:   "",
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [, setLoading] = useState(false);
@@ -49,17 +51,15 @@ const SignupPage: React.FC = () => {
     setErrorMsg(null);
     setLoading(true);
     try {
-      const newUser = await authService.signup({
-        firstName: form.firstname,
-        lastName:  form.lastname,
-        email:     form.email,
-        password:  form.password,
-        phone:     "",
-        adress:    "",
-        approved:  false,
-        activated: false,
+      await authService.signup({
+        firstname: form.firstName,
+        lastname: form.lastName,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+        adress: form.address,
       });
-      console.log("User created:", newUser);
+      console.log("User created:", form.email);
       setSuccess(true);
       navigate(ROUTES.LOGIN, { replace: true });
     } catch (err) {
@@ -94,8 +94,8 @@ const SignupPage: React.FC = () => {
             <input
               type="text"
               placeholder="Nom de famille"
-              value={form.lastname}
-              onChange={set("lastname")}
+              value={form.lastName}
+              onChange={set("lastName")}
               aria-label="Nom de famille"
             />
           </div>
@@ -104,8 +104,8 @@ const SignupPage: React.FC = () => {
             <input
               type="text"
               placeholder="Prénom"
-              value={form.firstname}
-              onChange={set("firstname")}
+              value={form.firstName}
+              onChange={set("firstName")}
               aria-label="Prénom"
             />
           </div>

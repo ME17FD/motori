@@ -1,4 +1,4 @@
-import apiClient from "../api/apiClient";
+import apiClient from "../api/axiosInstance";
 import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { buildCleanParams } from "../utils/buildParams";
 import type { UUID, ISODateString, PagedModel } from "../types/common.types";

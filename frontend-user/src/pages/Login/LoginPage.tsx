@@ -1,10 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";  // ← added
 import Navbar from "../../components/layout/Navbar/Navbar";
 import Button from "../../components/ui/Button/Button";
 import Footer from "../../components/layout/Footer/Footer";
 import useAuth from "../../hooks/useAuth";
-import { ROUTES } from "../../constants/routes";
 import type { NavCategory } from "../../types";
 import "../../styles/components/LoginPage.css";
 
@@ -25,22 +23,17 @@ const CATEGORIES: NavCategory[] = [
 ];
 
 /**
- * Email/password login using `useAuth`; redirects to home on success.
+ * Username/password login using `useAuth`.
+ * Navigation and error handling are fully delegated to the hook.
  */
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const { login, loading, error } = useAuth();
-  const navigate = useNavigate();  // ← added
+  const { login, isLoading, error, clearError } = useAuth();
 
   const handleLogin = async () => {
-    try {
-      await login({ email, password });
-      navigate(ROUTES.HOME, { replace: true });  // ← redirect on success
-    } catch {
-      // error is already set inside the hook
-    }
+    await login({ email, password });
   };
 
   return (
@@ -49,7 +42,6 @@ const LoginPage: React.FC = () => {
         categories={CATEGORIES}
         onSearchSubmit={(q: string) => console.log("Search:", q)}
       />
-
       <main className="login-section">
         <div className="login-card">
           <h2>Vous avez déjà un compte ?</h2>
@@ -58,11 +50,15 @@ const LoginPage: React.FC = () => {
 
           <div className="login-field">
             <input
-              type="email"
-              placeholder="xyz@gmail.com"
+              type="text"
+              placeholder="Adresse e-mail"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-label="Adresse email"
+              onChange={(e) => {
+                clearError();
+                setEmail(e.target.value);
+              }}
+              aria-label="Adresse e-mail"
+              autoComplete="username"
             />
           </div>
 
@@ -71,8 +67,12 @@ const LoginPage: React.FC = () => {
               type="password"
               placeholder="Mot de passe"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                clearError();
+                setPassword(e.target.value);
+              }}
               aria-label="Mot de passe"
+              autoComplete="current-password"
             />
           </div>
 
@@ -80,16 +80,15 @@ const LoginPage: React.FC = () => {
 
           <div className="login-btn-wrap">
             <Button
-              text={loading ? "Connexion…" : "Se connecter"}
+              text={isLoading ? "Connexion…" : "Se connecter"}
               variant="outline"
               type="submit"
               onClick={handleLogin}
-              disabled={loading}
+              disabled={isLoading}
             />
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

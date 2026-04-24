@@ -1,4 +1,4 @@
-import apiClient from "../api/apiClient";
+import apiClient from "../api/axiosInstance";
 import type { OrderResponse, OrderRequest } from "../types/order.types";
 import type { UUID } from "../types/common.types";
 

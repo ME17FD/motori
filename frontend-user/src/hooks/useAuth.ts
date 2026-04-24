@@ -1,144 +1,212 @@
 /**
- * Authentication/session hook: login, signup, logout, and silent refresh on mount.
+ * useAuth hook — primary interface for auth operations in React components.
  *
- * **State:** `user`, `isAuthenticated`, `loading`, `error`.
+ * Wraps the Zustand auth store and the auth service to expose:
+ *   - login / logout with loading and error state
+ *   - Role-based access helpers (isAdmin, isSuperAdmin)
+ *   - Reactive user / isAuthenticated state
  *
- * **Side effects:** restores session via `/auth/me` and refresh cookie; listens for `auth:logout` from axios refresh failure.
+ * Role enforcement on login:
+ *   After receivConversion of type 'AuthUser' to type 'Record<string, unknown>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'AuthUser'.ts(2352)ing tokens, the hook verifies the decoded JWT contains
+ *   ADMIN or SUPERADMIN before completing the login flow. Users without
+ *   these roles have their tokens immediately cleared.
+ *
+ * Usage:
+ *   const { login, logout, user, isAdmin, isLoading, error } = useAuth();
  */
-import { useState, useCallback, useEffect } from 'react';
-import authService from '../services/authService';
-import parseError from '../utils/parseError';
-import type { User } from '../types/user';
-import type { LoginRequest, SignupRequest } from '../types/auth';
 
-interface AuthState {
-  user: User | null;
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useAuthStore, selectIsAdmin, selectUser } from '../store/authStore';
+import {
+  login as keycloakLogin,
+  logout as keycloakLogout,
+  updateProfile,
+  changePassword,
+  isAuthError,
+} from '../services/authService';
+
+import type {
+  LoginCredentials,
+  AuthUser,
+  UpdateProfilePayload,
+  ChangePasswordPayload,
+} from '../types/auth';
+
+// ─── Return type ───────────────────────────────────────────────────────────
+
+interface UseAuthReturn {
+  /** Normalized user derived from the Keycloak JWT, or null when unauthenticated */
+  user: AuthUser | null;
   isAuthenticated: boolean;
-  loading: boolean;
+  /** True when the user holds the ADMIN or SUPERADMIN realm role */
+  isAdmin: boolean;
+  /** True when the user holds the SUPERADMIN realm role */
+  isSuperAdmin: boolean;
+  /** True while a login or logout network request is in flight */
+  isLoading: boolean;
+  /** Human-readable error message from the last failed login attempt */
   error: string | null;
+  /** Clear the error state (useful when the user starts typing again) */
+  updateProfile: (data: UpdateProfilePayload) => Promise<void>;
+  changePassword: (data: ChangePasswordPayload) => Promise<void>;
+  clearError: () => void;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-const INITIAL_STATE: AuthState = {
-  user: null,
-  isAuthenticated: false,
-  loading: false,
-  error: null,
-};
+// ─── Hook ──────────────────────────────────────────────────────────────────
 
-const useAuth = () => {
-  const [state, setState] = useState<AuthState>(INITIAL_STATE);
+export default function useAuth(): UseAuthReturn {
+  const navigate = useNavigate();
 
-  // ─── State helpers ────────────────────────────────────────────────────────
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError]         = useState<string | null>(null);
 
-  const setLoading = (loading: boolean) =>
-    setState((prev) => ({ ...prev, loading }));
+  // Zustand store bindings
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { setTokens, clearAuth, hasRole } = useAuthStore();
+  const user       = useAuthStore(selectUser);
+  const isAdmin    = useAuthStore(selectIsAdmin);
+  const isSuperAdmin = hasRole('SUPERADMIN');
+  
 
-  const setError = (error: unknown) =>
-    setState((prev) => ({
-      ...prev,
-      loading: false,
-      error: parseError(error),
-    }));
+  // ── Actions ──────────────────────────────────────────────────────────────
 
-  const setUser = (user: User) =>
-    setState({ user, isAuthenticated: true, loading: false, error: null });
 
-  const clearUser = () =>
-    setState({ ...INITIAL_STATE });
+  const clearError = useCallback(() => setError(null), []);
 
-  // ─── fetchUser ────────────────────────────────────────────────────────────
-
-  const fetchUser = useCallback(async (): Promise<void> => {
-    const user = await authService.getCurrentUser();
-    setUser(user);
-  }, []);
-
-  // ─── login ────────────────────────────────────────────────────────────────
-
-  const login = useCallback(async (data: LoginRequest): Promise<void> => {
-    setLoading(true);
+  /**
+   * Authenticates the user against Keycloak (ROPC flow) and stores tokens.
+   *
+   * Steps:
+   *   1. Call Keycloak token endpoint with username/password
+   *   2. Store tokens in Zustand (which decodes the JWT to derive AuthUser)
+   *   3. Verify the decoded user holds ADMIN or SUPERADMIN
+   *   4. On role failure: clear tokens and show an access-denied message
+   *   5. On success: show welcome toast and redirect to /dashboard
+   *
+   * @param credentials - { username, password }
+   */
+  const login = useCallback(
+  async (credentials: LoginCredentials): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { user } = await authService.login(data);
-      setUser(user);
-    } catch (error) {
-      setError(error);
-      throw error;
-    }
-  }, []);
+      const tokenResponse = await keycloakLogin(credentials);
 
-  // ─── signup ───────────────────────────────────────────────────────────────
+      // user-service returns `token` not `access_token`, no expires_in
+      // decode JWT to get expiry from the token itself
+      setTokens(
+        tokenResponse.token,
+        tokenResponse.refreshToken,
+        300  // fallback — decoded from JWT exp in setTokens anyway
+      );
 
-  const signup = useCallback(async (data: SignupRequest): Promise<void> => {
-    setLoading(true);
-    try {
-      const { user } = await authService.signup(data);
-      setUser(user);
-    } catch (error) {
-      setError(error);
-      throw error;
-    }
-  }, []);
+      const { user: storedUser } = useAuthStore.getState();
+      const hasAdminAccess =
+        storedUser?.roles.includes('ADMIN') ||
+        storedUser?.roles.includes('SUPERADMIN');
 
-  // ─── logout ───────────────────────────────────────────────────────────────
-
-  const logout = useCallback(async (): Promise<void> => {
-    try {
-      await authService.logout();
-    } catch {
-      // clear state even if backend call fails
-    } finally {
-      clearUser();
-    }
-  }, []);
-
-  // ─── Silent session restore on mount ─────────────────────────────────────
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const restoreSession = async (): Promise<void> => {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-      try {
-        await fetchUser();
-      } catch {
-        try {
-          await authService.refreshToken();
-          if (cancelled) return;
-          await fetchUser();
-        } catch {
-          if (cancelled) return;
-          clearUser();
-        }
-      } finally {
-        if (!cancelled) {
-          setState((prev) => ({ ...prev, loading: false }));
-        }
+      if (!hasAdminAccess) {
+        clearAuth();
+        setError('Access denied. Your account does not have backoffice access.');
+        return;
       }
-    };
 
-    void restoreSession();
+      const displayName = storedUser?.firstName || storedUser?.username;
+      toast.success(`Welcome back, ${displayName}!`);
+      navigate('/dashboard', { replace: true });
+    } catch (err) {
+      if (isAuthError(err)) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+        console.error('[useAuth] Unexpected login error:', err);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  },
+  [setTokens, clearAuth, navigate]
+);
 
-    return () => { cancelled = true; };
-  }, [fetchUser]);
+  /**
+   * Logs out the user.
+   *
+   * Steps:
+   *   1. Revoke the Keycloak session (back-channel logout — fire and forget)
+   *   2. Clear Zustand store and localStorage tokens
+   *   3. Show info toast and redirect to /login
+   */
+  const logout = useCallback(async (): Promise<void> => {
+    setIsLoading(true);
 
-  // ─── Forced logout (refresh failure via interceptor) ─────────────────────
+    try {
+      const { refreshToken } = useAuthStore.getState();
 
-  useEffect(() => {
-    const handleForcedLogout = () => clearUser();
-    window.addEventListener('auth:logout', handleForcedLogout);
-    return () => window.removeEventListener('auth:logout', handleForcedLogout);
-  }, []);
+      if (refreshToken) {
+        // Best-effort server-side session revocation
+        await keycloakLogout(refreshToken);
+      }
+    } catch {
+      // Swallow — local state is cleared regardless
+      console.warn('[useAuth] Logout request failed — clearing local state anyway.');
+    } finally {
+      clearAuth();
+      setIsLoading(false);
+      toast.info('You have been logged out.');
+      navigate('/login', { replace: true });
+    }
+  }, [clearAuth, navigate]);
+
+  const handleUpdateProfile = useCallback(
+  async (data: UpdateProfilePayload): Promise<void> => {
+    try {
+      await updateProfile(data);
+      toast.success('Profile updated successfully');
+    } catch (err) {
+      if (isAuthError(err)) {
+        setError(err.message);
+      } else {
+        setError('Failed to update profile');
+      }
+    }
+  },
+  []
+);
+
+  const handleChangePassword = useCallback(
+  async (data: ChangePasswordPayload): Promise<void> => {
+    try {
+      await changePassword(data);
+      toast.success('Password updated successfully');
+    } catch (err) {
+      if (isAuthError(err)) {
+        setError(err.message);
+      } else {
+        setError('Failed to update password');
+      }
+    }
+  },
+  []
+);
+
+  // ── Return ───────────────────────────────────────────────────────────────
 
   return {
-    user: state.user,
-    isAuthenticated: state.isAuthenticated,
-    loading: state.loading,
-    error: state.error,
+    user,
+    isAuthenticated,
+    isAdmin,
+    isSuperAdmin,
+    isLoading,
+    error,
+    clearError,
     login,
-    signup,
     logout,
-    fetchUser,
-  } as const;
-};
-
-export default useAuth;
+    updateProfile: handleUpdateProfile,
+    changePassword: handleChangePassword,
+  };
+}

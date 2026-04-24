@@ -1,4 +1,4 @@
-import apiClient from "../api/apiClient";
+import apiClient from "../api/axiosInstance";
 import { normalizePagedResponse } from "../api/normalizePagedResponse";
 import { mapEquipementParams } from "../utils/equipementParams";
 import type {
